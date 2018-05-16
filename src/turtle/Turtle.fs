@@ -2,7 +2,7 @@
 
 open SharpDX
 
-module Turtle = 
+module Turtle =
 
     type Color      = | Brown
                       | LimeGreen
@@ -19,9 +19,9 @@ module Turtle =
             Direction   : Vector2
             DrawLine    : DrawLine
         }
-        static member New c w p d dl = 
+        static member New c w p d dl =
             {Color = c; Width = w; Position = p; Direction = Normalize d; DrawLine = dl;}
-        static member UnsafeNew c w p d dl = 
+        static member UnsafeNew c w p d dl =
             {Color = c; Width = w; Position = p; Direction = d; DrawLine = dl;}
 
     type Result<'T> =
@@ -41,65 +41,65 @@ module Turtle =
     let Delay (tg : unit -> Movement<'T>) : Movement<'T>    = fun s -> tg () s
     let Run (t : Movement<'T>)            : Movement<'T>    = fun s -> t s
 
-    let Bind (l : Movement<'T>) (r : 'T -> Movement<'U>)    : Movement<'U> = 
-        fun s ->    
+    let Bind (l : Movement<'T>) (r : 'T -> Movement<'U>)    : Movement<'U> =
+        fun s ->
             let m = l s
             (r m.Value) m.State
-        
+
 
     let Combine (l : Movement<unit>) (r : Movement<'U>)     : Movement<'U> =
-        fun s ->   
+        fun s ->
             let m = l s
             r m.State
 
     let For (seq : seq<'T>) (r : 'T -> Movement<unit>)      : Movement<unit> =
-        fun s ->   
+        fun s ->
             let mutable state   = s
             for v in seq do
-                let mm = r v state 
+                let mm = r v state
                 state <- mm.State
             Result<_>.New () state
 
     let While (e : unit -> bool) (r : Movement<unit>)       : Movement<unit> =
-        fun s ->   
+        fun s ->
             let mutable state   = s
             while e () do
                 let mm = r state
                 state <- mm.State
             Result<_>.New () state
-        
-    let RunAndReturn (t : Movement<'T>)                     : Movement<'T>    = 
-        fun s ->    
+
+    let RunAndReturn (t : Movement<'T>)                     : Movement<'T>    =
+        fun s ->
             let m = t s
             Result<_>.New m.Value s
 
-    let Color (c : Color)                                   : Movement<unit> = 
-        fun s -> 
+    let Color (c : Color)                                   : Movement<unit> =
+        fun s ->
             let ss = State.UnsafeNew c s.Width s.Position s.Direction s.DrawLine
             Result<_>.New () ss
-        
 
-    let Width (w : float32)                                 : Movement<unit> = 
-        fun s -> 
+
+    let Width (w : float32)                                 : Movement<unit> =
+        fun s ->
             let ss = State.UnsafeNew s.Color w s.Position s.Direction s.DrawLine
             Result<_>.New () ss
-        
 
-    let Turn (a : float32)                                  : Movement<unit> = 
-        fun s -> 
+
+    let Turn (a : float32)                                  : Movement<unit> =
+        fun s ->
             let r = Matrix3x2.Rotation (Deg2Rad * a)
             let d = Matrix3x2.TransformPoint (r, s.Direction)
             let ss = State.UnsafeNew s.Color s.Width s.Position d s.DrawLine
             Result<_>.New () ss
-        
 
-    let Forward (v : float32)                               : Movement<unit> = 
-        fun s -> 
-            let p = s.Position + v*s.Direction 
+
+    let Forward (v : float32)                               : Movement<unit> =
+        fun s ->
+            let p = s.Position + v*s.Direction
             let ss = State.UnsafeNew s.Color s.Width p s.Direction s.DrawLine
             ss.DrawLine s.Color s.Width s.Position p
             Result<_>.New () ss
-        
+
 
     let Execute (c : Color) (w : float32) (p : Vector2) (d : Vector2) (dl : DrawLine) (t : Movement<'T>) =
         let s = State.New c w p d dl
@@ -123,5 +123,5 @@ module TurtleBuilder =
 
     let inline ( >>= ) l r = Turtle.Bind l r
     let inline ( >>+ ) l r = Turtle.Combine l r
-    
+
     let turtle = TurtleBuilder ()

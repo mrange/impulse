@@ -1,6 +1,6 @@
 ﻿namespace RayTracer
 
-type Color = 
+type Color =
     {
         Red     : float
         Green   : float
@@ -14,13 +14,13 @@ type Color =
     static member (*) (x : Color  , s : float)  = x.Scale s
 
     member x.Scale t = Color.New (t * x.Red) (t * x.Green) (t * x.Blue)
-    member x.Lerp y t = 
+    member x.Lerp y t =
         let xx = Vector3.New x.Red x.Green x.Blue
         let yy = Vector3.New y.Red y.Green y.Blue
         let rr = xx.Lerp yy t
         Color.New rr.X rr.Y rr.Z
 
-type Material = 
+type Material =
     {
         Color       : Color
         Opacity     : float
@@ -29,12 +29,12 @@ type Material =
         Reflection  : float
         Specular    : Color
     }
-    static member New color opacity diffusion refraction reflection specular = 
+    static member New color opacity diffusion refraction reflection specular =
         {
-            Color       = color 
-            Opacity     = unorm opacity 
-            Diffusion   = unorm diffusion 
-            Refraction  = unorm refraction 
+            Color       = color
+            Opacity     = unorm opacity
+            Diffusion   = unorm diffusion
+            Refraction  = unorm refraction
             Reflection  = unorm reflection
             Specular    = specular
         }
@@ -42,13 +42,13 @@ type Material =
 
 type Surface = Vector2 -> Material
 
-type Ray = 
+type Ray =
     {
         Direction   : Vector3
         Origin      : Vector3
     }
     member x.Trace t            = t * x.Direction + x.Origin
-    member x.IntersectSphere (center :Vector3) (radius : float) = 
+    member x.IntersectSphere (center :Vector3) (radius : float) =
         let v = x.Origin - center
         let vd = v * x.Direction
         let v2 = v.L2
@@ -65,11 +65,11 @@ type Ray =
             if t1 < cutoff || t2 < cutoff then None
             elif t1 < t2 then Some (t1, t2)
             else Some (t2, t1)
-    member x.IntersectPlane (normal :Vector3) (offset : float) = 
+    member x.IntersectPlane (normal :Vector3) (offset : float) =
         let t = -(x.Origin*normal + offset) / (x.Direction*normal)
         if t > cutoff then Some t
         else None
-        
+
     static member FromTo (origin : Vector3) (destination: Vector3) = {Direction = (destination - origin).Normalize; Origin = origin}
     static member DirectionOrigin (direction: Vector3) (origin : Vector3) = {Direction = direction.Normalize; Origin = origin}
 

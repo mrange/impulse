@@ -158,7 +158,7 @@ module Instanced =
                     let zz = z + d*float32 zz
                     menger_cube xx yy zz i
           else
-            let c c = 
+            let c c =
               let c = abs c / (maxSide / 2.F)
               c*c*c
             let cc = Vector4 (c x, c y, c z, 1.F)

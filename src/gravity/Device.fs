@@ -5,7 +5,7 @@ open System.Diagnostics
 
 open SharpDX
 
-type Device (form : Windows.RenderForm) = 
+type Device (form : Windows.RenderForm) =
 
     let GetDeviceAndSwapChain (form : Windows.RenderForm) =
         let width               = form.ClientSize.Width
@@ -28,7 +28,7 @@ type Device (form : Windows.RenderForm) =
         let device              = ref DefaultOf<Direct3D11.Device>
         let swapChain           = ref DefaultOf<DXGI.SwapChain>
 
-        let featureLevels       = 
+        let featureLevels       =
             [|
                 Direct3D.FeatureLevel.Level_11_0
                 Direct3D.FeatureLevel.Level_10_1
@@ -39,10 +39,10 @@ type Device (form : Windows.RenderForm) =
             |]
 
         Direct3D11.Device.CreateWithSwapChain (
-            Direct3D.DriverType.Hardware                , 
-            Direct3D11.DeviceCreationFlags.BgraSupport  , 
-            featureLevels                               , 
-            desc                                        , 
+            Direct3D.DriverType.Hardware                ,
+            Direct3D11.DeviceCreationFlags.BgraSupport  ,
+            featureLevels                               ,
+            desc                                        ,
             device                                      , swapChain
             )
 
@@ -59,7 +59,7 @@ type Device (form : Windows.RenderForm) =
 
     let backBuffer          = Direct3D11.Texture2D.FromSwapChain<Direct3D11.Texture2D> (swapChain, 0)
 //    let persistentBuffer    = new Direct3D11.Texture2D (backBuffer.Device, backBuffer.Description)
-    let persistentBuffer    = 
+    let persistentBuffer    =
         let mutable description         = Direct3D11.Texture2DDescription()
         description.ArraySize           <- 1
         description.BindFlags           <- Direct3D11.BindFlags.ShaderResource ||| Direct3D11.BindFlags.RenderTarget
@@ -70,33 +70,33 @@ type Device (form : Windows.RenderForm) =
         description.MipLevels           <- 1
         description.OptionFlags         <- Direct3D11.ResourceOptionFlags.None
         description.SampleDescription   <- DXGI.SampleDescription(1,0)
-        description.Usage               <- Direct3D11.ResourceUsage.Default            
+        description.Usage               <- Direct3D11.ResourceUsage.Default
         new Direct3D11.Texture2D (device, description)
 
     let surface             = backBuffer.QueryInterface<SharpDX.DXGI.Surface> ();
     let persistentSurface   = persistentBuffer.QueryInterface<SharpDX.DXGI.Surface> ();
     let d2dRenderTarget     = new Direct2D1.RenderTarget (
-                                d2dFactory                          , 
-                                surface                             , 
+                                d2dFactory                          ,
+                                surface                             ,
                                 Direct2D1.RenderTargetProperties (
                                     Direct2D1.PixelFormat (
-                                        DXGI.Format.Unknown         , 
+                                        DXGI.Format.Unknown         ,
                                         Direct2D1.AlphaMode.Premultiplied
                                         )
                                     )
                                 )
-    let d2dPersistentRenderTarget     
+    let d2dPersistentRenderTarget
                             = new Direct2D1.RenderTarget (
-                                d2dFactory                          , 
-                                persistentSurface                   , 
+                                d2dFactory                          ,
+                                persistentSurface                   ,
                                 Direct2D1.RenderTargetProperties (
                                     Direct2D1.PixelFormat (
-                                        DXGI.Format.Unknown         , 
+                                        DXGI.Format.Unknown         ,
                                         Direct2D1.AlphaMode.Premultiplied
                                         )
                                     )
                                 )
-    let bitmap              = 
+    let bitmap              =
         let mutable format      = Direct2D1.PixelFormat()
         format.AlphaMode        <- Direct2D1.AlphaMode.Premultiplied
         format.Format           <- DXGI.Format.R8G8B8A8_UNorm
@@ -104,10 +104,10 @@ type Device (form : Windows.RenderForm) =
         properties.PixelFormat  <- format
         new Direct2D1.Bitmap (d2dRenderTarget, persistentSurface, Nullable<_> (properties))
 
-    let solid (c : Color)   = new Direct2D1.SolidColorBrush (d2dRenderTarget, c.ToColor4 () |> rcolor4)                                    
+    let solid (c : Color)   = new Direct2D1.SolidColorBrush (d2dRenderTarget, c.ToColor4 () |> rcolor4)
 
 
-    let rainbow                 = 
+    let rainbow                 =
         [|
             0.00F     , Color.Red
             0.30F     , Color.Orange
@@ -124,7 +124,7 @@ type Device (form : Windows.RenderForm) =
 
     member x.PlanetBrush        = planetBrush
 
-    member x.GetRainbowBrush (v : Vector2) (c : float32) = 
+    member x.GetRainbowBrush (v : Vector2) (c : float32) =
         let v = v.Length ()
         let r = v / (v + c)
         let i = rainbowBrushes |> Array.findIndex (fun (n,_) -> n > r)
@@ -160,11 +160,11 @@ type Device (form : Windows.RenderForm) =
 
     interface IDisposable with
         member x.Dispose () =
-            rainbowBrushes 
-            |> Array.map (fun (_,b) -> b) 
+            rainbowBrushes
+            |> Array.map (fun (_,b) -> b)
             |> TryDisposeList
 
-            let resources : IDisposable list = 
+            let resources : IDisposable list =
                 [
                     planetBrush
                     bitmap
@@ -180,7 +180,7 @@ type Device (form : Windows.RenderForm) =
                     d2dFactory
                 ]
             resources |> TryDisposeList
-            
+
 
 
 

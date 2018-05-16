@@ -13,9 +13,9 @@ open RayTracer
 
 [<EntryPoint>]
 [<STAThread>]
-let main argv = 
+let main argv =
 
-    let lights = 
+    let lights =
        [|
             LightSource.New (White * 0.75) (Vector3.New 2. 3. 2.) 0.25
             LightSource.New (White * 0.25) (Vector3.New 5. 3. 0.) 0.25
@@ -26,9 +26,9 @@ let main argv =
     let orbiterRadius   = 0.25
     let orbiterCount    = int ((sphereRadius + orbiterRadius) * pi2 / (orbiterRadius * 2.))
 
-    let orbiters = 
+    let orbiters =
         [|
-            for c in 0..orbiterCount -> 
+            for c in 0..orbiterCount ->
                 let d = (float c) * pi2 / (float orbiterCount)
                 let x = (sphereRadius + orbiterRadius) * cos d
                 let z = (sphereRadius + orbiterRadius) * sin d
@@ -46,7 +46,7 @@ let main argv =
 
     let plane   = (Plane (planeSurface, 0., Vector3.New 0. 1. 0.)).AsShape
 
-    let placed = 
+    let placed =
         [|
             plane
             Sphere(sphereSurface                            , Vector3.New 0. sphereRadius 0., sphereRadius).AsShape
@@ -68,8 +68,8 @@ let main argv =
     window.MinHeight <- 400.
 
 
-    use loaded = window.Loaded.Subscribe (fun v -> 
-        
+    use loaded = window.Loaded.Subscribe (fun v ->
+
 
         let width   = window.Width  / (float granularity)
         let height  = window.Height / (float granularity)
@@ -93,7 +93,7 @@ let main argv =
                                             finally wb.Unlock()
                                         )
 
-        let timer = 
+        let timer =
             DispatcherTimer(
                 TimeSpan.FromMilliseconds(200.)      ,
                 DispatcherPriority.ApplicationIdle  ,
@@ -103,21 +103,21 @@ let main argv =
 
         timer.Start()
 
-        let tracers = 
+        let tracers =
             seq {
-                for x in 0..iwidth - 1 -> 
+                for x in 0..iwidth - 1 ->
                     async {
                         let row = [| for i in 0..iheight - 1 -> Black|]
                         for y in 0..iheight - 1 do
                             let vp = viewPort.Corner3 + viewPort.Axis0 * (viewPort.Width * float x / width) - viewPort.Axis1 * (viewPort.Height * float y / height)
                             let ray = Ray.FromTo eye vp
                             row.[y] <- Trace ray world lights
-    
-                        let pixels = 
+
+                        let pixels =
                             [| for i in row do
                                 yield asByte i.Blue
                                 yield asByte i.Green
-                                yield asByte i.Red 
+                                yield asByte i.Red
                                 yield byte 255
                             |]
 
@@ -127,18 +127,18 @@ let main argv =
                     }
             }
 
-        let tracer = 
+        let tracer =
             tracers
-                |>  Async.Parallel 
+                |>  Async.Parallel
                 |>  Async.Ignore
 
         let sw = Stopwatch ()
 
-        let complete = 
+        let complete =
             async {
                 do! tracer
 
-                dispatch window.Dispatcher (fun () -> 
+                dispatch window.Dispatcher (fun () ->
                     sw.Stop()
                     window.Title <- sprintf "Trace took %f secs" sw.Elapsed.TotalSeconds
                     )

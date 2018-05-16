@@ -6,7 +6,7 @@ open System
 
 [<AutoOpen>]
 module Utils =
-    
+
     let Deg2Rad = float32 Math.PI/180.F
     let Rad2Deg = 1.F / Deg2Rad
 
@@ -25,14 +25,14 @@ module Utils =
     let inline ( <*> ) (l : Matrix3x2) (r : Matrix3x2) = Matrix3x2.Multiply (l,r)
     let inline Normalize (v : Vector2) = v.Normalize (); v
 
-    let TryRun (a : unit -> unit) = 
+    let TryRun (a : unit -> unit) =
         try
             a ()
         with
         | e -> printfn "Caught exception: %A" e
 
-    type Disposer (action : unit->unit) = 
-    
+    type Disposer (action : unit->unit) =
+
         interface IDisposable with
             member x.Dispose () = TryRun action
 

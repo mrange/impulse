@@ -1,15 +1,3 @@
-// ----------------------------------------------------------------------------------------------
-// Copyright (c) Mårten Rånge.
-// ----------------------------------------------------------------------------------------------
-// This source code is subject to terms and conditions of the Microsoft Public License. A 
-// copy of the license can be found in the License.html file at the root of this distribution. 
-// If you cannot locate the  Microsoft Public License, please send an email to 
-// dlr@microsoft.com. By using this source code in any fashion, you are agreeing to be bound 
-//  by the terms of the Microsoft Public License.
-// ----------------------------------------------------------------------------------------------
-// You must not remove this notice, or any other, from this software.
-// ----------------------------------------------------------------------------------------------
-
 //--------------------------------------------------------------------------------------
 #include "stdafx.h"
 
@@ -30,14 +18,14 @@ using namespace DirectX;
 
 #define TEST_HR_IMPL2(n) hr_tester##n
 #define TEST_HR_IMPL1(n) TEST_HR_IMPL2(n)
-#define TEST_HR hr_tester TEST_HR_IMPL1(__COUNTER__) = 
+#define TEST_HR hr_tester TEST_HR_IMPL1(__COUNTER__) =
 
 using namespace concurrency;
 using namespace concurrency::graphics;
 
 namespace
 {
-    struct hr_exception : std::exception 
+    struct hr_exception : std::exception
     {
         HRESULT hresult;
 
@@ -48,7 +36,7 @@ namespace
         }
     };
 
-    struct hr_tester 
+    struct hr_tester
     {
         inline hr_tester (HRESULT hr)
         {
@@ -137,12 +125,12 @@ namespace
             return com_out_ptr<TInterface> (*this);
         }
 
-        inline TInterface* get () const throw () 
+        inline TInterface* get () const throw ()
         {
             return m_ptr;
         }
 
-        inline TInterface* operator-> () const throw () 
+        inline TInterface* operator-> () const throw ()
         {
             assert (m_ptr);
             return m_ptr;
@@ -219,12 +207,12 @@ namespace
         {
             return &m_ptr;
         }
-        
+
         operator void** () throw ()
         {
             return reinterpret_cast<void**> (&m_ptr);
         }
-        
+
     private:
         com_out_ptr (com_out_ptr const & cop);
         com_out_ptr & operator= (com_out_ptr const & cop);
@@ -501,7 +489,7 @@ namespace
 
         ModelViewProjection                 view                    ;
     };
-    
+
     device_independent_resources::ptr   dir ;
     device_dependent_resources::ptr     ddr ;
     size_dependent_resources::ptr       sdr ;
@@ -509,7 +497,7 @@ namespace
 
 }
 
-namespace 
+namespace
 {
     typedef float   mtype   ;
     typedef float_2 mtype_2 ;
@@ -519,7 +507,7 @@ namespace
     unsigned int    const   mandelbrot_iter = 512       ;
 
     mtype           const   cx_mandelbrot   = 0.350649F ;
-    mtype           const   cy_mandelbrot   = 0.580367F ; 
+    mtype           const   cy_mandelbrot   = 0.580367F ;
     mtype           const   zoom_mandelbrot = 1.0F/200  ;
 
     inline int mandelbrot2 (mtype_2 coord, mtype_2 center, int iter) restrict(amp)
@@ -657,7 +645,7 @@ namespace
 
                 auto color = lookup_view[result];
 
-                texv.set(idx,color); 
+                texv.set(idx,color);
             });
     }
 }
@@ -672,7 +660,7 @@ void                render ();
 
 
 //--------------------------------------------------------------------------------------
-// Entry point to the program. Initializes everything and goes into a message processing 
+// Entry point to the program. Initializes everything and goes into a message processing
 // loop. Idle time is used to render the scene.
 //--------------------------------------------------------------------------------------
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow)
@@ -754,8 +742,8 @@ HRESULT init_window (HINSTANCE hInstance, int nCmdShow)
 
     RECT rc = { 0, 0, 1024, 768 };
     AdjustWindowRect (&rc, WS_OVERLAPPEDWINDOW, FALSE);
-    dir->hwnd = CreateWindow ( 
-            L"MandelbrotWindowClass" 
+    dir->hwnd = CreateWindow (
+            L"MandelbrotWindowClass"
         ,   L"Mandelbrot"
         ,   WS_OVERLAPPEDWINDOW
         ,   CW_USEDEFAULT
@@ -765,7 +753,7 @@ HRESULT init_window (HINSTANCE hInstance, int nCmdShow)
         ,   nullptr
         ,   nullptr
         ,   hInstance
-        ,   nullptr 
+        ,   nullptr
         );
 
     if (!dir->hwnd)
@@ -817,7 +805,7 @@ HRESULT init_device ()
             ddr->driver_type = driverTypes[driverTypeIndex];
             HRESULT create_hr = D3D11CreateDeviceAndSwapChain (
                     nullptr
-                ,   ddr->driver_type 
+                ,   ddr->driver_type
                 ,   nullptr
                 ,   createDeviceFlags
                 ,   featureLevels
@@ -833,9 +821,9 @@ HRESULT init_device ()
             if (create_hr == E_INVALIDARG)
             {
                 // DirectX 11.0 platforms will not recognize D3D_FEATURE_LEVEL_11_1 so we need to retry without it
-                create_hr = D3D11CreateDeviceAndSwapChain ( 
+                create_hr = D3D11CreateDeviceAndSwapChain (
                         nullptr
-                    ,   ddr->driver_type 
+                    ,   ddr->driver_type
                     ,   nullptr
                     ,   createDeviceFlags
                     ,   &featureLevels[1]
@@ -857,7 +845,7 @@ HRESULT init_device ()
 
         // Create a render target view
         {
-            TEST_HR ddr->swap_chain->GetBuffer ( 
+            TEST_HR ddr->swap_chain->GetBuffer (
                     0
                 ,   __uuidof (ID3D11Texture2D)
                 ,   ddr->back_buffer.get_out_ptr ()
@@ -920,7 +908,7 @@ HRESULT init_device ()
             ,   ddr->vertex_shader.get_out_ptr ()
             );
 
-	    TEST_HR ddr->device->CreatePixelShader( 
+	    TEST_HR ddr->device->CreatePixelShader(
                 &pixel_bytes.front ()
             ,   pixel_bytes.size ()
             ,   nullptr
@@ -928,7 +916,7 @@ HRESULT init_device ()
             );
 
         // Create the input layout
-	    TEST_HR ddr->device->CreateInputLayout ( 
+	    TEST_HR ddr->device->CreateInputLayout (
                 vertexDesc
             ,   ARRAYSIZE (vertexDesc)
             ,   &vertex_shader_bytes.front ()
@@ -967,7 +955,7 @@ HRESULT init_device ()
         // Load mesh indices. Each triple of indices represents
         // a triangle to be rendered on the screen.
         // For example, 0,2,1 means that the vertices with indexes
-        // 0, 2 and 1 from the vertex buffer compose the 
+        // 0, 2 and 1 from the vertex buffer compose the
         // first triangle of this mesh.
         D3D11_SUBRESOURCE_DATA indexBufferData  = {} ;
         indexBufferData.pSysMem                 = CubeIndices   ;
@@ -1118,7 +1106,7 @@ void render ()
     {
         return;
     }
-    
+
     if (!sdr)
     {
         return;
@@ -1162,7 +1150,7 @@ void render ()
         ,   [=](mtype_2 coord, mtype_2 center, int iter) restrict(amp) {return mandelbrot2 (coord, coord, iter);}
         );
 
-    // Clear the back buffer 
+    // Clear the back buffer
     ddr->device_context->ClearRenderTargetView (ddr->render_target_view.get (), Colors::MidnightBlue);
 
     ID3D11Buffer* buffers[] =
@@ -1173,12 +1161,12 @@ void render ()
     // Set vertex buffer
     UINT stride = sizeof (MandelbrotPos);
     UINT offset = 0;
-    ddr->device_context->IASetVertexBuffers ( 
+    ddr->device_context->IASetVertexBuffers (
             0
         ,   ARRAYSIZE (buffers)
         ,   buffers
         ,   &stride
-        ,   &offset 
+        ,   &offset
         );
 
     // Set index buffer

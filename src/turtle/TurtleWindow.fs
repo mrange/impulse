@@ -8,9 +8,9 @@ open System.Collections.Generic
 open SharpDX
 open TurtlePower
 
-module TurtleWindow = 
+module TurtleWindow =
 
-    type Line = 
+    type Line =
         {
             Color   : Turtle.Color
             Width   : float32
@@ -18,21 +18,21 @@ module TurtleWindow =
             To      : Vector2
         }
         static member New c w f t = {Color = c; Width = w; From = f; To = t}
-    
-    type TurtleMessage = 
+
+    type TurtleMessage =
         {
             Turtle  : unit -> List<Line>
             Reply   : List<Line> -> unit
         }
         static member New t r = {Turtle = t; Reply = r;}
 
-    let Show (turtleGenerator : float32 -> Turtle.Movement<unit>) = 
+    let Show (turtleGenerator : float32 -> Turtle.Movement<unit>) =
         let turtleExecutor (t : Turtle.Movement<unit>) : List<Line> =
             let lines = List<Line> (64)
-            ignore <| Turtle.Execute 
+            ignore <| Turtle.Execute
                 Turtle.Brown
-                3.F 
-                (NewVector2 0.F 0.F) 
+                3.F
+                (NewVector2 0.F 0.F)
                 (NewVector2 0.F 1.F)
                 (fun c w f t -> lines.Add <| Line.New c w f t)
                 t
@@ -77,30 +77,30 @@ module TurtleWindow =
 
         use onExitRemoveHandler = OnExit <| fun () -> form.Resize.RemoveHandler resizer
 
-        Windows.RenderLoop.Run (form, fun () -> 
+        Windows.RenderLoop.Run (form, fun () ->
 
             let turtle = turtleGenerator <| float32 sw.Elapsed.TotalSeconds
             mp.Post <| TurtleMessage.New (fun () -> turtleExecutor turtle) (fun lines -> currentLines := lines)
-            
+
             let d = !device
             let colors              =   [
                                             Turtle.Brown            , d.BrownBrush
                                             Turtle.LimeGreen        , d.LimeGreenBrush
                                             Turtle.Lime             , d.LimeGreenBrush
                                             Turtle.MediumVioletRed  , d.MediumVioletRedBrush
-                                        ] 
+                                        ]
                                         |> List.fold (fun s (c,b) -> s |> Map.add c b) Map.empty
-                                
+
             let lines = !currentLines
 
-            d.Draw <| fun d2dRenderTarget -> 
-                
+            d.Draw <| fun d2dRenderTarget ->
+
                 d2dRenderTarget.Clear (Nullable<_> (Color.White.ToColor4 () |> rcolor4))
 
-                let transform = 
-                    Matrix3x2.Identity 
+                let transform =
+                    Matrix3x2.Identity
                     <*> Matrix3x2.Rotation (Deg2Rad * 180.F)
-                    <*> Matrix3x2.Translation (d.Width/2.F, d.Height - 20.F) 
+                    <*> Matrix3x2.Translation (d.Width/2.F, d.Height - 20.F)
                 d2dRenderTarget.Transform <- transform |> rmatrix3x2
 
                 let c = lines.Count

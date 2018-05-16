@@ -182,15 +182,15 @@ module LorenzAttractor =
 
         let avgPosition =
           let folder s (v : InstanceVertex) = s + v.Position
-          let v = 
+          let v =
             vs
             |> Array.fold folder Vector3.Zero
           (1.F / float32 vs.Length) * v
 
         printfn "Avg position: %A" avgPosition
 
-        vs 
-        |> Array.map (fun v -> 
+        vs
+        |> Array.map (fun v ->
           let v = v.WithPosition (v.Position - avgPosition)
           let v = v.WithNextPosition(v.NextPosition - avgPosition)
           v

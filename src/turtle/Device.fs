@@ -6,7 +6,7 @@ open System.Diagnostics
 open SharpDX
 open TurtlePower
 
-type Device (form : Windows.RenderForm) = 
+type Device (form : Windows.RenderForm) =
 
     let GetDeviceAndSwapChain (form : Windows.RenderForm) =
         let width               = form.ClientSize.Width
@@ -29,7 +29,7 @@ type Device (form : Windows.RenderForm) =
         let device              = ref DefaultOf<Direct3D11.Device>
         let swapChain           = ref DefaultOf<DXGI.SwapChain>
 
-        let featureLevels       = 
+        let featureLevels       =
             [|
                 Direct3D.FeatureLevel.Level_11_0
                 Direct3D.FeatureLevel.Level_10_1
@@ -40,10 +40,10 @@ type Device (form : Windows.RenderForm) =
             |]
 
         Direct3D11.Device.CreateWithSwapChain (
-            Direct3D.DriverType.Hardware                , 
-            Direct3D11.DeviceCreationFlags.BgraSupport  , 
-            featureLevels                               , 
-            desc                                        , 
+            Direct3D.DriverType.Hardware                ,
+            Direct3D11.DeviceCreationFlags.BgraSupport  ,
+            featureLevels                               ,
+            desc                                        ,
             device                                      , swapChain
             )
 
@@ -61,11 +61,11 @@ type Device (form : Windows.RenderForm) =
     let backBuffer          = Direct3D11.Texture2D.FromSwapChain<Direct3D11.Texture2D> (swapChain, 0)
     let surface             = backBuffer.QueryInterface<SharpDX.DXGI.Surface> ();
     let d2dRenderTarget     = new Direct2D1.RenderTarget (
-                                d2dFactory                          , 
-                                surface                             , 
+                                d2dFactory                          ,
+                                surface                             ,
                                 Direct2D1.RenderTargetProperties (
                                     Direct2D1.PixelFormat (
-                                        DXGI.Format.Unknown         , 
+                                        DXGI.Format.Unknown         ,
                                         Direct2D1.AlphaMode.Premultiplied
                                         )
                                     )
@@ -82,8 +82,8 @@ type Device (form : Windows.RenderForm) =
     member x.Height             = height
 
     member x.BrownBrush             = brownBrush
-    member x.LimeGreenBrush         = limeGreenBrush 
-    member x.LimeBrush              = limeBrush      
+    member x.LimeGreenBrush         = limeGreenBrush
+    member x.LimeBrush              = limeBrush
     member x.MediumVioletRedBrush   = mediumVioletRedBrush
 
     member x.Draw (a : Direct2D1.RenderTarget->unit) =
@@ -97,17 +97,17 @@ type Device (form : Windows.RenderForm) =
 
     interface IDisposable with
         member x.Dispose () =
-            TryRun limeBrush.Dispose 
-            TryRun limeGreenBrush.Dispose 
-            TryRun brownBrush.Dispose 
-            TryRun d2dRenderTarget.Dispose 
-            TryRun surface.Dispose 
-            TryRun backBuffer.Dispose 
-            TryRun factory.Dispose 
-            TryRun swapChain.Dispose 
-            TryRun device.Dispose 
+            TryRun limeBrush.Dispose
+            TryRun limeGreenBrush.Dispose
+            TryRun brownBrush.Dispose
+            TryRun d2dRenderTarget.Dispose
+            TryRun surface.Dispose
+            TryRun backBuffer.Dispose
+            TryRun factory.Dispose
+            TryRun swapChain.Dispose
+            TryRun device.Dispose
             TryRun d2dFactory.Dispose
-            
+
 
 
 

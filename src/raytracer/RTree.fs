@@ -8,7 +8,7 @@ type BoundingSphere =
     static member New center radius = {Center = center; Radius = radius}
     member x.Volume = 4. * pi * x.Radius * x.Radius * x.Radius / 4.
     member x.Intersect (r : Ray) = r.IntersectSphere x.Center x.Radius
-    member x.Merge (bs : BoundingSphere) = 
+    member x.Merge (bs : BoundingSphere) =
         let diff    = (x.Center - bs.Center)
         let radius  = (diff.Length + x.Radius + bs.Radius) / 2.
         let diffn   = diff.Normalize
@@ -17,7 +17,7 @@ type BoundingSphere =
         BoundingSphere.New center radius
 
 
-type RTree<'a> = 
+type RTree<'a> =
     |   Leaf    of  BoundingSphere*'a
     |   Fork    of  BoundingSphere*RTree<'a>*RTree<'a>
     member x.Cons   () = ()

@@ -184,8 +184,8 @@ type [<AbstractClass>] AbstractDeviceIndependent () =
         x.OnDispose ()
   end
 
-type [<AllowNullLiteral; AbstractClass>] AbstractDeviceDependent< 'ViewState  when  'ViewState : struct 
-                                                                              and   'ViewState :> ValueType 
+type [<AllowNullLiteral; AbstractClass>] AbstractDeviceDependent< 'ViewState  when  'ViewState : struct
+                                                                              and   'ViewState :> ValueType
                                                                               and   'ViewState : (new: unit -> 'ViewState)
                                                         > ( rf              : Windows.RenderForm
                                                           , shaderFileName  : string

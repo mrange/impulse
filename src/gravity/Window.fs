@@ -9,15 +9,15 @@ open SharpDX
 
 open Gravity
 
-module Window = 
+module Window =
 
-    type Message = 
+    type Message =
         {
             Reply       : RenderParticle [] -> unit
         }
         static member New r = {Reply = r}
 
-    let Show (particles : Particle []) = 
+    let Show (particles : Particle []) =
         let gravityProcessor (particles : Particle []) (ct : CancellationToken) (input : MailboxProcessor<Message>) : Async<unit> =
             async {
                 let particles = ref <| Cleanup particles
@@ -27,7 +27,7 @@ module Window =
                     particles       := ps
                     message.Reply rp
             }
-        
+
         let averageSpeed        = (particles |> Array.sumBy (fun p -> p.Velocity.Length ())) / (float32 particles.Length)
 
         use form                = new Windows.RenderForm ("Turtle Power")
@@ -59,15 +59,15 @@ module Window =
 
         use onExitRemoveHandler = OnExit <| fun () -> form.Resize.RemoveHandler resizer
 
-        Windows.RenderLoop.Run (form, fun () -> 
+        Windows.RenderLoop.Run (form, fun () ->
 
             let message = Message.New <| fun rp -> renderParticles := rp
             mp.Post message
-            
+
             let d = !device
 
-            d.Draw <| fun target persistentTarget -> 
-                
+            d.Draw <| fun target persistentTarget ->
+
 //                target.Clear (Nullable<_> (Color.Black.ToColor4 ()))
 
                 let ps      = !renderParticles
@@ -75,11 +75,11 @@ module Window =
                 let max     = ps |> Array.maxBy (fun p -> p.Mass)
                 let pos     = max.Current
 
-                let transform = 
-                    Matrix3x2.Identity 
+                let transform =
+                    Matrix3x2.Identity
 //                    <*> Matrix3x2.Rotation (Deg2Rad * 180.F)
-                    <*> Matrix3x2.Translation (d.Width/2.F, d.Height/2.F) 
-//                    <*> Matrix3x2.Translation (-pos.X, -pos.Y) 
+                    <*> Matrix3x2.Translation (d.Width/2.F, d.Height/2.F)
+//                    <*> Matrix3x2.Translation (-pos.X, -pos.Y)
                 target.Transform <- transform |> rmatrix3x2
                 persistentTarget.Transform <- transform |> rmatrix3x2
 

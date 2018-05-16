@@ -5,7 +5,7 @@ open SharpDX
 open System
 
 module Gravity =
-    
+
     let M = 10.F
 
 (* Elastic
@@ -28,7 +28,7 @@ module Gravity =
 
     type Particle =
         {
-            mutable Mass        : float32 
+            mutable Mass        : float32
             mutable Radius      : float32
             mutable Current     : Vector2
             mutable Velocity    : Vector2
@@ -51,11 +51,11 @@ module Gravity =
                                                   x.Mass * (v * v) / 2.0F
 
 
-        static member inline New m c v = 
+        static member inline New m c v =
             {
-                Mass        = m 
+                Mass        = m
                 Radius      = float32 <| Math.Pow (float m, 1.0/3.0)
-                Current     = c 
+                Current     = c
                 Velocity    = v
             }
 
@@ -80,7 +80,7 @@ module Gravity =
                 inner.Velocity  <-inner.Velocity + timeStep * force*diff / inner.Mass
         particles
 
-    let ApplyInertia (timeStep : float32) (particles : Particle []) = 
+    let ApplyInertia (timeStep : float32) (particles : Particle []) =
         let last = particles.Length - 1
         for p in 0..last do
             let particle        = particles.[p]
@@ -88,7 +88,7 @@ module Gravity =
             particle.Current    <- np
         particles
 
-    let ApplyCollision (particles : Particle []) = 
+    let ApplyCollision (particles : Particle []) =
         let last = particles.Length - 1
         for o in 0..last do
             let outer           = particles.[o]
@@ -120,16 +120,16 @@ module Gravity =
             for p in particles -> RenderParticle(p.Mass, p.Radius, p.Current, p.Velocity)
         |]
 
-    let Cleanup (particles : Particle []) = 
+    let Cleanup (particles : Particle []) =
         particles
-        |> ApplyCollision  
+        |> ApplyCollision
         |> RemoveMassless
 
     let TimeStep (timeStep : float32) (particles : Particle []) =
         let particles = particles
-                        |> ApplyGravity    timeStep 
-                        |> ApplyInertia    timeStep 
-                        |> ApplyCollision  
+                        |> ApplyGravity    timeStep
+                        |> ApplyInertia    timeStep
+                        |> ApplyCollision
                         |> RemoveMassless
         particles, ToRenderParticles particles
 

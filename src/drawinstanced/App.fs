@@ -4,11 +4,11 @@ open System
 open SharpDX
 open Common
 
-type App< 'DI 
+type App< 'DI
         , 'DD
-        , 'VS when  'DI :> AbstractDeviceIndependent 
-              and   'VS : struct 
-              and   'VS :> ValueType 
+        , 'VS when  'DI :> AbstractDeviceIndependent
+              and   'VS : struct
+              and   'VS :> ValueType
               and   'VS : (new: unit -> 'VS)
               and   'DD :> AbstractDeviceDependent<'VS>
         > (rf : Windows.RenderForm, di : unit -> 'DI, dd : Windows.RenderForm -> 'DI -> 'DD) =
