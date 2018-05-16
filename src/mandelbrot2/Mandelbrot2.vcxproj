@@ -19,10 +19,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{31274093-5B9D-442F-9AE5-3B8882CCBCAA}</ProjectGuid>
+    <ProjectGuid>{7B4783F2-A569-40DD-BE97-89B21209C2D1}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>Mandelbrot</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.14393.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

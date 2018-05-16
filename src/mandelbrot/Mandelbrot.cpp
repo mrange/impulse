@@ -370,7 +370,7 @@ namespace
         XMFLOAT2 texpos;
     };
 
-    XMVECTORF32 const eye   = { 0.0f, 1.0f, 1.5f, 0.0f };
+    XMVECTORF32 const eye   = { 0.0f, 0.75f, 1.0f, 0.0f };
     XMVECTORF32 const at    = { 0.0f, 0.0f, 0.0f, 0.0f };
     XMVECTORF32 const up    = { 0.0f, 1.0f, 0.0f, 0.0f };
 
@@ -514,13 +514,13 @@ namespace
     typedef float   mtype   ;
     typedef float_2 mtype_2 ;
 
-    unsigned int    const   texture_width   = 512                   ;
-    unsigned int    const   texture_height  = 512                   ;
-    unsigned int    const   mandelbrot_iter = 256                   ;
+    unsigned int    const   texture_width   = 512       ;
+    unsigned int    const   texture_height  = 512       ;
+    unsigned int    const   mandelbrot_iter = 512       ;
 
-    mtype           const   cx_mandelbrot   = 0.001643721971153F    ;
-    mtype           const   cy_mandelbrot   = 0.822467633298876F    ; 
-    mtype           const   zoom_mandelbrot = 1.0F/200              ;
+    mtype           const   cx_mandelbrot   = 0.350649F ;
+    mtype           const   cy_mandelbrot   = 0.580367F ; 
+    mtype           const   zoom_mandelbrot = 1.0F/200  ;
 
     inline int mandelbrot2 (mtype_2 coord, mtype_2 center, int iter) restrict(amp)
     {
