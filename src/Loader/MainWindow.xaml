@@ -28,10 +28,14 @@
       Orientation="Horizontal" 
       VerticalAlignment="Bottom"
       >
+      <Button Padding="8,2,8,2" Margin="4" Click="RunTurtle" Tag="other_tree">The Larch!</Button>
+      <Button Padding="8,2,8,2" Margin="4" Click="RunTurtle" Tag="recursive_box">Monadic turtles all the way!</Button>
+      <Button Padding="8,2,8,2" Margin="4" Click="RunTurtle" Tag="waving_tree">Waving tree</Button>
       <Button Padding="8,2,8,2" Margin="4" Click="RunRaytracer">Real-time raytracing</Button>
-      <Button Padding="8,2,8,2" Margin="4" Click="RunTurtle">Monadic turtles all the way!</Button>
       <Button Padding="8,2,8,2" Margin="4" Click="RunGravity">Solar system emulator</Button>
-      <Button Padding="8,2,8,2" Margin="4" Click="RunImpulseExperience">The impulse experience</Button>
+      <Button Padding="8,2,8,2" Margin="4" Click="RunImpulseExperience" Tag="logo">The impulse experience</Button>
+      <Button Padding="8,2,8,2" Margin="4" Click="RunImpulseExperience" Tag="lorentz">The impulse attraction</Button>
+      <Button Padding="8,2,8,2" Margin="4" Click="RunImpulseExperience" Tag="phong">Phong</Button>
       <Button Padding="8,2,8,2" Margin="4" Click="RunMandelbrot">Cubic mandelbrot</Button>
       <Button Padding="8,2,8,2" Margin="4" Click="RunMandelbrot2">Impulse Mandelbrot explorer</Button>
     </WrapPanel>

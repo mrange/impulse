@@ -9,26 +9,33 @@ namespace Loader
   {
     readonly string m_rootPath;
 
-    void Open(string cmd)
+    void Open(string cmd, string args = null)
     {
-      Process.Start(cmd);
+      if (string.IsNullOrWhiteSpace(args))
+      {
+        Process.Start(cmd);
+      }
+      else
+      {
+        Process.Start(cmd, args);
+      }
     }
 
     void Spotify(string id)
     {
-      //Open($"https://open.spotify.com/track/{id}");
+      Open($"https://open.spotify.com/track/{id}");
     }
 
-    void Launch(string app)
+    void Launch(string app, string args = null)
     {
-      Open(Path.Combine(m_rootPath, app));
+      Open(Path.Combine(m_rootPath, app), args);
     }
 
     public MainWindow()
     {
       InitializeComponent();
       m_rootPath = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\.."));
-      Spotify("79aotvPXTlHbZ8MvoxhqAE");
+      Spotify("2JQQuLi7Dfs8PliuUAUMp2");
     }
 
 
@@ -37,9 +44,15 @@ namespace Loader
       Launch(@"gravity\bin\Release\gravity.exe");
     }
 
+    static string GetTag(object o)
+    {
+      var dobj = o as FrameworkElement;
+      return dobj?.Tag?.ToString() ?? "";
+    }
+
     void RunImpulseExperience(object sender, RoutedEventArgs e)
     {
-      Launch(@"drawinstanced\bin\Release\DrawInstanced.exe");
+      Launch(@"drawinstanced\bin\Release\DrawInstanced.exe", GetTag(sender));
     }
 
     void RunRaytracer(object sender, RoutedEventArgs e)
@@ -59,7 +72,7 @@ namespace Loader
 
     void RunTurtle(object sender, RoutedEventArgs e)
     {
-      Launch(@"turtle\bin\Release\turtle.exe");
+      Launch(@"turtle\bin\Release\turtle.exe", GetTag(sender));
     }
   }
 }

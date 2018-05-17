@@ -58,7 +58,7 @@ module LorenzAttractor =
         sprintf "IV: c:%A, p:%A, np:%A, s:%A, ns:%A, r:%A, nr:%A" color position nextPosition scale nextScale rotation nextRotation
     end
 
-  let totalTime         = 30.F
+  let totalTime         = 60.F
 
   let startDistance     = 10.F
   let endDistance       = 2.F

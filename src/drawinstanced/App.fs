@@ -4,6 +4,14 @@ open System
 open SharpDX
 open Common
 
+type IApp =
+  interface
+    inherit IDisposable
+    abstract Initialize : unit    -> unit
+    abstract Update     : float32 -> unit
+    abstract Render     : unit    -> unit
+  end
+
 type App< 'DI
         , 'DD
         , 'VS when  'DI :> AbstractDeviceIndependent
@@ -36,14 +44,15 @@ type App< 'DI
       member x.Dispose () =
         uninitialize ()
 
-    member x.Initialize () =
-      ()
+    interface IApp with
+      member x.Initialize () =
+        ()
 
-    member x.Update timestamp =
-      deviceDependent.Update timestamp
-      ()
+      member x.Update timestamp =
+        deviceDependent.Update timestamp
+        ()
 
-    member x.Render () =
-      deviceDependent.Render ()
-      ()
+      member x.Render () =
+        deviceDependent.Render ()
+        ()
   end

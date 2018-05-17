@@ -23,9 +23,11 @@ let main argv =
     use rf  = new Windows.RenderForm (Width = 3600, Height = 2000, StartPosition = FormStartPosition.CenterScreen)
     rf.AutoScaleMode <- AutoScaleMode.None
 
-//    use app = new App<_, _, _> (rf, LorenzAttractor.deviceIndependent, LorenzAttractor.deviceDependent)
-//    use app = new App<_, _, _> (rf, PixelShaderTest.deviceIndependent, PixelShaderTest.deviceDependent)
-    use app = new App<_, _, _> (rf, Instanced.deviceIndependent, Instanced.deviceDependent)
+    use app : IApp =
+      match argv |> Array.tryItem 0 with
+      | Some "lorentz"  -> upcast new App<_, _, _> (rf, LorenzAttractor.deviceIndependent, LorenzAttractor.deviceDependent)
+      | Some "logo"     -> upcast new App<_, _, _> (rf, Instanced.deviceIndependent      , Instanced.deviceDependent)
+      | _               -> upcast new App<_, _, _> (rf, PixelShaderTest.deviceIndependent, PixelShaderTest.deviceDependent)
 
     rf.Show ()
 

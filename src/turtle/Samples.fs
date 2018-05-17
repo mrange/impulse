@@ -31,8 +31,7 @@ module RecursiveBox =
 
     let Generate v time =
         turtle {
-//            let d = v + 50.0F * (sin <| 20.F * Deg2Rad * time)
-            let d = v
+            let d = v + 50.0F * (sin <| 20.F * Deg2Rad * time)
             do! Forward v
             do! Forward v
             for i in 0..200 do
