@@ -26,7 +26,7 @@ namespace
 {
   bool        done              ;
   ULONGLONG   start             ;
-  bool        screen_saver_mode ;
+  bool        full_screen_mode  ;
 
   HWND        hwnd              ;
   HDC         hdc               ;
@@ -170,7 +170,6 @@ void main()
     };
 
     auto now = GetTickCount64 () - start;
-    auto screen_saver_check = screen_saver_mode && (now > 1000);
 
     switch (message)
     {
@@ -190,51 +189,6 @@ void main()
     case WM_DESTROY:
       kill ();
       return 0;
-    case WM_ACTIVATE:
-    case WM_ACTIVATEAPP:
-    case WM_NCACTIVATE:
-      if (screen_saver_check && !wParam)
-      {
-        kill ();
-        return 0;
-      }
-      else
-      {
-        return DefWindowProc (hWnd, message, wParam, lParam);
-      }
-    case WM_LBUTTONDOWN:
-    case WM_RBUTTONDOWN:
-    case WM_MBUTTONDOWN:
-    case WM_KEYDOWN:
-    case WM_KEYUP:
-    case WM_MOUSEMOVE:
-      if (screen_saver_check)
-      {
-        kill ();
-        return 0;
-      }
-      else
-      {
-        return DefWindowProc (hWnd, message, wParam, lParam);
-      }
-    case WM_SETCURSOR:
-      if (screen_saver_check)
-      {
-        return DefWindowProc (hWnd, message, 0, lParam);  // Clears wParam
-      }
-      else
-      {
-        return DefWindowProc (hWnd, message, wParam, lParam);
-      }
-    case WM_SYSCOMMAND:
-      if (screen_saver_check && (wParam == SC_CLOSE || wParam == SC_SCREENSAVE))
-      {
-        return false;
-      }
-      else
-      {
-        return DefWindowProc (hWnd, message, wParam, lParam);
-      }
     default:
       return DefWindowProc (hWnd, message, wParam, lParam);
     }
@@ -278,7 +232,7 @@ void main()
       , nullptr
       ));
 
-    if (screen_saver_mode)
+    if (full_screen_mode)
     {
       auto cx = GetSystemMetrics (SM_CXSCREEN);
       auto cy = GetSystemMetrics (SM_CYSCREEN);
@@ -388,9 +342,9 @@ void main()
 
 }
 
-int show__screen_saver (int nCmdShow, bool ssm)
+int show__screen (int nCmdShow, bool fsm)
 {
-  screen_saver_mode = ssm;
+  full_screen_mode = fsm;
 
   register_class ();
 

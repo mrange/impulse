@@ -22,8 +22,7 @@
 
 #pragma comment(linker, "\"/manifestdependency:type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 
-extern int show__screen_saver (int nCmdShow, bool screen_saver_mode);
-extern int show__config_dialog (HWND parent);
+extern int show__screen (int nCmdShow, bool full_screen_mode);
 
 namespace
 {
@@ -56,9 +55,9 @@ int APIENTRY wWinMain (
     InitCommonControls ();
 
     std::wstring command_line (lpCmdLine);
-    std::wregex re_commands (LR"*(^\s*(()|(/dev)|(/c)|(/s)|/p (\d+)|/c:(\d+))\s*$)*", std::regex_constants::ECMAScript | std::regex_constants::icase);
+    std::wregex re_commands (LR"*(^\s*(()|(/window)|(/fullscreen))\s*$)*", std::regex_constants::ECMAScript | std::regex_constants::icase);
 
-    auto invalid_command_line_msg = std::string ("Invalid argument, expecting /dev, /c, /c:<HWND>, /s or /p <HWND>\r\n") + utf8_encode (command_line);
+    auto invalid_command_line_msg = std::string ("Invalid argument, expecting no arguments, /window or /fullscreen\r\n") + utf8_encode (command_line);
 
     std::wcmatch match;
     if (!std::regex_match (command_line.c_str (), match, re_commands))
@@ -66,46 +65,24 @@ int APIENTRY wWinMain (
       throw std::runtime_error (invalid_command_line_msg.c_str ());
     }
 
-    assert (match.size () == 8);
+    assert (match.size () == 5);
 
     if (match[2].matched)
     {
-      // No arg - Show config
-      return 1;
+      show__screen (nCmdShow, false);
+      return 0;
     }
     else if (match[3].matched)
     {
-      // /dev - Show screen saver in window
-      show__screen_saver (nCmdShow, false);
+      // /window - Show screen saver in window
+      show__screen (nCmdShow, false);
       return 0;
     }
     else if (match[4].matched)
     {
-      // /c - Show config modal
-
-      show__config_dialog (nullptr);
-
-      return 1;
-    }
-    else if (match[5].matched)
-    {
-      // /s - Show screen saver in full screen
-      show__screen_saver (nCmdShow, true);
+      // /fullscreen - Show screen saver in fullscreen
+      show__screen (nCmdShow, true);
       return 0;
-    }
-    else if (match[6].matched)
-    {
-      // /p <HWND> - Show screen saver attached to HWND
-      return 1;
-    }
-    else if (match[7].matched)
-    {
-      // /c:<HWND> - Show config modal attached to HWND
-
-      // TODO: Parse HWND
-      show__config_dialog (nullptr);
-
-      return 1;
     }
     else
     {
