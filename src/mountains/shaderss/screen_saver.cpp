@@ -24,6 +24,8 @@ extern HINSTANCE get__hinstance () noexcept;
 
 namespace
 {
+  using GLuints = std::vector<GLuint> ;
+
   bool        done              ;
   ULONGLONG   start             ;
   bool        full_screen_mode  ;
@@ -38,10 +40,11 @@ namespace
   GLuint      pid               ;
   GLuint      fsid              ;
   GLuint      vsid              ;
-  GLuint      tid               ;
+  
+  GLuints     tids              ;
 
   float       start_time = 0    ;
-  float       period     = 1E22 ;
+  float       period     = 1E22F;
   float       speed      = 1    ;
 
   constexpr int gl_functions_count = 7;
@@ -290,16 +293,23 @@ void main()
       gl_functions[i] = CHECK (wglGetProcAddress(gl_names[i]));
     }
 
-    if (loaded_config.image_converter)
+    auto tsz = loaded_config.loaded_images.size ();
+    if (tsz > 0)
     {
-      auto dim    = loaded_config.get__image_dimensions ();
-      auto pixels = loaded_config.get__image_bits ();
-      glGenTextures (1, &tid);
-      glBindTexture (GL_TEXTURE_2D, tid);
-      glTexImage2D (GL_TEXTURE_2D, 0, GL_RGB, dim.first, dim.second, 0, GL_RGB, GL_UNSIGNED_BYTE, &pixels.front ());
-      glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-      glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    //  glGenerateMipmap(GL_TEXTURE_2D);
+      tids.resize (tsz);
+      glGenTextures (static_cast<GLsizei> (tsz), &tids.front ());
+      auto tidx = 0;
+      for (auto && loaded_image : loaded_config.loaded_images)
+      {
+        auto dim    = loaded_image.get__image_dimensions ();
+        auto pixels = loaded_image.get__image_bits ();
+        glBindTexture (GL_TEXTURE_2D, tids[0]);
+        glTexImage2D (GL_TEXTURE_2D, 0, GL_RGB, dim.first, dim.second, 0, GL_RGB, GL_UNSIGNED_BYTE, &pixels.front ());
+        glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        ++tidx;
+      //  glGenerateMipmap(GL_TEXTURE_2D);
+      }
     }
 
     std::string shader_source = fragment_shader_prelude;
@@ -316,9 +326,12 @@ void main()
     oglUseProgramStages (pid, GL_VERTEX_SHADER_BIT, vsid);
     oglUseProgramStages (pid, GL_FRAGMENT_SHADER_BIT, fsid);
 
-    if (!!loaded_config.image_converter)
+    if (tsz > 0)
     {
-      CHECK_LINK_STATUS (tid);
+      for (auto && tid : tids)
+      {
+        CHECK_LINK_STATUS (tid);
+      }
     }
     CHECK_LINK_STATUS (vsid);
     CHECK_LINK_STATUS (fsid);

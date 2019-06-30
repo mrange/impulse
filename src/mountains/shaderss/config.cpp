@@ -502,7 +502,7 @@ shader_configuration get__current_configuration ()
   };
 }
 
-std::pair<UINT, UINT> loaded_shader_configuration::get__image_dimensions ()
+std::pair<UINT, UINT> loaded_image::get__image_dimensions ()
 {
   CHECK (image_converter);
   UINT wic_width = 0;
@@ -510,7 +510,7 @@ std::pair<UINT, UINT> loaded_shader_configuration::get__image_dimensions ()
   CHECK_HR (image_converter->GetSize (&wic_width, &wic_height));
   return std::make_pair (wic_width, wic_height);
 }
-std::vector<BYTE> loaded_shader_configuration::get__image_bits ()
+std::vector<BYTE> loaded_image::get__image_bits ()
 {
   CHECK (image_converter);
 
@@ -553,22 +553,16 @@ std::vector<BYTE> loaded_shader_configuration::get__image_bits ()
 
 loaded_shader_configuration load__configuration (shader_configuration const & configuration)
 {
-  if (configuration.image_path.empty ())
-  {
-    return
-    {
-        configuration
-      , empty
-    };
-  }
-  else
+  loaded_images loaded_images;
+
+  for (auto && image_path : configuration.image_paths)
   {
     auto wic = cocreate_instance<IWICImagingFactory> (CLSID_WICImagingFactory);
 
     com_ptr<IWICBitmapDecoder> wic_decoder;
 
     CHECK_HR (wic->CreateDecoderFromFilename(
-        configuration.image_path.c_str ()
+        image_path.c_str ()
       , nullptr
       , GENERIC_READ
       , WICDecodeMetadataCacheOnDemand
@@ -590,11 +584,13 @@ loaded_shader_configuration load__configuration (shader_configuration const & co
       , WICBitmapPaletteTypeCustom
       ));
 
-    return
-    {
-        configuration
-      , wic_format_converter
-    };
+    loaded_images.push_back(loaded_image { image_path, wic_format_converter });
   }
+
+  return
+  {
+      configuration
+    , loaded_images
+  };
 }
 
