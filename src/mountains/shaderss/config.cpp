@@ -497,7 +497,7 @@ shader_configuration get__current_configuration ()
   {
       shader__XljGDz__protosphere
     , 0
-    , 1E22
+    , 1E22F
     , 1
   };
 }

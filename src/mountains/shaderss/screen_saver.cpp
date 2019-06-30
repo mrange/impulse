@@ -40,7 +40,8 @@ namespace
   GLuint      vsid              ;
   GLuint      tid               ;
 
-  float       start_time        ;
+  float       start_time = 0    ;
+  float       period     = 1E22 ;
   float       speed      = 1    ;
 
   constexpr int gl_functions_count = 7;
@@ -271,6 +272,7 @@ void main()
     auto loaded_config  = load__configuration (get__current_configuration ());
 
     start_time  = loaded_config.shader_configuration.start_time ;
+    period      = loaded_config.shader_configuration.period     ;
     speed       = loaded_config.shader_configuration.speed      ;
 
     hdc = CHECK (GetDC(hwnd));
@@ -329,10 +331,10 @@ void main()
 
     float fparams[4]
     {
-      start_time + t*speed  ,
-      width*1.f             ,
-      height*1.f            ,
-      0                     ,
+      start_time + fmodf(t*speed, period)   ,
+      width*1.f                             ,
+      height*1.f                            ,
+      0                                     ,
     };
 
     oglProgramUniform4fv (fsid, 0, 1, fparams);
