@@ -47,7 +47,7 @@ namespace
   float       period     = 1E22F;
   float       speed      = 1    ;
 
-  constexpr int gl_functions_count = 7;
+  constexpr int gl_functions_count = 9;
 
   char const * const gl_names[gl_functions_count] =
   {
@@ -57,7 +57,9 @@ namespace
     "glUseProgramStages"    ,
     "glProgramUniform4fv"   ,
     "glGetProgramiv"        ,
-    "glGetProgramInfoLog"   ,
+    "glGetProgramInfoLog"   ,   
+    "glProgramUniform1f"    ,
+    "glProgramUniform2fv"   ,
   };
 
   void * gl_functions[gl_functions_count];
@@ -69,6 +71,8 @@ namespace
   #define oglProgramUniform4fv            ((PFNGLPROGRAMUNIFORM4FVPROC)     gl_functions[4])
   #define oglGetProgramiv                 ((PFNGLGETPROGRAMIVPROC)          gl_functions[5])
   #define oglGetProgramInfoLog            ((PFNGLGETPROGRAMINFOLOGPROC)     gl_functions[6])
+  #define oglProgramUniform1f             ((PFNGLPROGRAMUNIFORM1FPROC)      gl_functions[7])
+  #define oglProgramUniform2fv            ((PFNGLPROGRAMUNIFORM2FVPROC)     gl_functions[8])
 
   PIXELFORMATDESCRIPTOR const pfd =
   {
@@ -100,7 +104,6 @@ out gl_PerVertex
   vec4 gl_Position;
 };
 
-
 void main()
 {
   gl_Position=vec4(inVer,0.0,1.0);
@@ -116,24 +119,24 @@ void main()
 
 precision mediump float;
 
-layout (location=0) uniform vec4 fpar[];
+layout (location=0) uniform float iTime;
+layout (location=1) uniform vec2 iResolution;
+
 layout (location=0) out vec4 co;
+
 uniform sampler2D iChannel0;
+uniform sampler2D iChannel1;
+uniform sampler2D iChannel2;
+uniform sampler2D iChannel3;
 
 in vec2 p;
 
-// TODO: How to make these uniform
-vec3 iMouse       = vec3(0.0);
-vec2 iResolution  = vec2(1.0);
-float iTime       = 1.0;
+const vec2 iMouse = vec2(0.0);
 
 void mainImage(out vec4 fragColor, in vec2 fragCoord);
 
 void main()
 {
-  iTime = fpar[0].x;
-  iResolution.x = fpar[0].y;
-  iResolution.y = fpar[0].z;
   vec2 pp = (p + 1.0)*0.5*iResolution.xy;
 
   mainImage(co, pp);
@@ -350,7 +353,14 @@ void main()
       0                                     ,
     };
 
-    oglProgramUniform4fv (fsid, 0, 1, fparams);
+    float reso[2]
+    {
+      width*1.f                             ,
+      height*1.f                            ,
+    };
+
+    oglProgramUniform1f  (fsid, 0, fparams[0]);
+    oglProgramUniform2fv (fsid, 1, 1, reso);
 
     glRects (-1, -1, 1, 1);
   }
