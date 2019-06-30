@@ -7,36 +7,17 @@
 
 #include "common.hpp"
 
-struct shader_info
-{
-  std::wstring  id                ;
-  std::wstring  short_description ;
-  std::wstring  author            ;
-  std::wstring  license           ;
-  std::wstring  modifications     ;
-  std::wstring  notes             ;
-  std::string   source            ;
-
-  bool          requires_image    ;
-};
-using shader_infos = std::vector<shader_info> ;
-shader_infos const & get__shader_infos ();
-
-extern std::size_t invalid_index;
-
-std::size_t index_of__shader (std::wstring const & id);
-
 struct shader_configuration
 {
-  shader_info   shader_info     ;
+  std::string   source          ;
 
   float         start_time      ;
+  float         end_time        ;
   float         speed           ;
 
   std::wstring  image_path      ;
 };
 shader_configuration get__current_configuration ();
-void set__current_configuration (shader_configuration const & configuration);
 
 struct loaded_shader_configuration
 {

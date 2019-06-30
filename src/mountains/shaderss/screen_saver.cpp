@@ -301,7 +301,7 @@ void main()
     }
 
     std::string shader_source = fragment_shader_prelude;
-    shader_source += loaded_config.shader_configuration.shader_info.source;
+    shader_source += loaded_config.shader_configuration.source;
 
     auto vsh = vertex_shader;
     auto fsh = shader_source.c_str ();
