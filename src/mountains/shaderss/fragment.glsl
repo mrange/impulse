@@ -1,3 +1,8 @@
+// TODO:
+
+// 1. Get it to run smoothly in FF
+// 2. Remove black dot artifacts in jungle section
+
 #define PI  3.141592654
 #define TAU (2.0*PI)
 
@@ -11,13 +16,14 @@
 const float seaScale = 55.0;
 
 #define INTERVAL 34.0
-/*
-#define PERIOD int(iTime/INTERVAL)
-#define TIMEINPERIOD mod(iTime, INTERVAL)
-*/
 
+#if defined(SCREEN_LOADER)
 #define PERIOD iPeriod
 #define TIMEINPERIOD fTimeInPeriod
+#else
+#define PERIOD int(iTime/INTERVAL)
+#define TIMEINPERIOD mod(iTime, INTERVAL)
+#endif
 
 float rand(in vec2 co)
 {
@@ -780,7 +786,8 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
   if (iTime < INTERVAL)
   {
     vec2 tp = fragCoord/vec2(1920, 1200);
-    tp.y = 1.0 - tp.y + 0.0075;
+    tp.y = 1.0 - tp.y - 0.045;
+    tp.x += 0.05;
     float texFade = clamp((iTime - 8.0)*2.0/INTERVAL, 0.0, 1.0);
     col = mix(texture(iChannel1, tp).xyz, col, texFade);
   }

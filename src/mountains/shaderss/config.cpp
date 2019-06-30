@@ -76,7 +76,7 @@ loaded_shader_configuration load__configuration (shader_configuration const & co
 
   std::string fragment_source;
 
-  char fragment_line[1024] = {};
+  char fragment_line[1024] {};
 
   while (std::fgets (fragment_line, sizeof fragment_line, fragment_file) != nullptr)
   {

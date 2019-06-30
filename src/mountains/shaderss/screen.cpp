@@ -28,26 +28,25 @@ namespace
 {
   using GLuints = std::vector<GLuint> ;
 
-  bool        done              ;
-  ULONGLONG   start             ;
-  bool        full_screen_mode  ;
+  bool          done              ;
+  bool          full_screen_mode  ;
 
-  HWND        hwnd              ;
-  HDC         hdc               ;
+  HWND          hwnd              ;
+  HDC           hdc               ;
 
-  LONG        width             ;
-  LONG        height            ;
+  LONG          width             ;
+  LONG          height            ;
 
-  HGLRC       hrc               ;
-  GLuint      pid               ;
-  GLuint      fsid              ;
-  GLuint      vsid              ;
+  HGLRC         hrc               ;
+  GLuint        pid               ;
+  GLuint        fsid              ;
+  GLuint        vsid              ;
   
-  GLuints     tids              ;
+  GLuints       tids              ;
 
-  float       start_time = 0    ;
-  float       period     = 1E22F;
-  float       speed      = 1    ;
+  float         start_time = 0    ;
+  float         period     = 1E22F;
+  float         speed      = 1    ;
 
   constexpr int gl_functions_count = 13;
 
@@ -104,7 +103,9 @@ namespace
   WCHAR const window_class_name[] = L"SHADER_SS"          ; // the main window class name
 
   char const vertex_shader[] = R"SHADER(
-#version 430
+#version 460
+
+#define SCREEN_LOADER
 
 layout (location=0) in vec2 inVer;
 out vec2 p;
@@ -126,6 +127,8 @@ void main()
 // BEGIN - Common prelude
 // -----------------------------------------------------------------------
 #version 460
+
+#define SCREEN_LOADER
 
 precision mediump float;
 
@@ -186,8 +189,6 @@ void main()
       done = true;
       PostQuitMessage (0);
     };
-
-    auto now = GetTickCount64 () - start;
 
     switch (message)
     {
@@ -284,6 +285,8 @@ void main()
   }
 
 
+  using PFN_wglSwapIntervalEXT = BOOL WINAPI (int interval);
+
   void init_opengl ()
   {
     auto loaded_config  = load__configuration (get__current_configuration ());
@@ -363,11 +366,9 @@ void main()
     CHECK_LINK_STATUS (pid);
   }
 
-  void draw_gl (std::uint64_t now)
+  void draw_gl (float now)
   {
-    auto t = 0.001f*now;
-
-    float time = start_time + fmodf(t*speed, period);
+    float time = start_time + fmodf(now*speed, period);
 
     int period = time / PERIOD;
     float timeInPeriod = std::fmodf(time, PERIOD);
@@ -412,11 +413,18 @@ int show__screen (int nCmdShow, bool fsm)
 
   MSG msg;
 
-  start = GetTickCount64 ();
+  LARGE_INTEGER freq {};
+  LARGE_INTEGER start {};
+
+  CHECK (QueryPerformanceFrequency(&freq));
+
+  CHECK (QueryPerformanceCounter (&start));
+
+  auto freq_multiplier = 1.0 / freq.QuadPart;
 
   int frames = 0;
 
-  wchar_t window_title[32] = {};
+  wchar_t window_title[32] {};
   long long last_second = 0;
 
   // Main message loop:
@@ -433,12 +441,19 @@ int show__screen (int nCmdShow, bool fsm)
 
     if (done) break;
 
-    auto now = GetTickCount64 () - start;
+    LARGE_INTEGER now {};
 
-    draw_gl (now);
+    QueryPerformanceCounter (&now);
+
+    auto time = freq_multiplier*(now.QuadPart - start.QuadPart);
+
+    draw_gl (time);
+
+    SwapBuffers (hdc);
+
     ++frames;
 
-    auto second = now / 1000;
+    auto second = static_cast<long long >(time);
 
     if (second > last_second)
     {
@@ -447,9 +462,6 @@ int show__screen (int nCmdShow, bool fsm)
       SetWindowText (hwnd, window_title);
       frames = 0;
     }
-
-    SwapBuffers (hdc);
-    Sleep (1);
   }
 
   return 0;
