@@ -26,7 +26,7 @@
 
 extern HINSTANCE get__hinstance () noexcept;
 
-#define PERIOD 34
+#define PERIOD 36
 
 namespace
 {

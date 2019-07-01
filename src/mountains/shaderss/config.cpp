@@ -11,7 +11,7 @@ shader_configuration get__current_configuration ()
   return shader_configuration
   {
       0
-    , 340
+    , 360
     , 1
     , { L"value_noise.png", L"impulse.png" }
   };
