@@ -15,7 +15,7 @@
 
 const float seaScale = 55.0;
 
-#define INTERVAL 34.0
+#define INTERVAL 36.0
 
 #if defined(SCREEN_LOADER)
 #define PERIOD iPeriod

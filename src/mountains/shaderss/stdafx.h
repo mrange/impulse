@@ -15,6 +15,9 @@
 
 #include <GL/gl.h>
 
+#include <Mmsystem.h>
+#include <mciapi.h>
+
 #include <inttypes.h>
 #include <stddef.h>
 #include <stdint.h>

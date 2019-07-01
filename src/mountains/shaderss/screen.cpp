@@ -15,10 +15,14 @@
 
 #include "glext.h"
 
+#include <Mmsystem.h>
+#include <mciapi.h>
+
 #include "common.hpp"
 #include "config.hpp"
 
 #pragma comment(lib, "Opengl32")
+#pragma comment(lib, "Winmm.lib")
 
 extern HINSTANCE get__hinstance () noexcept;
 
@@ -169,13 +173,13 @@ void main()
     oglGetProgramiv (id, GL_LINK_STATUS, &result);
     if (!result)
     {
-      char    info[1536];
+      char    info[1536] {};
 
       oglGetProgramInfoLog (id, 1024, nullptr, info);
       OutputDebugStringA (msg);
-      OutputDebugStringA ("\n");
+      OutputDebugStringW (L"\n");
       OutputDebugStringA (info);
-      OutputDebugStringA ("\n");
+      OutputDebugStringW (L"\n");
       throw std::runtime_error (msg);
     }
 
@@ -183,6 +187,28 @@ void main()
   }
 
   #define CHECK_LINK_STATUS(expr) check_link_status (expr, (__FILE__ "(" STRINGIFY(__LINE__) "): Check link status failed for - " #expr))
+
+  MCIERROR check_mci (MCIERROR err, char const * msg)
+  {
+    if (err != 0)
+    {
+      wchar_t   info[1536] {};
+
+      OutputDebugStringA (msg);
+      OutputDebugStringW (L"\n");
+      if (mciGetErrorString (err, info, sizeof info / 2))
+      {
+        OutputDebugStringW (info);
+        OutputDebugStringW (L"\n");
+      }
+      throw std::runtime_error (msg);
+    }
+
+    return err;
+  }
+
+
+  #define CHECK_MCI(expr) check_mci (expr, (__FILE__ "(" STRINGIFY(__LINE__) "): MCI call failed for - " #expr))
 
   LRESULT CALLBACK window_proc (HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
   {
@@ -194,7 +220,7 @@ void main()
 
     switch (message)
     {
-    case WM_SIZE:
+      case WM_SIZE:
       width  = LOWORD (lParam);
       height = HIWORD (lParam);
       if (open_gl_initialized)
@@ -328,7 +354,8 @@ void main()
         glBindTexture   (GL_TEXTURE_2D, tids[tidx]);
         glTexImage2D    (GL_TEXTURE_2D, 0, GL_RGB, dim.first, dim.second, 0, GL_RGB, GL_UNSIGNED_BYTE, &pixels.front ());
         glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        if (dim.first == dim.second && __popcnt64(dim.first) == 1)
+        auto single_bit_number = (dim.first & (dim.first - 1)) == 0;
+        if (dim.first == dim.second && single_bit_number)
         {
           glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
           glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -404,6 +431,12 @@ void main()
     open_gl_initialized = true;
   }
 
+  void init_music ()
+  {
+    CHECK_MCI (mciSendStringW(LR"PATH(open "c:\temp\mountains.mp3" alias music)PATH", nullptr, 0, hwnd));
+    CHECK_MCI (mciSendStringW(L"play music", nullptr, 0, hwnd));
+  }
+
 }
 
 int show__screen (int nCmdShow, bool fsm)
@@ -415,6 +448,8 @@ int show__screen (int nCmdShow, bool fsm)
   init_window (nCmdShow);
 
   init_opengl ();
+
+  init_music ();
 
   HACCEL hAccelTable = LoadAccelerators (get__hinstance (), MAKEINTRESOURCE (IDC_SHADERSS));
 
