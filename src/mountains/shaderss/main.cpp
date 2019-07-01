@@ -74,13 +74,11 @@ int APIENTRY wWinMain (
     }
     else if (match[3].matched)
     {
-      // /window - Show screen saver in window
       show__screen (nCmdShow, false);
       return 0;
     }
     else if (match[4].matched)
     {
-      // /fullscreen - Show screen saver in fullscreen
       show__screen (nCmdShow, true);
       return 0;
     }
@@ -91,12 +89,12 @@ int APIENTRY wWinMain (
   }
   catch (std::exception const & e)
   {
-    MessageBoxA (nullptr, e.what (), "Shader Screen Saver Crashed", MB_OK|MB_ICONERROR);
+    MessageBoxA (nullptr, e.what (), "Screen Crashed", MB_OK|MB_ICONERROR);
     return 98;
   }
   catch (...)
   {
-    MessageBoxW (nullptr, L"Unrecognized exception caught", L"Shader Screen Saver Crashed", MB_OK|MB_ICONERROR);
+    MessageBoxW (nullptr, L"Unrecognized exception caught", L"Screen Crashed", MB_OK|MB_ICONERROR);
     return 99;
   }
 }

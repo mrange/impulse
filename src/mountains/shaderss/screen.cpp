@@ -28,25 +28,27 @@ namespace
 {
   using GLuints = std::vector<GLuint> ;
 
-  bool          done              ;
-  bool          full_screen_mode  ;
+  bool          done                ;
+  bool          full_screen_mode    ;
 
-  HWND          hwnd              ;
-  HDC           hdc               ;
+  HWND          hwnd                ;
+  HDC           hdc                 ;
 
-  LONG          width             ;
-  LONG          height            ;
+  LONG          width               ;
+  LONG          height              ;
 
-  HGLRC         hrc               ;
-  GLuint        pid               ;
-  GLuint        fsid              ;
-  GLuint        vsid              ;
+  HGLRC         hrc                 ;
+  GLuint        pid                 ;
+  GLuint        fsid                ;
+  GLuint        vsid                ;
   
-  GLuints       tids              ;
+  GLuints       tids                ;
 
-  float         start_time = 0    ;
-  float         period     = 1E22F;
-  float         speed      = 1    ;
+  bool          open_gl_initialized ;
+
+  float         start_time = 0      ;
+  float         period     = 1E22F  ;
+  float         speed      = 1      ;
 
   constexpr int gl_functions_count = 13;
 
@@ -89,7 +91,7 @@ namespace
     1                                                     ,
     PFD_DRAW_TO_WINDOW|PFD_SUPPORT_OPENGL|PFD_DOUBLEBUFFER,
     PFD_TYPE_RGBA                                         ,
-    32                                                    ,
+    24                                                    ,
     0, 0, 0, 0, 0, 0, 8, 0                                ,
     0, 0, 0, 0, 0                                         , // accum
     32                                                    , // zbuffer
@@ -99,7 +101,7 @@ namespace
     0, 0, 0, 0                                            ,
   };
 
-  WCHAR const window_title[]      = L"Shader Screen Saver"; // The title bar text
+  WCHAR const window_title[]      = L"The sun, the sea and the mountains"; // The title bar text
   WCHAR const window_class_name[] = L"SHADER_SS"          ; // the main window class name
 
   char const vertex_shader[] = R"SHADER(
@@ -195,7 +197,10 @@ void main()
     case WM_SIZE:
       width  = LOWORD (lParam);
       height = HIWORD (lParam);
-      glViewport (0, 0, width, height);
+      if (open_gl_initialized)
+      {
+        glViewport (0, 0, width, height);
+      }
       return 0;
     case WM_PAINT:
       {
@@ -370,7 +375,7 @@ void main()
   {
     float time = start_time + fmodf(now*speed, period);
 
-    int period = time / PERIOD;
+    int period = static_cast<int>(time / PERIOD);
     float timeInPeriod = std::fmodf(time, PERIOD);
 
     float reso[2]
@@ -395,6 +400,8 @@ void main()
     }
 
     glRects (-1, -1, 1, 1);
+
+    open_gl_initialized = true;
   }
 
 }
@@ -420,12 +427,10 @@ int show__screen (int nCmdShow, bool fsm)
 
   CHECK (QueryPerformanceCounter (&start));
 
-  auto freq_multiplier = 1.0 / freq.QuadPart;
-
-  int frames = 0;
-
-  wchar_t window_title[32] {};
-  long long last_second = 0;
+  auto      freq_multiplier = 1. / freq.QuadPart;
+  int       frames          = 0;
+  long long last_second     = 0;
+  wchar_t window_title[64]  {};
 
   // Main message loop:
   while (true)
@@ -447,7 +452,7 @@ int show__screen (int nCmdShow, bool fsm)
 
     auto time = freq_multiplier*(now.QuadPart - start.QuadPart);
 
-    draw_gl (time);
+    draw_gl (static_cast<float> (time));
 
     SwapBuffers (hdc);
 
@@ -455,7 +460,7 @@ int show__screen (int nCmdShow, bool fsm)
 
     auto second = static_cast<long long >(time);
 
-    if (second > last_second)
+    if (!full_screen_mode && second > last_second)
     {
       last_second = second;
       std::swprintf (window_title, (sizeof window_title)/2, L"FPS: %i", frames);
