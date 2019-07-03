@@ -431,10 +431,29 @@ void main()
     open_gl_initialized = true;
   }
 
+  bool file_exists (wchar_t const* file_name)
+  {
+    WIN32_FIND_DATA ffd {};
+    auto handle = FindFirstFileW(L"music.mp3", &ffd);
+    if (handle != INVALID_HANDLE_VALUE)
+    {
+      FindClose (handle);
+      return true;
+    }
+    else
+    {
+      return false;
+    }
+
+  }
+
   void init_music ()
   {
-    CHECK_MCI (mciSendStringW(LR"PATH(open "c:\temp\mountains.mp3" alias music)PATH", nullptr, 0, hwnd));
-    CHECK_MCI (mciSendStringW(L"play music", nullptr, 0, hwnd));
+    if (file_exists (L"music.mp3"))
+    {
+      CHECK_MCI (mciSendStringW(LR"PATH(open "music.mp3" alias music)PATH", nullptr, 0, hwnd));
+      CHECK_MCI (mciSendStringW(L"play music", nullptr, 0, hwnd));
+    }
   }
 
 }
