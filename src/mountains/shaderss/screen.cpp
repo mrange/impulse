@@ -128,45 +128,6 @@ void main()
 }
 )SHADER";
 
-  char const fragment_shader_prelude[] = R"SHADER(
-// -----------------------------------------------------------------------
-// BEGIN - Common prelude
-// -----------------------------------------------------------------------
-#version 460
-
-#define SCREEN_LOADER
-
-precision mediump float;
-
-layout (location=0) uniform float iTime;
-layout (location=1) uniform vec2 iResolution;
-
-layout (location=0) out vec4 co;
-
-layout (location=2) uniform sampler2D iChannel0;
-layout (location=3) uniform sampler2D iChannel1;
-layout (location=4) uniform sampler2D iChannel2;
-layout (location=5) uniform sampler2D iChannel3;
-
-layout (location=10) uniform int iPeriod;
-layout (location=11) uniform float fTimeInPeriod;
-
-in vec2 p;
-
-void mainImage(out vec4 fragColor, in vec2 fragCoord);
-
-void main()
-{
-  vec2 pp = (p + 1.0)*0.5*iResolution.xy;
-
-  mainImage(co, pp);
-}
-// -----------------------------------------------------------------------
-// END - Common prelude
-// -----------------------------------------------------------------------
-
-)SHADER";
-
   int check_link_status (int id, char const * msg)
   {
     int result;
@@ -372,7 +333,7 @@ void main()
       }
     }
 
-    std::string fragment_shader_source = fragment_shader_prelude;
+    std::string fragment_shader_source = "#version 460\n#define SCREEN_LOADER\n";
     fragment_shader_source += loaded_config.fragment_source;
 
     auto vsh = vertex_shader;

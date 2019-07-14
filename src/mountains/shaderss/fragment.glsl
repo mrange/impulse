@@ -1,7 +1,48 @@
+precision mediump float;
+
+#if defined(SCREEN_LOADER)
+in vec2 p;
+#else
+in VertexData
+{
+    vec4 v_position;
+    vec3 v_normal;
+    vec2 v_texcoord;
+} inData;
+#endif
+
+layout (location=0) out vec4 fragColor;
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+layout (location=0) uniform float iTime;
+layout (location=1) uniform vec2 iResolution;
+
+layout (location=2) uniform sampler2D iChannel0;
+layout (location=3) uniform sampler2D iChannel1;
+
+layout (location=10) uniform int iPeriod;
+layout (location=11) uniform float fTimeInPeriod;
+
+void mainImage(out vec4, in vec2);
+void main(void)
+{
+#if defined(SCREEN_LOADER)
+  mainImage(fragColor,p);
+#else
+  mainImage(fragColor,inData.v_texcoord*2.0 - 1);
+#endif
+}
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
 // TODO:
 
-// 1. Get it to run smoothly in FF
 // 2. Remove black dot artifacts in jungle section
+// 4. Find bug in voronoi pattern on lonely mountain
+// 5. Improve skybix
 
 #define PI  3.141592654
 #define TAU (2.0*PI)
@@ -663,8 +704,8 @@ vec3 getSample(in vec2 p)
     posDT     = vec3(0.0, -0.2, 0.0);
     break;
   case 2:
-    seaHeight = 0.5;
-    timeOfDay = 0.025*timeInPeriod/INTERVAL + 0.39;
+    seaHeight = 0.0;
+    timeOfDay = 0.025*timeInPeriod/INTERVAL + 0.07;
     posT      = vec3(0.0, 0.0, 20.0);
     posDT     = vec3(0.0, -0.1, 0.0);
     break;
@@ -768,10 +809,8 @@ vec3 saturate(in vec3 col)
   return clamp(col, vec3(0.0), vec3(1.0));
 }
 
-void mainImage(out vec4 fragColor, in vec2 fragCoord)
+void mainImage(out vec4 fragColor, in vec2 p)
 {
-  vec2 q = fragCoord.xy/iResolution.xy;
-  vec2 p = -1.0 + 2.0*q;
   p.x *= iResolution.x/iResolution.y;
 
   vec3 col = getSample(p);
@@ -783,11 +822,10 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
   float fade = clamp(timeInPeriod*0.5, 0.0, 1.0)*clamp((INTERVAL - timeInPeriod)*0.5, 0.0, 1.0);
   col = mix(vec3(0.0), col, fade*fade);
 
-  if (iTime < INTERVAL)
+  if (PERIOD == 0)
   {
-    vec2 tp = fragCoord/vec2(1920, 1200);
-    tp.y = 1.0 - tp.y - 0.045;
-    tp.x += 0.05;
+    vec2 tp = 0.5*vec2(p.x + 0.75, -p.y + 0.02) + 0.5;
+    tp.x /= 1920.0/1200.0;
     float texFade = clamp((iTime - 8.0)*2.0/INTERVAL, 0.0, 1.0);
     col = mix(texture(iChannel1, tp).xyz, col, texFade);
   }
