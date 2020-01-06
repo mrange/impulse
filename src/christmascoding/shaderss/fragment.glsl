@@ -2,6 +2,7 @@ precision mediump float;
 
 #if defined(SCREEN_LOADER)
 in vec2 p;
+in vec2 q;
 #else
 in VertexData
 {
@@ -16,819 +17,1028 @@ layout (location=0) out vec4 fragColor;
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-layout (location=0) uniform float iTime;
-layout (location=1) uniform vec2 iResolution;
+layout (location=0) uniform float time;
+layout (location=1) uniform vec2 resolution;
 
-layout (location=2) uniform sampler2D iChannel0;
-layout (location=3) uniform sampler2D iChannel1;
+layout (location=2) uniform sampler2D texture0;
+layout (location=3) uniform sampler2D texture1;
 
-layout (location=10) uniform int iPeriod;
-layout (location=11) uniform float fTimeInPeriod;
+layout (location=10) uniform int period;
+layout (location=11) uniform float timeInPeriod;
 
-void mainImage(out vec4, in vec2);
+void mainImage(out vec4, in vec2, in vec2);
 void main(void)
 {
 #if defined(SCREEN_LOADER)
-  mainImage(fragColor,p);
+  mainImage(fragColor, p, q);
 #else
-  mainImage(fragColor,inData.v_texcoord*2.0 - 1);
+  mainImage(fragColor, -1.0 + 2.0*inData.v_texcoord, inData.v_texcoord);
 #endif
 }
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
+// -----------------------------==>> COMMON <<==--------------------------------
 
-// TODO:
+#define PI          3.141592654
+#define TAU         (2.0*PI)
+#define FADEPERIOD  22.0
+#define PERIOD      (int(time/FADEPERIOD))
+#define TIME        (mod(time, FADEPERIOD))
 
-// 2. Remove black dot artifacts in jungle section
-// 4. Find bug in voronoi pattern on lonely mountain
-// 5. Improve skybix
-
-#define PI  3.141592654
-#define TAU (2.0*PI)
-
-#define TOLERANCE       0.001
-#define END_STEP_FACTOR 3
-#define MAX_ITER        75
-#define MIN_DISTANCE    0.1
-#define MAX_DISTANCE    30
-#define GLOBAL_SCALE    1.2
-
-const float seaScale = 55.0;
-
-#define INTERVAL 36.0
-
-#if defined(SCREEN_LOADER)
-#define PERIOD iPeriod
-#define TIMEINPERIOD fTimeInPeriod
-#else
-#define PERIOD int(iTime/INTERVAL)
-#define TIMEINPERIOD mod(iTime, INTERVAL)
-#endif
-
-float rand(in vec2 co)
-{
-  return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
+float softMin(float a, float b, float k) {
+  float res = exp(-k*a) + exp(-k*b);
+  return -log(res)/k;
 }
 
-vec2 hash(in vec2 p)
-{
-  p=vec2(dot(p,vec2(127.1,311.7)),dot(p,vec2(269.5,183.3)));
-  return fract(sin(p)*18.5453);
+vec3 expSoftMin3(vec3 a, vec3 b, vec3 k) {
+  vec3 res = exp(-k*a) + exp(-k*b);
+  return -log( res )/k;
 }
 
-void rot(inout vec2 p, in float a)
-{
+vec3 polySoftMin3(vec3 a, vec3 b, vec3 k) {
+  vec3 h = clamp( 0.5+0.5*(b-a)/k, 0.0, 1.0);
+  
+  return mix(b, a, h) - k*h*(1.0-h);
+}
+
+vec3 powSoftMin3(vec3 a, vec3 b, vec3 k) {
+  a = pow(a, k); 
+  b = pow(b, k);
+  return pow( (a*b)/(a+b), 1.0/k );
+}
+
+void rot(inout vec2 p, float a) {
   float c = cos(a);
   float s = sin(a);
-
-  p = vec2(p.x*c + p.y*s, -p.x*s + p.y*c);
+  p = vec2(c*p.x + s*p.y, -s*p.x + c*p.y);
 }
 
-mat2 mrot(in float a)
-{
-  float c = cos(a);
-  float s = sin(a);
-  return mat2(c, s, -s, c);
+float impulse1(vec2 p) {
+  ivec2 ivec = textureSize(texture0, 0);
+  p.x *= float(ivec.y)/ivec.x;
+  p.y = -p.y;
+  p*=1.0;
+  p+=vec2(1.00, 1.00);
+  p*=0.5;
+  vec4 t = texture(texture0, p);
+  float d = t.x + (1.0/256.0)*t.y + (1.0/(256.0*256.0))*t.z;
+  return -2.0*d + 1.0;
 }
 
-const float gravity = 1.0;
-const float waterTension = 0.01;
-
-vec2 wave(in float t, in float a, in float w, in float p)
-{
-  float x = t;
-  float y = a*sin(t*w + p);
-  return vec2(x, y);
+float impulse2(vec2 p) {
+  ivec2 ivec = textureSize(texture1, 0);
+  p.x *= float(ivec.y)/ivec.x;
+  p.y = -p.y;
+  p*=1.0;
+  p+=vec2(1.08, 1.00);
+  p*=0.5;
+  vec4 t = texture(texture1, p);
+  float d = t.x + (1.0/256.0)*t.y + (1.0/(256.0*256.0))*t.z;
+  return -2.0*d + 1.0;
 }
 
-vec2 dwave(in float t, in float a, in float w, in float p)
+float box(vec3 p, vec3 b)
 {
-  float dx = 1.0;
-  float dy = a*w*cos(t*w + p);
-  return vec2(dx, dy);
+  vec3 q = abs(p) - b;
+  return length(max(q,0.0)) + min(max(q.x,max(q.y,q.z)),0.0);
 }
 
-#define AMPMOD tanh(0.02*k*h)
-
-vec2 gravityWave(in float t, in float a, in float k, in float h)
-{
-  float w = sqrt(gravity*k);
-  return wave(t, a*AMPMOD, k, w*iTime);
+float box(vec2 p, vec2 b) {
+  vec2 d = abs(p)-b;
+  return length(max(d,vec2(0))) + min(max(d.x,d.y),0.0);
 }
 
-vec2 gravityWaveD(in float t, in float a, in float k, in float h)
-{
-  float w = sqrt(gravity*k);
-  return dwave(t, a*AMPMOD, k, w*iTime);
+float circle(vec2 p, float r) {
+  return length(p) - r;
 }
 
-vec2 capillaryWave(in float t, in float a, in float k, in float h)
-{
-  float w = sqrt((gravity*k + waterTension*k*k*k));
-  return wave(t, a*AMPMOD, k, w*iTime);
+float parabola(vec2 pos, float k) {    
+  pos.x = abs(pos.x);
+    
+  float p = (1.0-2.0*k*pos.y)/(6.0*k*k);
+  float q = -abs(pos.x)/(4.0*k*k);
+    
+  float h = q*q + p*p*p;
+  float r = sqrt(abs(h));
+
+  float x = h > 0.0
+    ? pow(-q+r,1.0/3.0) - pow(abs(-q-r),1.0/3.0)*sign(q+r) 
+    : 2.0*cos(atan(r,-q)/3.0)*sqrt(-p)
+    ;
+    
+  return length(pos-vec2(x,k*x*x)) * sign(pos.x-x);
 }
 
-vec2 capillaryWaveD(in float t, in float a, in float k, in float h)
-{
-  float w = sqrt((gravity*k + waterTension*k*k*k));
-  return dwave(t, a*AMPMOD, k, w*iTime);
+float unevenCapsule(vec2 p, float r1, float r2, float h) {
+  p.x = abs(p.x);
+  float b = (r1-r2)/h;
+  float a = sqrt(1.0-b*b);
+  float k = dot(p,vec2(-b,a));
+  if( k < 0.0 ) return length(p) - r1;
+  if( k > a*h ) return length(p-vec2(0.0,h)) - r2;
+  return dot(p, vec2(a,b) ) - r1;
 }
 
-vec4 sea(in vec2 p, in float h, in float ia)
+float sphere(vec3 p, float t) {
+  return length(p)-t;
+}
+
+float torus(vec3 p, vec2 t) {
+  vec2 q = vec2(length(p.xz)-t.x,p.y);
+  return length(q)-t.y;
+}
+
+vec2 toSmith(vec2 p)  {
+  // z = (p + 1)/(-p + 1)
+  // (x,y) = ((1+x)*(1-x)-y*y,2y)/((1-x)*(1-x) + y*y)
+  float d = (1.0 - p.x)*(1.0 - p.x) + p.y*p.y;
+  float x = (1.0 + p.x)*(1.0 - p.x) - p.y*p.y;
+  float y = 2.0*p.y;
+  return vec2(x,y)/d;
+}
+
+vec2 fromSmith(vec2 p)  {
+  // z = (p - 1)/(p + 1)
+  // (x,y) = ((x+1)*(x-1)+y*y,2y)/((x+1)*(x+1) + y*y)
+  float d = (p.x + 1.0)*(p.x + 1.0) + p.y*p.y;
+  float x = (p.x + 1.0)*(p.x - 1.0) + p.y*p.y;
+  float y = 2.0*p.y;
+  return vec2(x,y)/d;
+}
+
+vec2 toRect(vec2 p) {
+  return vec2(p.x*cos(p.y), p.x*sin(p.y));
+}
+
+vec2 toPolar(vec2 p) {
+  return vec2(length(p), atan(p.y, p.x));
+}
+
+vec2 mod2(inout vec2 p, vec2 size)  {
+  vec2 c = floor((p + size*0.5)/size);
+  p = mod(p + size*0.5,size) - size*0.5;
+  return c;
+}
+
+
+float mod1(inout float p, float size) {
+  float halfsize = size*0.5;
+  float c = floor((p + halfsize)/size);
+  p = mod(p + halfsize, size) - halfsize;
+  return c;
+}
+
+float modMirror1(inout float p, float size) {
+  float halfsize = size*0.5;
+  float c = floor((p + halfsize)/size);
+  p = mod(p + halfsize,size) - halfsize;
+  p *= mod(c, 2.0)*2 - 1;
+  return c;
+}
+
+
+vec2 modMirror2(inout vec2 p, vec2 size) {
+  vec2 halfsize = size*0.5;
+  vec2 c = floor((p + halfsize)/size);
+  p = mod(p + halfsize, size) - halfsize;
+  p *= mod(c,vec2(2))*2 - vec2(1);
+  return c;
+}
+
+vec2 hash(vec2 p) {
+  p = vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2 (269.5, 183.3)));
+
+  return -1. + 2.*fract(sin(p)*43758.5453123);
+}
+
+float noise(vec2 p) {
+  const float K1 = .366025404;
+  const float K2 = .211324865;
+
+  vec2 i = floor(p + (p.x + p.y)*K1);
+   
+  vec2 a = p - i + (i.x + i.y)*K2;
+  vec2 o = step(a.yx, a.xy);    
+  vec2 b = a - o + K2;
+  vec2 c = a - 1. + 2.*K2;
+
+  vec3 h = max(.5 - vec3(dot(a, a), dot(b, b), dot(c, c)), .0);
+
+  vec3 n = h*h*h*h*vec3(dot(a, hash(i + .0)), dot(b, hash(i + o)), dot(c, hash(i + 1.)));
+
+  return dot(n, vec3(70.));
+}
+
+const float fadeRep = 0.05;
+float fadef(vec2 p, vec2 j) {
+  float localTime = TIME;
+  j = toPolar(j);
+  j.y += PI*length(j*fadeRep) - TAU*localTime;
+  j = toRect(j);
+  const float o = 0.25;
+  float tt = localTime + 0.005*(j.x + 1.5*j.y);  
+  return smoothstep(FADEPERIOD - 1.0 - o, FADEPERIOD - o, tt) + smoothstep(1.0 + o, 0.0 + o, tt);
+}
+
+vec3 fade(vec3 col, vec2 p) {
+  const vec3 fcol = vec3(1.0);
+  const float bw = 0.00125;
+  vec2 pp = p ;
+  
+  vec2 j = mod2(pp, vec2(fadeRep));
+  float ff = fadef(p, j);
+  float d = circle(pp, (sqrt(0.5)*fadeRep)*ff);
+  
+  col = mix(col, fcol, step(4.0, time)*step(time, 210)*step(0.0001, ff)*smoothstep(bw, -bw, d));
+  col *= smoothstep(0.0, 4.0, time)*smoothstep(220, 210, time);
+  
+  return col;
+}
+
+float fbm(vec2 p, float time) {
+  float c =  cos(time/sqrt(3.0));
+  float d =  noise (p                 );
+  d += .5*   noise (p + vec2(+c  ,+0.0));
+  d += .25*  noise (p + vec2(+0.0,+c  ));
+  d += .125* noise (p + vec2(-c  ,+0.0));
+  d += .0625*noise (p + vec2(+0.0,-c  ));
+  d /= (1. + .5 + .25 + .125 + .0625);
+  return .5 + .5*d;
+}
+
+vec3 saturate(vec3 col) {
+  return clamp(col, 0.0, 1.0);
+}
+
+// -----------------------------==>> COMMON <<==--------------------------------
+
+// ----------------------------==>> IMPULSE <<==--------------------------------
+
+vec3 impulse_lightning(vec2 p, float d)
 {
-  float y = 0.0;
-  vec3 d = vec3(0.0);
+  const float thickness = 0.25;
+  const float haze = 2.5;
+  const float size = .075;
+  const int count = 3;
 
-  float k = 1.5;
-  float kk = 1.2;
-  float a = ia*0.2;
-  float aa = 1.0/(kk*kk);
+  vec3 col = vec3(0.0);
 
-  const float scale = seaScale;
+  float e1 = 1.6 + 0.4*sin(time*sqrt(2.0));
+  float e2 = e1;
+  
+//  float o = pow(d, 1.0);
+  float o = d;
 
+  for (int i = 0; i < count; ++i)
+  {
+    float fi = float(i);
+    float localTime = time + fi;
+    float fe1 = (pow(fi + 1.0, 0.2))*e1;
+    float fe2 = fe1;
+    vec2 o1 = 1.5*localTime*vec2(0.0, -1);
+    vec2 o2 = o1;
+    
+    vec2 fp1 = p + o1;
+    vec2 fp2 = p + o2;
+    float d1 = abs ((o*haze)*thickness / (o - fe1*fbm (fp1, localTime*0.11)));
+    float d2 = abs ((o*haze)*thickness / (o - fe2*fbm (fp2, localTime*0.09+0.75)));
+    col += d1*size*vec3 (.1, .8, 2.);
+    col += d2*size*vec3 (2., .1, .8);
+  }
+
+  col /= float(count-1);
+
+  return col;
+}
+
+float impulse_appear(vec2 p) {
+  float localTime = TIME*16.0/22.0;
+  float o = 1.5*localTime - 0.25;
+  float l = smoothstep(3.5, 8.0, localTime)*smoothstep(17.0, 13.0, localTime);
+  float d0 = impulse1(p) + mix(2.0, 0.55, l) + -0.25*p.y;
+  float d1 = parabola(p - vec2(0.0, 6.0-o), 0.5);
+  float d2 = parabola(p - vec2(0.0, 9.0-o), 1.0);
+  float d = max(d1, -d2 + 0.5);
+  d = min(d, d0);
+  return d;
+}
+
+float impulse_window(vec2 p) {
+  const float r = 2.7;
+  float d0 = -circle(p, r);
+  vec2 bp = p;
+  bp = toPolar(bp);
+  bp.y += time*0.125;
+  mod1(bp.y, TAU/3.0);
+  bp = toRect(bp);
+  const float bs = 0.3;
+  bp -= vec2(r - 1.0*bs, 0.0);
+  float d1 = box(bp, vec2(bs)) - 0.2;
+  float d2 = 1.0*impulse2(0.9*p) + 0.7 - 0.3*p.y;
+  p -= vec2(0.0, -1.5);
+  mod1(p.y, 3.0);
+  float d = d0;
+  d = softMin(d, d1, 10.0);
+  d = min(d, d2);
+  return d;
+}
+
+float impulse_df(vec2 p) {
+  switch(PERIOD) {
+  default:
+  case 0: return impulse_appear(p);
+  case 5: return impulse_window(p);
+  }
+}
+
+vec3 impulse_main(vec2 p, vec2 q) {
+  p*=1.75;
+
+  float d = impulse_df(p);
+  float lf = 1.65*(d + 0.125);
+  vec3 l = impulse_lightning(p, lf);
+
+  d*=150.0;  
+  const vec3 baseCol = vec3(0.5, 0.35, 0.8);
+  vec3 col = 0.0*baseCol;
+  
+  col += baseCol*smoothstep(1.0, -1.0, d);
+  col += vec3(0.55)*smoothstep(0.0, -32.0, d);
+  col += vec3(1.0)*smoothstep(-3.0, -2.0, d)*smoothstep(3.0, 2.0, d);
+  col += baseCol*0.66*step(0.0, d)*exp(-d*d*0.001);
+
+  col += l;
+  
+  return col;
+}
+
+// ----------------------------==>> IMPULSE <<==--------------------------------
+
+// -----------------------==>> INFINITE COGWHEELS <<==--------------------------
+
+const float infcw_cogRadius = 0.02;
+const float infcw_smallWheelRadius = 0.30;
+const float infcw_bigWheelRadius = 0.55;
+const float infcw_wheelOffset = infcw_smallWheelRadius + infcw_bigWheelRadius - infcw_cogRadius;
+const vec3 infcw_baseCol = vec3(240.0, 115.0, 51.0)/vec3(255.0);
+
+float infcw_smallCogwheel(vec2 p) {
+  float dc = circle(p, 0.25);  
+  vec2 pp = toPolar(p);
+  pp.y += time*2 + TAU/32;
+  vec2 cpp = pp;
+  mod1(cpp.y, TAU/16.0);
+  cpp.y += PI/2.0;
+  vec2 cp = toRect(cpp);
+  float ds = unevenCapsule(cp, 0.05, infcw_cogRadius, infcw_smallWheelRadius);
+  float dcw = softMin(ds, dc, 100.0);
+  float dic = circle(p, 0.11/2);
+  vec2 ipp = pp;
+  mod1(ipp.y, TAU/6.0);
+  vec2 ip = toRect(ipp);
+  float dic2 = circle(ip - vec2(0.15, 0.0), 0.11/2);
+  float di = min(dic, dic2);
+  return max(dcw, -di);
+}
+
+float infcw_bigCogwheel(vec2 p) {
+  float dc = circle(p, 0.5);  
+  vec2 pp_ = toPolar(p);
+  pp_.y += -time;
+  vec2 cpp = pp_;
+  mod1(cpp.y, TAU/32.0);
+  cpp.y += PI/2.0;
+  vec2 cp = toRect(cpp);
+  float ds = unevenCapsule(cp, 0.1, infcw_cogRadius, infcw_bigWheelRadius);
+  float dcw = softMin(ds, dc, 100.0);
+  float dic = circle(p, 0.125);
+  vec2 ipp = pp_;
+  mod1(ipp.y, TAU/6.0);
+  vec2 ip = toRect(ipp);
+  float dic2 = circle(ip - vec2(0.3, 0.0), 0.125);
+  float di = min(dic, dic2);
+  return max(dcw, -di);
+}
+
+float infcw_cogwheels(vec2 p) {
+  p.x += infcw_wheelOffset*0.5;
+  float dsc = infcw_smallCogwheel(p - vec2(infcw_wheelOffset, 0.0));
+  float dbc = infcw_bigCogwheel(p);
+  return min(dsc, dbc);
+}
+
+float infcw_df(vec2 p) {
+  float i = mod1(p.x, infcw_wheelOffset);
+  float s = mod(i, 2.0)*2.0 - 1.0;
+  p *= s;
+  float dcs = infcw_cogwheels(p);
+  return dcs;
+}
+
+vec4 infcw_sample(float localTime, vec2 p, int i) {
+  float borderStep = 0.00125;
+  vec3 col = infcw_baseCol;  
+  p *= 4.0;
+  rot(p, TAU*float(i)/250.0 + TAU*localTime*0.01);
+  float d = infcw_df(p);
+  float d2 = abs(d) - 0.025;
+  if (d < d2) col = pow(infcw_baseCol, vec3(0.6));
+  float t = smoothstep(-borderStep, 0.0, -d);
+  t *= exp(-dot(p, p)*0.0025);
+  return vec4(col, t);
+}
+
+
+vec3 infcw_main(vec2 p, vec2 q) {
+  int period = PERIOD;
+  float localTime = TIME + 166;
+  
+  float shadeF = 0.25;
+  float zf = pow(0.9, 20.0*(0.5+0.5*cos(localTime*sqrt(0.03))));
+  p = vec2(0.5, -0.05) + p*0.75*zf;
+
+  vec3 col = vec3(0.0);
+  vec3 ss = mix(vec3(0.2, 0.2, 0.5), vec3(0.2,-0.2,1.0), 2.2 + 1.25*sin(localTime*0.5));
+
+  vec2 c = vec2(-0.76, 0.15);
+  rot(c, 0.2*sin(localTime*sqrt(3.0)/12.0));
+  float f = 0.0;
+  vec2 z = p;
+
+  float transparency = 1.0;
+
+  vec3 bg = vec3(0.0);
+
+  float minTrap = 10000.0;
+
+  const int maxIter = 85;
+  const float maxIterF = float(maxIter);
+  for(int i=0; i<maxIter; ++i)
+  {
+    float re2 = z.x*z.x;
+    float im2 = z.y*z.y;
+    if((re2 + im2>4.0) || (transparency<0.2)) break;
+    float reim = z.x*z.y;
+
+    z = vec2(re2 - im2, 2.0*reim) + c;
+    minTrap = min(minTrap, length(z - c));
+
+    float fi = f/maxIterF;
+    float shade = sqrt(1.0-0.9*fi);
+
+    vec4 sample_ = infcw_sample(localTime, ss.xy + ss.z*z, i);
+    float ff = mix(0.0, 0.5, pow(fi, 0.5));
+    sample_.xyz = pow(sample_.xyz, mix(vec3(1.0), vec3(75.0, 0.5, 0.0), ff));
+    sample_.w *= shade;
+   
+    col += sample_.xyz*sample_.w*transparency; 
+    transparency *= (1.0 - clamp(sample_.w, 0.0, 1.0));
+    
+    f += 1.0;
+  }
+  
+  bg= vec3(0.3, 0.25, 0.4)*max(0.5 - sqrt(minTrap), 0.0);
+  col = mix(col, bg, transparency);
+  return col;
+}
+
+// -----------------------==>> INFINITE COGWHEELS <<==--------------------------
+
+// ----------------------------==>> MANDALA <<==--------------------------------
+
+float mandala_df(float localTime, vec2 p) {
+  vec2 pp = toPolar(p);
+  float a = TAU/64.0;
+  float np = pp.y/a;
+  pp.y = mod(pp.y, a);
+  float m2 = mod(np, 2.0);
+  if (m2 > 1.0) {
+    pp.y = a - pp.y;
+  }
+  pp.y += localTime/40.0;
+  p = toRect(pp);
+  p = abs(p);
+  p -= vec2(0.5);
+  
+  float d = 10000.0;
+  
+  for (int i = 0; i < 4; ++i) {
+    mod2(p, vec2(1.0));
+    float da = -0.2 * cos(localTime*0.25);
+    float sb = box(p, vec2(0.35)) + da ;
+    float cb = circle(p + vec2(0.2), 0.25) + da;
+    
+    float dd = max(sb, -cb);
+    d = min(dd, d);
+    
+    p *= 1.5 + 1.0*(0.5 + 0.5*sin(0.5*localTime));
+    rot(p, 1.0);
+  }
+
+  
+  return d;
+}
+
+vec3 mandala_postProcess(float localTime, vec3 col, vec2 uv) 
+{
+  float r = length(uv);
+  float a = atan(uv.y, uv.x);
+  col = clamp(col, 0.0, 1.0);   
+  col=pow(col,mix(vec3(0.5, 0.75, 1.5), vec3(0.45), r)); 
+  col=col*0.6+0.4*col*col*(3.0-2.0*col);  // contrast
+  col=mix(col, vec3(dot(col, vec3(0.33))), -0.4);  // satuation
+  col*=sqrt(1.0 - sin(-localTime + (50.0 - 25.0*sqrt(r))*r))*(1.0 - sin(0.5*r));
+  col = clamp(col, 0.0, 1.0);
+  float ff = pow(1.0-0.75*sin(20.0*(0.5*a + r + -0.1*localTime)), 0.75);
+  col = pow(col, vec3(ff*0.9, 0.8*ff, 0.7*ff));
+  col *= 0.5*sqrt(max(4.0 - r*r, 0.0));
+  return clamp(col, 0.0, 1.0);
+}
+
+vec2 mandala_distort(float localTime, vec2 uv) {
+  float lt = 0.1*localTime;
+  vec2 suv = toSmith(uv);
+  suv += 1.0*vec2(cos(lt), sin(sqrt(2.0)*lt));
+//  suv *= vec2(1.5 + 1.0*sin(sqrt(2.0)*time), 1.5 + 1.0*sin(time));
+  uv = fromSmith(suv);
+  modMirror2(uv, vec2(2.0+sin(lt)));
+  return uv;
+}
+
+vec3 mandala_sample(float localTime, vec2 p, vec2 q)
+{
+  float lt = 0.1*localTime;
+  vec2 uv = p;
+  uv *=8.0;
+  rot(uv, lt);
+  //uv *= 0.2 + 1.1 - 1.1*cos(0.1*iTime);
+
+  vec2 nuv = mandala_distort(localTime, uv);
+  vec2 nuv2 = mandala_distort(localTime, uv + vec2(0.0001));
+
+  float nl = length(nuv - nuv2);
+  float nf = 1.0 - smoothstep(0.0, 0.002, nl);
+
+  uv = nuv;
+  
+  float d = mandala_df(localTime, uv);
+
+  vec3 col = vec3(0.0);
+ 
+  const float r = 0.065;
+
+  float nd = d / r;
+  float md = mod(d, r);
+  
+  if (abs(md) < 0.025) {
+    col = (d > 0.0 ? vec3(0.25, 0.65, 0.25) : vec3(0.65, 0.25, 0.65) )/abs(nd);
+  }
+
+  if (abs(d) < 0.0125) {
+    col = vec3(1.0);
+  }
+
+  col += 1.0 - pow(nf, 5.0);
+  
+  col = mandala_postProcess(localTime, col, uv);;
+  
+  col += 1.0 - pow(nf, 1.0);
+
+  return saturate(col);
+}
+
+vec3 mandala_main(vec2 p, vec2 q) {
+
+  float to = 0.0;
+  switch(PERIOD) {
+  default:
+  case 1:
+    to = 32.0;
+    break;
+  case 7:
+    to = 104;
+    break;
+  } 
+  float localTime = 0.8 *TIME + to;
+  vec3 col  = vec3(0.0);
+  vec2 unit = 1.0/resolution.xy;
+  const int aa = 2;
+  for(int y = 0; y < aa; ++y)
+  {
+    for(int x = 0; x < aa; ++x)
+    {
+      col += mandala_sample(localTime, p - 0.5*unit + unit*vec2(x, y), q);
+    }
+  }
+
+  col /= (aa*aa);
+  return col;
+}
+// ----------------------------==>> MANDALA <<==--------------------------------
+
+// ---------------------------==>> MANDELBONE <<==------------------------------
+
+const float mandelbone_max_distance  = 40.0;
+const float mandelbone_eps           = 0.001;
+const float mandelbone_tolerance     = 0.0003;
+const float mandelbone_fixed_radius2 = 1.9;
+const float mandelbone_min_radius2   = 0.5;
+const float mandelbone_folding_limit = 1.0;
+const float mandelbone_scale         = -2.8;
+const int   mandelbone_max_iter      = 120;
+const vec3  mandelbone_bone          = vec3(0.89, 0.855, 0.788);
+
+void mandelbone_sphereFold(inout vec3 z, inout float dz) {
+    float r2 = dot(z, z);
+    if(r2 < mandelbone_min_radius2) {
+        float temp = (mandelbone_fixed_radius2 / mandelbone_min_radius2);
+        z *= temp;
+        dz *= temp;
+    } else if(r2 < mandelbone_fixed_radius2) {
+        float temp = (mandelbone_fixed_radius2 / r2);
+        z *= temp;
+        dz *= temp;
+    }
+}
+
+void mandelbone_boxFold(inout vec3 z, inout float dz) {
+    const float k = 0.055;
+    vec3 zz = sign(z)*polySoftMin3(abs(z), vec3(mandelbone_folding_limit), vec3(k));
+//    vec3 zz = clamp(z, -folding_limit, folding_limit);
+    z = zz * 2.0 - z;
+}
+
+float mandelbone_mandelbox(vec3 z) {
+    vec3 offset = z;
+    float dr = 1.0;
+    float fd = 0.0;
+    for(int n = 0; n < 5; ++n) {
+        mandelbone_boxFold(z, dr);
+        mandelbone_sphereFold(z, dr);
+        z = mandelbone_scale * z + offset;
+        dr = dr * abs(mandelbone_scale) + 1.0;        
+        float r1 = sphere(z, 5.0);
+        float r2 = torus(z, vec2(8.0, 1));        
+        float r = n < 4 ? r2 : r1;        
+        float dd = r / abs(dr);
+        if (n < 3 || dd < fd) {
+          fd = dd;
+        }
+    }
+    return fd;
+}
+
+float mandelbone_apollian(vec3 p) {
+  float s = 1.3 + smoothstep(0.15, 1.5, p.y)*0.95;
+//  float s = 1.3 + min(pow(max(p.y - 0.25, 0.0), 1.0)*0.75, 1.5);
+  float scale = 1.0;
+
+  float r = 0.2;
+  vec3 o = vec3(0.22, 0.0, 0.0);
+
+  const int rep = 7;
+
+  for (int i=0; i < rep ;++i) {
+    mod1(p.y, 2.0);
+    modMirror2(p.xz, vec2(2.0));
+    rot(p.xz, PI/5.5);
+
+    float r2 = dot(p,p) + 0.0;
+    float k = s/r2;
+    float r = 0.5;
+    p *= k;
+    scale *= k;
+  }
+
+  float db = box(p - 0.1, 1.0*vec3(1.0, 2.0, 1.0)) - 0.5;  
+  float d = db;
+  d = abs(d) - 0.01;
+  return 0.25*d/scale;
+}
+
+float mandelbone_tree(vec3 p) { 
+  float d1 = mandelbone_apollian(p);
+  float db = box(p - vec3(0.0, 0.5, 0.0), vec3(0.75,1.0, 0.75)) - 0.5;
+  float dp = p.y;
+  return min(dp, max(d1, db)); 
+} 
+
+float mandelbone_mengercube(vec3 p)
+{
+  const float scale = 6.0;
+  const vec3 offs = vec3(9.0);
+  const float s = 3.;
+  
   p *= scale;
 
-  float angle = 0.0;
+  float d = 1e5;
 
-  for (int i = 0; i < 4; ++i)
-  {
-    mat2 fr = mrot(angle);
-    mat2 rr = transpose(fr);
-    vec2 pp = fr*p;
-    y += gravityWave(pp.y + float(i), a, k, h).y;
-    vec2 dw = gravityWaveD(pp.y + float(i), a, k, h);
+  float amp = 1./s;
 
-    vec2 d2 = vec2(0.0, dw.x);
-    vec2 rd2 = rr*d2;
+  for(int i = 0; i < 5; ++i){
+    p = abs(p);
 
-    d += vec3(rd2.x, dw.y, rd2.y);
+//    float ss = 0.125*s;
+    p.xy += step(p.x, p.y)*(p.yx - p.xy);
+    p.xz += step(p.x, p.z)*(p.zx - p.xz);
+    p.yz += step(p.y, p.z)*(p.zy - p.yz);
 
-    angle += float(i);
-    k *= kk;
-    a *= aa;
+    p = p*s + offs*(1. - s);
+
+    p.z -= step(p.z, offs.z*(1. - s)*.5)*offs.z*(1. - s);
+
+    float o = 2.0;
+     rot(p.xy, PI/3);
+     p = abs(p);
+    float dd = box(p, vec3(o*8, o, o))*amp;
+    d = min(d, dd);
+    amp /= s;
   }
 
-  for (int i = 4; i < 8; ++i)
-  {
-    mat2 fr = mrot(angle);
-    mat2 rr = transpose(fr);
-    vec2 pp = fr*p;
-    y += capillaryWave(pp.y + float(i), a, k, h).y;
-    vec2 dw = capillaryWaveD(pp.y + float(i), a, k, h);
+  return (d + 0.02)/scale;
 
-    vec2 d2 = vec2(0.0, dw.x);
-    vec2 rd2 = rr*d2;
-
-    d += vec3(rd2.x, dw.y, rd2.y);
-
-    angle += float(i);
-    k *= kk;
-    a *= aa;
-  }
-
-  vec3 t = normalize(d);
-  vec3 nxz = normalize(vec3(t.z, 0.0, -t.x));
-  vec3 nor = cross(t, nxz);
-
-  return vec4(y/scale, nor);
 }
 
-float heightFactor(in vec2 p)
-{
-  switch(PERIOD)
-  {
-  case 0:
-  case 1:
-  case 5:
-    return 0.3;
-  case 2:
-  case 7:
-    return (0.75 + 0.25*cos(0.025*(65 + 35*cos(0.025*p.y))*p.x + 10*cos(0.025*2*p.y)));
-  case 3:
-  case 6:
-  case 8:
-    return 1.0/(1.0 - 0.2 + length(0.3*(p - vec2(8 + 0.3, 8 + 407.0)).xy));
-  case 4:
-  case 9:
-    float hd = (p.y - 100)*0.02;
-    return 1.05*(0.75 + 0.25*cos(0.025*(65 + 35*cos(0.025*p.y))*p.x + 10*cos(0.025*2*p.y)))*(exp(-hd*hd));
+float mandelbone_df(vec3 p) { 
+  switch(PERIOD) {
   default:
-    return 1.0;
+  case 2:
+  case 6:
+    return mandelbone_mandelbox(p);
+  case 4:
+    return mandelbone_mengercube(p);
+  case 8:
+    return mandelbone_tree(p);
   }
-}
+} 
 
-float hiTerrain(in vec2 p)
-{
-  vec2 pp = p;
-  p *= 0.025;
-  vec4 t = vec4(0);
-  float s=.5;
-
-  t = texture(iChannel0,p*s)/(s += s);
-
-  for (int j = 1; j < 10; ++j)
-  {
-    t += texture(iChannel0,p*s)/(s += GLOBAL_SCALE*s);
-  }
-
-  return t.x*heightFactor(pp);
-}
-
-float loTerrain(in vec2 p)
-{
-  vec2 pp = p;
-  p *= 0.025;
-  vec4 t = vec4(0);
-  float s=.5;
-
-  t = texture(iChannel0,p*s)/(s += s);
-
-  for (int j = 1; j < 6; ++j)
-  {
-    t += texture(iChannel0,p*s)/(s += GLOBAL_SCALE*s);
-  }
-
-  return t.x*heightFactor(pp);
-}
-
-float superLoTerrain(in vec2 p)
-{
-  vec2 pp = p;
-  p *= 0.025;
-  vec4 t = vec4(0);
-  float s=.5;
-
-  // A bug that superLo precision is computed differently than
-  // hi & lo ended up looking nice
-  t = texture(iChannel0,p*s)/(s += GLOBAL_SCALE*s);
-
-  for (int j = 1; j < 3; ++j)
-  {
-    t += texture(iChannel0,p*s)/(s += s);
-  }
-
-  return t.x*heightFactor(pp);
-}
-
-vec3 getHiNormal(in vec2 p, in float d)
-{
-  vec2 eps = vec2(mix(0.0008, 0.001*d, smoothstep(3.0, 9.0, d)), 0);
-  float dx = hiTerrain(p - eps) - hiTerrain(p + eps);
-  float dy = 2.0f*eps.x;
-  float dz = hiTerrain(p - eps.yx) - hiTerrain(p + eps.yx);
-  return normalize(vec3(dx, dy, dz));
-}
-
-vec3 getLoNormal(in vec2 p, in float d)
-{
-  vec2 eps = vec2(0.004*d, 0);
-  float dx = loTerrain(p - eps) - loTerrain(p + eps);
-  float dy = 2.0f*eps.x;
-  float dz = loTerrain(p - eps.yx) - loTerrain(p + eps.yx);
-  return normalize(vec3(dx, dy, dz));
-}
-
-
-const float step_factors[END_STEP_FACTOR] = float[END_STEP_FACTOR](0.75, 0.25, 0.25/4);
-
-float march(in vec3 ro, in vec3 rd, out int max_iter)
-{
-  float dt = 0.1;
-  float d = mix(MIN_DISTANCE, 2.0*MIN_DISTANCE, rand(ro.xy + rd.xy));
-
-  int sfi = 0;
-  float lh = 0.0;
-  float ly = 0.0;
-
-  for (int i = 0; i < MAX_ITER; ++i)
-  {
-    vec3 p = ro + d*rd;
-    float h = loTerrain(p.xz);
-
-    if (d > MAX_DISTANCE)
-    {
-      max_iter = i;
-      return MAX_DISTANCE;
+float mandelbone_intersect(vec3 ro, vec3 rd, float it, out int iter) {
+    float res;
+    float t = it;
+    iter = mandelbone_max_iter;
+    
+    for(int i = 0; i < mandelbone_max_iter; ++i) {
+        vec3 p = ro + rd * t;
+        res = mandelbone_df(p);
+        if(res < mandelbone_tolerance * t || res > mandelbone_max_distance) {
+            iter = i;
+            break;
+        }
+        t += res;
     }
+    
+    if(res > mandelbone_max_distance) t = -1.;
+    return t;
+}
 
-    float hd = p.y - h;
+float mandelbone_ambientOcclusion(vec3 p, vec3 n) {
+  float stepSize = 0.012;
+  float t = stepSize;
 
-    if (hd < TOLERANCE)
-    {
-      ++sfi;
-      if (sfi == END_STEP_FACTOR || hd > -TOLERANCE)
-      {
-        max_iter = i;
-        return d - dt + dt*(lh-ly)/(p.y-ly-h+lh);
-      }
-      else
-      {
-        d -= 1.5*dt;
-      }
-    }
+  float oc = 0.0;
 
-    lh = h;
-    ly = p.y;
-    dt = max(step_factors[sfi]*hd, TOLERANCE) + d*0.001;
-    d += dt;
+  for(int i = 0; i < 12; i++) {
+    float d = mandelbone_df(p + n * t);
+    oc += t - d;
+    t += stepSize;
   }
 
-  max_iter = MAX_ITER;
-  return MAX_DISTANCE;
+  return clamp(oc, 0.0, 1.0);
 }
 
-float shadow(in vec3 ro, in vec3 rd, in float ll, in float mint, in float k)
-{
-  float t = mint;
-  for (int i=0; i<24; ++i)
-  {
-    vec3 p = ro + t*rd;
-    float h = loTerrain(p.xz);
-    float d = (p.y - h);
-    if (d < TOLERANCE) return 0.0;
-    if (t > ll) return 1.0;
-    t += max(0.1, 0.25*h);
+vec3 mandelbone_normal(in vec3 pos) {
+  vec2  eps = vec2(mandelbone_eps,0.0);
+  vec3 nor;
+  nor.x = mandelbone_df(pos+eps.xyy) - mandelbone_df(pos-eps.xyy);
+  nor.y = mandelbone_df(pos+eps.yxy) - mandelbone_df(pos-eps.yxy);
+  nor.z = mandelbone_df(pos+eps.yyx) - mandelbone_df(pos-eps.yyx);
+  return normalize(nor);
+}
+
+vec3 mandelbone_lighting(vec3 p, vec3 rd, int iter) {
+  vec3 n = mandelbone_normal(p);
+  float fake = float(iter)/float(mandelbone_max_iter);
+  float fakeAmb = exp(-fake*fake*9);
+  float amb = mandelbone_ambientOcclusion(p, n);
+
+  vec3 col = vec3(mix(1.0, 0.125, pow(amb, 3.0)))*vec3(fakeAmb)*mandelbone_bone;
+  return col;
+}
+
+vec3 mandelbone_post(vec3 col, vec2 q) {
+  col=pow(clamp(col,0.0,1.0),vec3(0.65)); 
+  col=col*0.6+0.4*col*col*(3.0-2.0*col);  // contrast
+  col=mix(col, vec3(dot(col, vec3(0.33))), -0.5);  // satuation
+  col*=0.5+0.5*pow(19.0*q.x*q.y*(1.0-q.x)*(1.0-q.y),0.7);  // vigneting
+  return col;
+}
+
+vec3 mandelbone_main(vec2 p, vec2 q)  {
+  float ror = 0.57; // 0.57, 4.5
+
+  float localTime = TIME;
+
+  vec3 la = vec3(0.0, 0.75, 0.0); 
+  vec3 ro = vec3(-4.0, 1.25, -0.0);
+
+  switch(PERIOD) {
+  default:
+  case 6:
+    localTime += 20.0;
+  case 4:
+    localTime += 14.0;
+  case 2:
+    localTime -= 56.0;
+    float stime=sin(localTime*0.1); 
+    float ctime=cos(localTime*0.1); 
+    la = vec3(0.0,0.0,0.0); 
+    ro = ror*vec3(3.0*stime,2.0*ctime,5.0+1.0*stime);
+    break;
+  case 8:
+   rot(ro.xz, 2.0*PI*localTime/120.0);
+   break;
   }
-  return 1.0;
+
+  vec3 cf = normalize(la-ro); 
+  vec3 cs = normalize(cross(cf,vec3(0.0,1.0,0.0))); 
+  vec3 cu = normalize(cross(cs,cf)); 
+  vec3 rd = normalize(p.x*cs + p.y*cu + 3*cf);  // transform from view to world
+
+  vec3 bg = mix(mandelbone_bone*0.5, mandelbone_bone, smoothstep(-1.0, 1.0, p.y));
+  vec3 col = bg;
+
+  int iter = 0;
+  
+  float t = mandelbone_intersect(ro, rd, 0.2, iter);
+    
+  if(t > -0.5) {
+    vec3 p = ro + t * rd;
+    col = mandelbone_lighting(p, rd, iter); 
+    col = mix(col, bg, 1.0-exp(-0.001*t*t)); 
+  } 
+    
+
+  col=mandelbone_post(col, q);
+  return col;
 }
 
-const vec3 skyColLo = vec3(0.6, 0.35, 0.3);
-const vec3 skyColHi = vec3(0., 0.6, 1.0);
-const vec3 sunCol1  = vec3(1.0,0.5,0.4);
-const vec3 sunCol2  = vec3(1.0,0.8,0.7);
-const vec3 skyCol3  = pow(sunCol2, vec3(0.25));
-const vec3 sunDir   = normalize(vec3(-1.0, 0., -1.0));
-const vec3 seaCol1  = 0.8*vec3(0.1,0.2,0.2);
+// ---------------------------==>> MANDELBONE <<==------------------------------
 
-vec3 sunDirection(in float timeOfDay)
-{
-  vec3 sunDir = sunDir;
-  float angle = timeOfDay*TAU;
-  rot(sunDir.xy, sin(angle));
-  rot(sunDir.xz, angle-0.5);
-  return sunDir;
+// -----------------------------==>> SUNSET <<==--------------------------------
+
+const float sunset_gravity = 1.0;
+const float sunset_waterTension = 0.01;
+
+/*
+const vec3 sunset_skyCol1 = vec3(0.2, 0.4, 0.6);
+const vec3 sunset_skyCol2 = vec3(0.4, 0.7, 1.0);
+const vec3 sunset_sunCol  =  vec3(8.0,7.0,6.0)/8.0;
+const vec3 sunset_seaCol1 = vec3(0.1,0.2,0.2);
+const vec3 sunset_seaCol2 = vec3(0.8,0.9,0.6);
+*/
+const vec3 sunset_skyCol1 = vec3(0.6, 0.35, 0.3);
+const vec3 sunset_skyCol2 = vec3(1.0, 0.3, 0.3);
+const vec3 sunset_sunCol1 =  vec3(1.0,0.5,0.4);
+const vec3 sunset_sunCol2 =  vec3(1.0,0.8,0.7);
+const vec3 sunset_seaCol1 = vec3(0.1,0.2,0.2);
+const vec3 sunset_seaCol2 = vec3(0.8,0.9,0.6);
+
+
+float sunset_gravityWave(in vec2 p, float k, float h) {
+  float w = sqrt(sunset_gravity*k*tanh(k*h));
+  return sin(p.y*k + w*time);
 }
 
-vec3 skyCol(in float sunf)
-{
-  return mix(skyColLo, skyColHi, clamp(sunf, 0.0, 1.0));
+float sunset_capillaryWave(in vec2 p, float k, float h) {
+  float w = sqrt((sunset_gravity*k + sunset_waterTension*k*k*k)*tanh(k*h));
+  return sin(p.y*k + w*time);
 }
 
-vec3 ambient(in float sunf, in vec3 sunDir, vec3 rd)
-{
-  return skyCol(sunf)*mix(0.5, 0.2, pow(max(dot(sunDir, rd), 0), 2));
+float sunset_seaHeight(in vec2 p) {
+  float height = 0.0;
+
+  float k = 1.0;
+  float kk = 1.3;
+  float a = 0.25;
+  float aa = 1.0/(kk*kk);
+
+  float h = 10.0;
+  p *= 0.5;
+
+  for (int i = 0; i < 3; ++i) {
+    height += a*sunset_gravityWave(p + float(i), k, h);
+    rot(p, float(i));
+    k *= kk;
+    a *= aa;
+  }
+  
+  for (int i = 3; i < 7; ++i) {
+    height += a*sunset_capillaryWave(p + float(i), k, h);
+    rot(p, float(i));
+    k *= kk;
+    a *= aa;
+  }
+
+  return height;
 }
 
-vec3 skyColor(in float sunf, in vec3 sunDir, in vec3 rd)
-{
-  float skyf = atan(rd.y, length(rd.xz))*2.0/PI;
+vec3 seaNormal(in vec2 p, in float d) {
+  vec2 eps = vec2(0.001*pow(d, 1.5), 0.0);
+  vec3 n = vec3(
+    sunset_seaHeight(p + eps) - sunset_seaHeight(p - eps),
+    2.0*eps.x,
+    sunset_seaHeight(p + eps.yx) - sunset_seaHeight(p - eps.yx)
+  );
+  
+  return normalize(n);
+}
 
-  vec3 skyCol1 = skyCol(sunf);
-  vec3 skyCol2 = skyCol(sunf);
+vec3 sunset_sunDirection() {
+  vec3 dir = normalize(vec3(0, 0.1, 1));
+  return dir;
+}
 
-  vec3 starDir = sunDir;
-  rot(starDir.xz, 0.2);
-  rot(starDir.xy, 0.2);
+vec3 sunset_skyColor(vec3 rd) {
+  vec3 sunDir = sunset_sunDirection();
 
   float sunDot = max(dot(rd, sunDir), 0.0);
-  float starDot = max(dot(rd, starDir), 0.0);
-
+  
   vec3 final = vec3(0.0);
 
-  final += mix(mix(skyCol1, skyCol2, max(0.0, skyf)), skyCol3, clamp(-skyf*2.0, 0.0, 1.0));
+  final += mix(sunset_skyCol1, sunset_skyCol2, rd.y);
 
-  final += 1.0*sunCol1*pow(sunDot, mix(30.0, 300.0, sunf));
-  final += 80.0*sunCol2*pow(sunDot, mix(400.0, 4000.0, sunf));
+  final += 0.5*sunset_sunCol1*pow(sunDot, 20.0);
 
-  final += 2.5*(abs(starDot) > 0.999999 ? 1.0 : 0.0) ;
-
+  final += 4.0*sunset_sunCol2*pow(sunDot, 400.0);
+    
   return final;
 }
 
-vec4 voronoi(in vec2 x)
-{
-  vec2 n = floor(x);
-  vec2 f = fract(x);
+vec3 sunset_main(vec2 p, vec2 q)  {
+  vec3 ro = vec3(0.0, 10.0, 0.0);
+  vec3 ww = normalize(vec3(0.0, -0.1, 1.0));
+  vec3 uu = normalize(cross( vec3(0.0,1.0,0.0), ww));
+  vec3 vv = normalize(cross(ww,uu));
+  vec3 rd = normalize(p.x*uu + p.y*vv + 2.5*ww);
 
-  vec4 m = vec4(8.0);
-  for(int j=-1; j<=1; j++)
-  for(int i=-1; i<=1; i++)
-  {
-    vec2  g = vec2(float(i), float(j));
-    vec2  o = hash(n + g);
-    vec2  r = g - f + o;
-    float d = dot(r, r);
-    if(d<m.x)
-    {
-      m = vec4(d, o.x + o.y, r);
-    }
-  }
+  vec3 col = vec3(0.0);
 
-  return vec4(sqrt(m.x), m.yzw);
-}
-
-vec3 getColor(in float timeOfDay, in float seaHeight, in float fogHeight_, in vec3 ro, in vec3 rd)
-{
-  const vec3  mountainColor   = vec3(0.68, 0.4, 0.3);
-  const vec3  sandColor       = sqrt(mountainColor);
-  const float snowHeight      = 0.9;
-  const float treeHeight      = 0.8;
-
-  int max_iter = 0;
-  float d = march(ro, rd, max_iter);
-  vec3 p = ro + d*rd;
-
-  vec3 sunDir = sunDirection(timeOfDay);
-  float sunf = atan(sunDir.y, length(sunDir.xz))*2.0/PI;
-  float sunf2 = sunf*sunf;
-
-  float fogHeight = mix(fogHeight_, 0.5*fogHeight_, sunf2);
-
-  vec3 skyCol = skyColor(sunf, sunDir, rd);
-  float ired = float(max_iter)/float(MAX_ITER);
-  vec3 col = vec3(0);
-
-
-  float dsea = (seaHeight - ro.y)/rd.y;
-
-  vec3 amb = ambient(sunf, sunDir, rd);
-
-  if (d > dsea && dsea > 0.0)
-  {
-    // SEA
-
-    vec3 psea = ro + dsea*rd;
-
-    float height = loTerrain(psea.xz);
-    float depth = max(0.0, seaHeight - height);
-
-    vec3 loNormal = getLoNormal(psea.xz, dsea);
-    float flatness = dot(loNormal, vec3(0.0, 1.0, 0.0));
-    float ff = abs(dot(rd, vec3(0.0, 1.0, 0.0)));
-
-    float dseaf = dsea/MAX_DISTANCE;
-    float dseafs = sqrt(dseaf);
-    vec4 s = sea(psea.xz, seaScale*depth, exp(-10*dseaf*dseaf));
-    float h = s.x;
-//    vec3 nor = mix(s.yzw, vec3(0.0, 1.0, 0.0), mix(0.0, 1.0, dseafs));
-    vec3 nor = s.yzw;
-
-    float mint = mix(0.05, 0.1, rand(psea.xy));
-    float shade = shadow(psea + vec3(0.0, h, 0.0), sunDir, 4.0, mint, 1.0);
-    vec3 shd = mix(mix(amb, vec3(1.0), shade), vec3(1.0), dseafs);
-
-    float fogHeight = (1.0 - shade*sunf2)*(fogHeight + 0.15*flatness - ff*(3*depth*flatness - 0.5*depth));
-    float dfog = (fogHeight - ro.y)/rd.y;
-    float fogf = dsea > dfog && dfog > 0 ? 1.0 - exp(-1.0*(dsea - dfog)) : 0.0;
-
+  float dsea = (0.0 - ro.y)/rd.y;
+  
+  vec3 sunDir = sunset_sunDirection();
+  
+  vec3 sky = sunset_skyColor(rd);
+    
+  if (dsea > 0.0) {
+    vec3 p = ro + dsea*rd;
+    float h = sunset_seaHeight(p.xz);
+    vec3 nor = mix(seaNormal(p.xz, dsea), vec3(0.0, 1.0, 0.0), smoothstep(0.0, 200.0, dsea));
     float fre = clamp(1.0 - dot(-nor,rd), 0.0, 1.0);
     fre = pow(fre, 3.0);
-    float dif = max(dot(nor,sunDir), 0.0);
-
-    vec3 refl = skyColor(sunf, sunDir, reflect(rd, nor));
-    vec3 mat = skyCol*seaCol1 + sunCol1*dif*seaCol1;
-
-    vec3 seaColor = mix(mat, mix(refl, mat, 0.75), fre*shade);
-    vec3 bottomCol = max(0.5, dif)*skyCol*sandColor;
-    seaColor = mix(bottomCol, seaColor, 1.0 - exp(-25*(d - dsea)));
-    seaColor += mix(0.4*bottomCol, vec3(0.0), clamp(pow(depth*11.0, 2.0), 0.0, 1.0));
-
-    col = mix(mix(shd*seaColor, skyCol, fogf), skyCol, dseaf*dseafs);
-  }
-  else if (d < MAX_DISTANCE)
-  {
-    // GROUND
-
-    float bandings = mix(50.0, 100.0, 0.5 + 0.5*sin(length(p.y)*10));
-    float bandingo = sin(length(p.xz)*3);
-    float bandingf = pow(0.5 + 0.5*sin(p.y*bandings + bandingo), .25);
-    float banding = mix(0.75, 1.0, bandingf);
-    vec3 mountainColor = mountainColor*banding;
-
-    vec3 hiNormal = getHiNormal(p.xz, d);
-    vec3 loNormal = getLoNormal(p.xz, d);
-    vec3 normal   = hiNormal;
-
-    float flatness = dot(loNormal, vec3(0.0, 1.0, 0.0));
-    float sflatness = sqrt(flatness);
-
-    float shade = shadow(p, sunDir, 4.0, 0.05, 1.0);
-
-    float fogHeight = (1.0 - shade*sunf2)*(fogHeight + 0.15*flatness);
-    float dfog = (fogHeight - ro.y)/rd.y;
-    float fogf = d > dfog && dfog > 0 ? 1.0 - exp(-1.0*(d - dfog)) : 0.0;
-
-    float height1 = hiTerrain(p.xz);
-    float height2 = superLoTerrain(p.xz);
-
-    float heightRatioPower = 7.0;
-
-    vec3 surfaceColor = mountainColor;
-
-    vec3 spec = vec3(0.0);
-
-    if (p.y > (snowHeight + 0.10*sin(0.1*length(p.xz)))/sflatness)
-    {
-      spec = vec3(0.5);
-      normal = loNormal;
-      heightRatioPower = 4.0;
-      surfaceColor = vec3(1.1);
-    }
-    else if (p.y < seaHeight + 0.015*treeHeight*sflatness)
-    {
-      normal = loNormal;
-      heightRatioPower = 7.0;
-      surfaceColor = sandColor;
-    }
-    else if (p.y < treeHeight*sflatness)
-    {
-      vec4 t  = voronoi(p.xz*100.0);
-      vec3 no = vec3(t.z, 0.0, t.w)*3*(1.0 - smoothstep(0.0, 9.0, d));
-      normal = normalize(loNormal + -no);
-      heightRatioPower = 5.0;
-      surfaceColor = vec3(pow(1.0 - t.x, 0.5))*vec3(0.25, 0.3, 0.15)*vec3(max(1.0, 1.5*t.y), 1.0, 1.0);
-    }
-    else
-    {
-      heightRatioPower = 7.0;
-      surfaceColor = mountainColor;
-    }
-
-    heightRatioPower *= clamp(0.6 + 0.4*abs(timeOfDay - 0.25), 0.0, 1.0);
-
-    float heightRatio = pow(height1/height2, heightRatioPower);
-
-    float dif = shade*max(0, dot(sunDir, normal));
-    vec3 shd = mix(amb, vec3(1.0), heightRatio*dif); // sunCol1?
-
-    vec3 reflectedSky = spec*skyColor(sunf, sunDir, reflect(rd, normal));
-
-    col = mix(mix(shd*surfaceColor + reflectedSky, skyCol, fogf), skyCol, pow(d/MAX_DISTANCE, 1.5));
-  }
-  else
-  {
-    // SKY
-    col = skyCol;
+    float dif = mix(0.25, 1.0, max(dot(nor,sunDir), 0.0));
+    
+    vec3 refl = sunset_skyColor(reflect(rd, nor));
+    vec3 refr = sunset_seaCol1 + dif*sunset_seaCol2*0.1; 
+    
+    col = mix(refr, 0.9*refl, fre);
+      
+    float atten = max(1.0 - dot(dsea,dsea) * 0.001, 0.0);
+    col += sunset_seaCol2 * (p.y - h) * 2.0 * atten;
+      
+    col = mix(col, sky, 1.0 - exp(-0.01*dsea));
+  } else {
+    col = sky;
   }
 
   return col;
 }
 
-const vec3 PosOrigin = vec3(8,0,8);
+// -----------------------------==>> SUNSET <<==--------------------------------
 
-const float xOffset = 5*PI;
+void mainImage(out vec4 fragColor, vec2 p, vec2 q) {
+/* TODO:
+    1. (x) Lowpass filter the distance fields and reduce size
+    2. (x) Improve effect 5 (impulse_main 2)    
+    3. (x) Find music
+    4. Convert to executable
+*/
+  p.x *= resolution.x/resolution.y;
 
-float sech(in float t)
-{
-  return 1.0/cosh(t);
-}
+  vec3 col = vec3(0.0);
 
-vec3 getIslandHopperPos(in float timeInPeriod)
-{
-  const float C = xOffset;
-  float t = timeInPeriod;
-  float x = (C - 10*cos(0.025*2*t))/(0.025*(65 + 35*cos(0.025*t)));
-  float y = 1.0;
-  float z = t;
-  return vec3(x, y, z);
-}
-
-vec3 getIslandHopperPosD(in float timeInPeriod)
-{
-  const float C = xOffset;
-  float t = timeInPeriod;
-  float dx = (sin(0.025*t)*(1.4*C - 14.*cos(0.05*t)) + sin(0.05*t)*(28*cos(0.025*t) + 52))/pow(7*cos(0.025*t) + 13, 2.0);
-  float dy = 0.0;
-  float dz = 1.0;
-  return vec3(dx, dy, dz);
-}
-
-vec3 getIslandHopperPosDD(in float timeInPeriod)
-{
-  const float C = xOffset;
-  float t = timeInPeriod;
-  float ddx = (0.025*cos(0.025*t)*(1.4*C - 14*cos(0.05*t)) + 0.05*(28*cos(0.025*t) + 52)*cos(0.05*t))/pow(7*cos(0.025*t) + 13, 2.0) + (0.35*sin(0.025*t)*(sin(0.025*t)*(1.4*C - 14*cos(0.05*t)) + sin(0.05*t)*(28*cos(0.025*t) + 52)))/pow(7*cos(0.025*t) + 13, 3.0);
-  float ddy = 0;
-  float ddz = 0.0;
-  return 12*vec3(ddx, ddy, ddz);
-}
-
-const vec3 centerOfLonelyMountain = vec3(0.0, 1.0 , 407.0);
-
-vec3 getLonelyMountainPos(in float timeInPeriod)
-{
-  float t = (timeInPeriod - 4)*0.05;
-  const float w = 4*log(2.0);
-  float x = -2.6 + -4*(exp(-w*(t - 1.5)*(t - 1.5)) - 1.0);
-  float y = 1.1*exp(-w*(t - 1.5)*(t - 1.5)) + 0.1;
-  float z = 8 - ((13.0/3.0)*t*t*t + (-39.0/2.0)*t*t + (145.0/6.0)*t);
-
-  return PosOrigin + centerOfLonelyMountain + vec3(x, y, z);
-}
-
-vec3 getLonelyMountainPosD(in float timeInPeriod)
-{
-  return PosOrigin + centerOfLonelyMountain - getLonelyMountainPos(timeInPeriod);
-}
-
-vec3 getLonelyMountainPosDD(in float timeInPeriod)
-{
-  return vec3(0.0);
-}
-
-vec3 getCirclingLonelyMountainPos(in float timeInPeriod)
-{
-  float t = -(timeInPeriod - 4)*0.05 + 2;
-  const float d = 12;
-  float x = d*cos(t);
-  float y = 3.5;
-  float z = d*sin(t);
-
-  return PosOrigin + centerOfLonelyMountain + vec3(x, y, z);
-}
-
-vec3 getCirclingLonelyMountainPosD(in float timeInPeriod)
-{
-  return PosOrigin + centerOfLonelyMountain - getCirclingLonelyMountainPos(timeInPeriod);
-}
-
-vec3 getCirclingLonelyMountainPosDD(in float timeInPeriod)
-{
-  return vec3(0.0);
-}
-
-vec3 getMistyMountainsPos(in float timeInPeriod)
-{
-  return PosOrigin + vec3(0.0, 1.4+0., timeInPeriod - 4);
-}
-
-vec3 getMistyMountainsPosD(in float timeInPeriod)
-{
-  return vec3(0.0, -0.1, 1.0);
-}
-
-vec3 getMistyMountainsPosDD(in float timeInPeriod)
-{
-  return vec3(0.0);
-}
-
-
-vec3 getSample(in vec2 p)
-{
-  vec3 pos   = vec3(0.0, 2.0, 0.0);
-  vec3 posd  = vec3(0.0, 0.0, 1.0);
-  vec3 posdd = vec3(0.0, 0.0, 0.0);
-
-  float timeInPeriod = TIMEINPERIOD;
-  float timeOfDay    = 0.25;
-  float seaHeight    = 0.0;
-  float fogHeight    = 0.5;
-  float posTimeM     = 1.0;
-  float posTimeO     = 0.0;
-  vec3  posT         = vec3(0.0);
-  vec3  posDT        = vec3(0.0);
-
-  switch(PERIOD)
-  {
-  case 0:
-    timeOfDay = -0.01*timeInPeriod/INTERVAL + 0.485;
-    seaHeight = 0.55;
-    posTimeM  = 2.0;
-    posT      = vec3(0.0, -0.3, 0.0);
-    break;
-  case 1:
-    seaHeight = 0.0;
-    timeOfDay = 0.01*timeInPeriod/INTERVAL + 0.467;
-    posTimeM  = 0.5;
-    posDT     = vec3(0.0, -0.2, 0.0);
-    break;
-  case 2:
-    seaHeight = 0.0;
-    timeOfDay = 0.025*timeInPeriod/INTERVAL + 0.07;
-    posT      = vec3(0.0, 0.0, 20.0);
-    posDT     = vec3(0.0, -0.1, 0.0);
-    break;
-  case 3:
-    timeOfDay = 0.23*timeInPeriod/INTERVAL + 0.02;
-    seaHeight = 0.5;
-    break;
-  case 4:
-    timeOfDay = 0.025*timeInPeriod/INTERVAL + 0.425;
-    seaHeight = 0.5;
-    posTimeM  = 2.0;
-    posTimeO  = 30.0;
-    posDT     = vec3(0.0, -0.1, 0.0);
-    break;
-  case 5:
-    seaHeight = 0.24;
-    timeOfDay = 0.01*timeInPeriod/INTERVAL + 0.467;
-    posTimeM  = 0.5;
-    posDT     = vec3(0.0, -0.2, 0.0);
-    break;
-  case 6:
-    timeOfDay = 0.025*timeInPeriod/INTERVAL + 0.07;
-    seaHeight = 0.5;
-    fogHeight = 0.75;
-    break;
-  case 7:
-    seaHeight = 0.5;
-    timeOfDay = 0.025*timeInPeriod/INTERVAL + 0.45;
-    posT      = vec3(0.0, 0.0, 90.0);
-    posDT     = vec3(0.0, -0.1, 0.0);
-    break;
-  case 8:
-    timeOfDay = 0.23*(INTERVAL + timeInPeriod)/INTERVAL + 0.02;
-    seaHeight = 0.5;
-    posTimeO  = INTERVAL;
-    break;
-  case 9:
-    timeOfDay = 0.025*(INTERVAL + timeInPeriod)/INTERVAL + 0.425;
-    seaHeight = 0.5;
-    posTimeM  = 2.0;
-    posTimeO  = 30.0 + INTERVAL;
-    posDT     = vec3(0.0, -0.1, 0.0);
-    break;
-  default:
-    break;
+  switch(PERIOD) {
+  case 0: col = impulse_main(p, q); break;
+  case 1: col = mandala_main(p, q); break;
+  case 2: col = mandelbone_main(p, q); break;
+  case 3: col = infcw_main(p, q); break;
+  case 4: col = mandelbone_main(p, q); break;
+  case 5: col = impulse_main(p, q); break;
+  case 6: col = mandelbone_main(p, q); break;
+  case 7: col = mandala_main(p, q); break;
+  case 8: col = mandelbone_main(p, q); break;
+  case 9: col = sunset_main(p, q); break;
   }
+//  col = impulse_main(p, q);
 
-  float posTime = timeInPeriod*posTimeM + posTimeO;
-
-  switch(PERIOD)
-  {
-  case 0:
-  case 1:
-  case 2:
-  case 5:
-  case 7:
-    pos   = getMistyMountainsPos(posTime);
-    posd  = getMistyMountainsPosD(posTime);
-    posdd = getMistyMountainsPosDD(posTime);
-    break;
-  case 3:
-    pos   = getLonelyMountainPos(posTime);
-    posd  = getLonelyMountainPosD(posTime);
-    posdd = getLonelyMountainPosDD(posTime);
-    break;
-  case 6:
-    pos   = getCirclingLonelyMountainPos(posTime);
-    posd  = getCirclingLonelyMountainPosD(posTime);
-    posdd = getCirclingLonelyMountainPosDD(posTime);
-    break;
-  case 4:
-  case 9:
-    pos   = getIslandHopperPos(posTime);
-    posd  = getIslandHopperPosD(posTime);
-    posdd = getIslandHopperPosDD(posTime);
-    break;
-  case 8:
-    pos   = getLonelyMountainPos(posTime);
-    posd  = getLonelyMountainPosD(posTime);
-    posdd = getLonelyMountainPosDD(posTime);
-    break;
-  default:
-    break;
-  }
-
-  vec3 up = vec3(0.0,1.0,0.0) + posdd ;
-  vec3 ro = pos + posT;
-  vec3 ww = normalize(posd + posDT);
-  vec3 uu = normalize(cross(up, ww));
-  vec3 vv = normalize(cross(ww, uu));
-  vec3 rd = normalize(p.x*uu + p.y*vv + 2.0*ww);
-
-  vec3 col = getColor(timeOfDay, seaHeight, fogHeight, ro, rd);
-
-  return col;
-
-}
-
-vec3 saturate(in vec3 col)
-{
-  return clamp(col, vec3(0.0), vec3(1.0));
-}
-
-void mainImage(out vec4 fragColor, in vec2 p)
-{
-  p.x *= iResolution.x/iResolution.y;
-
-  vec3 col = getSample(p);
-
-  col = saturate(col);
-
-  float timeInPeriod = TIMEINPERIOD;
-
-  float fade = clamp(timeInPeriod*0.5, 0.0, 1.0)*clamp((INTERVAL - timeInPeriod)*0.5, 0.0, 1.0);
-  col = mix(vec3(0.0), col, fade*fade);
-
-  if (PERIOD == 0)
-  {
-    vec2 tp = 0.5*vec2(p.x + 0.75, -p.y + 0.02) + 0.5;
-    tp.x /= 1920.0/1200.0;
-    float texFade = clamp((iTime - 8.0)*2.0/INTERVAL, 0.0, 1.0);
-    col = mix(texture(iChannel1, tp).xyz, col, texFade);
-  }
-
+  col = fade(col, p);
   fragColor = vec4(col, 1.0);
 }

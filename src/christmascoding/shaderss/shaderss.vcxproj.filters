@@ -17,8 +17,8 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="shaderss.ico" />
-    <Image Include="impulse.png" />
-    <Image Include="value_noise.png" />
+    <Image Include="impulse1.png" />
+    <Image Include="impulse2.png" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="shaderss.rc" />

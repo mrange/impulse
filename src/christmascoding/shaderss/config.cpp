@@ -11,9 +11,9 @@ shader_configuration get__current_configuration ()
   return shader_configuration
   {
       0
-    , 360
+    , 220
     , 1
-    , { L"value_noise.png", L"impulse.png" }
+    , { L"impulse1.png", L"impulse2.png" }
   };
 }
 
@@ -47,10 +47,11 @@ std::vector<BYTE> loaded_image::get__image_bits ()
     , &pixels.front ()
     ));
 
+  /*
+  // Flip image
   std::vector<BYTE> row;
   row.resize (stride);
 
-  /*
   for (auto y = 0U; y < wic_height/2; ++y)
   {
     auto from = y;

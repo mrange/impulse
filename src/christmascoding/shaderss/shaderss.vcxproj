@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -196,9 +196,9 @@
     <ResourceCompile Include="shaderss.rc" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="impulse.png" />
+    <Image Include="impulse1.png" />
+    <Image Include="impulse2.png" />
     <Image Include="shaderss.ico" />
-    <Image Include="value_noise.png" />
   </ItemGroup>
   <ItemGroup>
     <None Include="fragment.glsl" />

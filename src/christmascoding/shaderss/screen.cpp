@@ -26,7 +26,7 @@
 
 extern HINSTANCE get__hinstance () noexcept;
 
-#define PERIOD 36
+#define PERIOD 22.f
 
 namespace
 {
@@ -105,7 +105,7 @@ namespace
     0, 0, 0, 0                                            ,
   };
 
-  WCHAR const window_title[]      = L"The sun, the sea and the mountains"; // The title bar text
+  WCHAR const window_title[]      = L"Impulse Christmas Coding 2019"; // The title bar text
   WCHAR const window_class_name[] = L"SHADER_SS"          ; // the main window class name
 
   char const vertex_shader[] = R"SHADER(
@@ -115,6 +115,7 @@ namespace
 
 layout (location=0) in vec2 inVer;
 out vec2 p;
+out vec2 q;
 
 out gl_PerVertex
 {
@@ -125,6 +126,7 @@ void main()
 {
   gl_Position=vec4(inVer,0.0,1.0);
   p=inVer;
+  q=0.5*inVer+0.5;
 }
 )SHADER";
 
@@ -316,18 +318,12 @@ void main()
         glTexImage2D    (GL_TEXTURE_2D, 0, GL_RGB, dim.first, dim.second, 0, GL_RGB, GL_UNSIGNED_BYTE, &pixels.front ());
         glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         auto single_bit_number = (dim.first & (dim.first - 1)) == 0;
+        glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         if (dim.first == dim.second && single_bit_number)
         {
-          glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-          glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-          glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-//          oglGenerateMipmap(GL_TEXTURE_2D);
-        }
-        else
-        {
-          glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-          glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-          glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+          oglGenerateMipmap(GL_TEXTURE_2D);
         }
         ++tidx;
       }
@@ -372,10 +368,10 @@ void main()
       , height*1.f
     };
     
-    oglProgramUniform1f  (fsid, 0, time);
+    oglProgramUniform1f  (fsid, 0 , time);
     oglProgramUniform1i  (fsid, 10, period);
     oglProgramUniform1f  (fsid, 11, timeInPeriod);
-    oglProgramUniform2fv (fsid, 1, 1, reso);
+    oglProgramUniform2fv (fsid, 1 , 1, reso);
 
     auto tidx = 0;
 
