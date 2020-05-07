@@ -105,7 +105,7 @@ namespace
     0, 0, 0, 0                                            ,
   };
 
-  WCHAR const window_title[]      = L"Impulse Christmas Coding 2019"; // The title bar text
+  WCHAR const window_title[]      = L"Impulse 2D Psychedelics"; // The title bar text
   WCHAR const window_class_name[] = L"SHADER_SS"          ; // the main window class name
 
   char const vertex_shader[] = R"SHADER(

@@ -94,7 +94,7 @@ const Effect effects[] = Effect[](
     Effect(MAJOR_SMEAR   , MINOR_NONE , 0.0, 140.0      , 0.0) // FIXED
   );
 #else
-#define START_DELAY   4.0
+#define START_DELAY   3.15
 #define ENABLE_TUNNEL
 #define ENABLE_IMPULSE
 #define ENABLE_DRAGON
@@ -180,7 +180,7 @@ const Effect effects[] = Effect[](
 #endif
 const vec2 sca0 = SCA(0.0);
 
-const float effectDuration  = 7.0;
+const float effectDuration  = 6.75;
 const float fadeTime        = 1.0;
 const float startDelay      = START_DELAY;
 
