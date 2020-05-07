@@ -463,6 +463,11 @@ int show__screen (int nCmdShow, bool fsm)
 
     auto time = freq_multiplier*(now.QuadPart - start.QuadPart);
 
+    if (time > duration)
+    {
+      done = true;
+    }
+
     draw_gl (static_cast<float> (time));
 
     SwapBuffers (hdc);

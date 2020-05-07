@@ -1493,10 +1493,10 @@ void mainImage(out vec4 fragColor, vec2 p, vec2 q) {
   col = clamp(col, 0.0, 1.0);
   
   float initialFade = smoothstep(0.5, effectDuration, dtime);
+  float exitFade = 1.0 - smoothstep((effects.length - 1)*effectDuration, effects.length*effectDuration, dtime);
   
   col *= sqrt(initialFade);
- 
-//  col = fadeCol;
+  col *= sqrt(exitFade);
  
   fragColor = vec4(col.xyz, 1.0);
 }
