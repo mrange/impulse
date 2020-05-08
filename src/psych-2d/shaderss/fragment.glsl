@@ -75,6 +75,10 @@ void main(void)
 #define MAJOR_FORT       7
 
 #define MAJOR_JUPYTER    8
+#define MINOR_PLANET     0
+#define MINOR_FLAT       1
+#define MINOR_MIRROR     2
+#define MINOR_KALEIDO    3
 
 struct Effect {
   int      major  ;
@@ -89,12 +93,12 @@ struct Effect {
 
 #ifdef EXPERIMENTING
 #define START_DELAY   0.0
-#define ENABLE_SMEAR
+#define ENABLE_JUPYTER
 const Effect effects[] = Effect[](
-    Effect(MAJOR_SMEAR   , MINOR_NONE , 0.0, 140.0      , 0.0) // FIXED
+    Effect(MAJOR_DRAGON  , MINOR_FADEIN    , 0.0, 1.4        , 5.5)
   );
 #else
-#define START_DELAY   3.15
+#define START_DELAY   3.24
 #define ENABLE_TUNNEL
 #define ENABLE_IMPULSE
 #define ENABLE_DRAGON
@@ -116,34 +120,35 @@ const Effect effects[] = Effect[](
   , Effect(MAJOR_TUNNEL  , MINOR_CIRCLES   , 0.0, pow(0.5, 5), 0.0)
   , Effect(MAJOR_TUNNEL  , MINOR_CIRCLES   , 0.0, pow(0.5, 8), 0.0)
   , Effect(MAJOR_IMPULSE , MINOR_PULSAR    , 0.0, PI/10      , 0.0) // FIXED
-  , Effect(MAJOR_TUNNEL  , MINOR_STARS     , 0.0, pow(0.5, 5), 0.0)
   , Effect(MAJOR_TUNNEL  , MINOR_POLYGON   , 0.0, pow(0.5, 5), 3.0)
   , Effect(MAJOR_TUNNEL  , MINOR_POLYGON   , 1.0, pow(0.5, 5), 3.0)
-  , Effect(MAJOR_TUNNEL  , MINOR_STARS     , 0.0, pow(0.5, 6), 0.0)
+  , Effect(MAJOR_TUNNEL  , MINOR_STARS     , 0.0, pow(0.5, 5), 0.0)
   , Effect(MAJOR_TUNNEL  , MINOR_POLYGON   , 0.0, pow(0.5, 5), 5.0)
   , Effect(MAJOR_TUNNEL  , MINOR_POLYGON   , 1.0, pow(0.5, 5), 5.0)
-  , Effect(MAJOR_ACID    , MINOR_NONE      , 0.0, 1.0        , 0.1)
-  , Effect(MAJOR_ACID    , MINOR_NONE      , 1.0, 1.0        , 0.1)
+  , Effect(MAJOR_JUPYTER , MINOR_FLAT      , 0.0, 45.0       , 0.0)
+  , Effect(MAJOR_JUPYTER , MINOR_FLAT      , 1.0, 45.0       , 0.0)
   , Effect(MAJOR_TUNNEL  , MINOR_ICIRCLES  , 0.0, pow(0.5, 2), 0.0)
   , Effect(MAJOR_TUNNEL  , MINOR_ICIRCLES  , 0.0, pow(0.5, 4), 0.0)
   , Effect(MAJOR_DRAGON  , MINOR_NONE      , 0.0, -1.0       , 5.0)
   , Effect(MAJOR_DRAGON  , MINOR_NONE      , 1.0, -1.0       , 5.0)
+  , Effect(MAJOR_ACID    , MINOR_NONE      , 0.0, 1.0        , 0.1)
+  , Effect(MAJOR_ACID    , MINOR_NONE      , 1.0, 1.0        , 0.1)
   , Effect(MAJOR_SMEAR   , MINOR_NONE      , 0.0, 140.0      , 0.0) // FIXED
   , Effect(MAJOR_SMEAR   , MINOR_NONE      , 1.0, 140.0      , 0.0)
   , Effect(MAJOR_DRAGON  , MINOR_NONE      , 0.0, 1.4        , 5.0)
   , Effect(MAJOR_DRAGON  , MINOR_NONE      , 1.0, 1.4        , 5.0)
   , Effect(MAJOR_TUNNEL  , MINOR_STARFIELD , 0.0, pow(0.5, 5), 0.0)
-  , Effect(MAJOR_IMPULSE , MINOR_PULSAR    , 0.0, PI/10      , 0.0)
+  , Effect(MAJOR_DRAGON  , MINOR_NONE      , 0.0, 0.0        , 1.6)
   , Effect(MAJOR_TUNNEL  , MINOR_POLYGON   , 0.0, pow(0.5, 4), 2.0)
   , Effect(MAJOR_TUNNEL  , MINOR_POLYGON   , 1.0, pow(0.5, 4), 2.0)
-  , Effect(MAJOR_ACID    , MINOR_NONE      , 0.0, 3.0        , 0.5)
-  , Effect(MAJOR_ACID    , MINOR_NONE      , 1.0, 3.0        , 0.5)
+  , Effect(MAJOR_JUPYTER , MINOR_MIRROR    , 0.0, 47.0       , 0.0)
+  , Effect(MAJOR_JUPYTER , MINOR_MIRROR    , 1.0, 47.0       , 0.0)
   , Effect(MAJOR_TUNNEL  , MINOR_ICIRCLES  , 0.0, pow(0.5, 3), 0.0)
   , Effect(MAJOR_TUNNEL  , MINOR_ICIRCLES  , 1.0, pow(0.5, 3), 0.0)
   , Effect(MAJOR_FORT    , MINOR_NONE      , 0.0, 1.0        , 0.2)
   , Effect(MAJOR_FORT    , MINOR_NONE      , 0.0, 2.0        , 0.5)
   , Effect(MAJOR_FORT    , MINOR_NONE      , 0.0, 3.0        , 0.8)
-  , Effect(MAJOR_DRAGON  , MINOR_NONE      , 0.0, 0.0        , 1.6)
+  , Effect(MAJOR_IMPULSE , MINOR_PULSAR    , 0.0, PI/10      , 0.0) // FIXED
   , Effect(MAJOR_DREAMS  , MINOR_NONE      , 0.0, -35.0      , 0.0) // FIXED
   , Effect(MAJOR_DREAMS  , MINOR_NONE      , 1.0, -35.0      , 0.0)
   , Effect(MAJOR_DREAMS  , MINOR_NONE      , 2.0, -35.0      , 0.0)
@@ -156,19 +161,21 @@ const Effect effects[] = Effect[](
   , Effect(MAJOR_GLOWBALL, MINOR_NONE      , 0.0, 11.0       , 0.5)
   , Effect(MAJOR_GLOWBALL, MINOR_NONE      , 0.0, 317.0      , 0.5)
   , Effect(MAJOR_TUNNEL  , MINOR_POLYGON   , 0.0, pow(0.5, 5), 5.0)
-  , Effect(MAJOR_TUNNEL  , MINOR_POLYGON   , 1.0, pow(0.5, 5), 5.0)
-  , Effect(MAJOR_DRAGON  , MINOR_NONE      , 0.0, -1.4       , 5.0)
-  , Effect(MAJOR_DRAGON  , MINOR_NONE      , 1.0, -1.4       , 5.0)
+  , Effect(MAJOR_JUPYTER , MINOR_KALEIDO   , 0.0, 70.0       , 0.0)
+  , Effect(MAJOR_JUPYTER , MINOR_KALEIDO   , 1.0, 70.0       , 0.0)
   , Effect(MAJOR_TUNNEL  , MINOR_ICIRCLES  , 0.0, pow(0.5, 2), 0.0)
   , Effect(MAJOR_TUNNEL  , MINOR_ICIRCLES  , 1.0, pow(0.5, 2), 0.0)
-  , Effect(MAJOR_IMPULSE , MINOR_PULSAR    , 0.0, PI/10      , 0.0)
+  , Effect(MAJOR_TUNNEL  , MINOR_ICIRCLES  , 0.0, pow(0.5, 5), 0.0)
+  , Effect(MAJOR_TUNNEL  , MINOR_ICIRCLES  , 1.0, pow(0.5, 5), 0.0)
   , Effect(MAJOR_ACID    , MINOR_NONE      , 0.0, 3.0        , 0.5)
   , Effect(MAJOR_ACID    , MINOR_NONE      , 1.0, 3.0        , 0.5)
+  , Effect(MAJOR_JUPYTER , MINOR_KALEIDO   , 0.0, 80.0       , 0.0)
   , Effect(MAJOR_DRAGON  , MINOR_NONE      , 0.0, 1.0        , 5.0)
   , Effect(MAJOR_DRAGON  , MINOR_NONE      , 1.0, 1.0        , 5.0)
   , Effect(MAJOR_FORT    , MINOR_NONE      , 0.0, 3.0        , 0.1)
-  , Effect(MAJOR_JUPYTER , MINOR_NONE      , 0.0, 38.0       , 0.0)
+  , Effect(MAJOR_JUPYTER , MINOR_NONE      , 0.0, 0.0        , 0.0)
   , Effect(MAJOR_FORT    , MINOR_NONE      , 0.0, 3.0        , 1.0)
+  , Effect(MAJOR_JUPYTER , MINOR_MIRROR    , 0.0, 47.0       , 0.0)
   , Effect(MAJOR_IMPULSE , MINOR_80S       , 0.0, 0.0        , 0.0)
   , Effect(MAJOR_DREAMS  , MINOR_NONE      , 0.0, 24.0       , 0.0)
   , Effect(MAJOR_DREAMS  , MINOR_NONE      , 1.0, 24.0       , 0.0)
@@ -180,7 +187,7 @@ const Effect effects[] = Effect[](
 #endif
 const vec2 sca0 = SCA(0.0);
 
-const float effectDuration  = 6.75;
+const float effectDuration  = 6.733;
 const float fadeTime        = 1.0;
 const float startDelay      = START_DELAY;
 
@@ -203,6 +210,14 @@ float mod1(inout float p, float size) {
   float c = floor((p + halfsize)/size);
   p = mod(p + halfsize, size) - halfsize;
   return c;
+}
+
+float modMirror1(inout float p, float size) {
+    float halfsize = size*0.5;
+    float c = floor((p + halfsize)/size);
+    p = mod(p + halfsize,size) - halfsize;
+    p *= mod(c, 2.0)*2 - 1;
+    return c;
 }
 
 vec2 mod2(inout vec2 p, vec2 size) {
@@ -1253,7 +1268,7 @@ float fort_nfield(vec2 p, vec2 c) {
     float m = dot(u,u);
     u = SABS(u, 0.0125)/m + c;
     u *= pow(s, 0.65);
-    a += pow(s, 1.0)*m;
+    a += s*m;
     s *= 0.75;
   }
   
@@ -1353,18 +1368,8 @@ float jupyter_df(vec2 p) {
   return d;
 }
 
-vec3 jupyter_effect(int minor, float input0, float input1, float gtime, float ltime, vec2 p, vec2 q) {
-  float ttime = ltime*TAU;
-  vec3 col = vec3(1.0);
- 
-  float smoothPixel = 10.0/RESOLUTION.y;
-
-  float z = 0.5;
-  
-  p /= z;
-
-  float d = jupyter_df(p)*z;
-
+vec3 jupyter_warp(vec2 p, vec2 q, vec3 lig, float ttime, float d) {
+  vec3 col;
   vec2 v;
   vec2 w;
  
@@ -1377,8 +1382,6 @@ vec3 jupyter_effect(int minor, float input0, float input1, float gtime, float lt
   v *= td;
   w *= td;
   
-  vec3 lig = normalize(vec3(0., 0.2, -0.4));
-  rot(lig.xy, ttime/10.0);
   float dif = max(dot(lig, n), 0.5);
 
   const vec3 col11 = vec3(0.1, 0.3, 0.8);
@@ -1389,17 +1392,103 @@ vec3 jupyter_effect(int minor, float input0, float input1, float gtime, float lt
   vec3 col1 = mix(col11, col12, q.x);
   vec3 col2 = mix(col21, col22, q.y);
  
-  col = pow(dif, 0.75)*tanh(pow(abs(f + 0.5), 1.5)) + (length(v)*col1 + length(w)*col2);
+  return pow(dif, 0.75)*tanh(pow(abs(f + 0.5), 1.5)) + (length(v)*col1 + length(w)*col2);
+}
+
+vec3 jupyter_planet(vec2 p, vec2 q, float ltime, float ttime) {
+  float smoothPixel = 10.0/RESOLUTION.y;
+
+  float z = 0.5;
+  
+  p /= z;
+
+  float d = jupyter_df(p)*z;
+
+  vec3 lig = normalize(vec3(0., 0.2, -0.4));
+  rot(lig.xy, ttime/10.0);
+  vec3 col = jupyter_warp(p, q, lig, ttime, d);
+
   col *= pow(max(-d, 0.0), 0.5);
-//  col = vec3(0.0);
   col += vec3(1.0 - pow(smoothstep(0.0, 0.2, -d), 0.5))*0.25*vec3(0.0, 0.0, 1.0);
   col += vec3(1.0 - pow(smoothstep(0.0, 0.1, -d), 0.25))*1.5*vec3(1.0, 0.8, 0.8);
   vec3 ccol = vec3(1.0 - pow(smoothstep(0.0, 0.2, d), 0.25))*2.0*vec3(1.0, 0.8, 0.8);
 
   col = mix(col, ccol, smoothstep(0.0, smoothPixel, d));
 
-  col = postProcess(col, q);
+  return col;
+}
 
+vec3 jupyter_flat(vec2 p, vec2 q, float ltime, float ttime) {  
+  p += ltime*0.0125;
+  p *= 2.0 - ltime*0.0125;
+  rot(p, (ltime-effectDuration)*TAU/900.0);
+
+  vec3 lig = normalize(vec3(0., 0.2, -0.4));
+  rot(lig.xy, ttime/10.0);
+  vec3 col = jupyter_warp(p, q, lig, ttime, 1.0);
+  
+  col = clamp(col, 0.0, 1.0);
+  col = pow(col, vec3(1.5, 2.5, 3.5));
+
+  return col;
+}
+
+vec3 jupyter_mirror(vec2 p, vec2 q, float ltime, float ttime) {  
+  p*=2.0;
+  p.x = SABS(p.x, 0.125);
+  p.y *= -1.0;
+
+  vec3 lig = normalize(vec3(0.2, 0.2, -0.2));
+  vec3 col = jupyter_warp(p, q, lig, ttime, 1.0);
+  
+  col = clamp(col, 0.0, 1.0);
+  col = pow(col, vec3(1.5, 2.5, 3.5)*1.5);
+
+  return col;
+}
+
+vec3 jupyter_kaleido(vec2 p, vec2 q, float ltime, float ttime) {  
+  p += ltime*0.0125;
+  p *= 2.0 - ltime*0.0125;
+  rot(p, (ltime-effectDuration)*TAU/900.0);
+  
+  vec2 pp = toPolar(p);
+  modMirror1(pp.y, PI/15.0);
+  p = toRect(pp);
+
+  vec3 lig = normalize(vec3(0.2, 0.2, 0.2));
+//  rot(lig.xz, ttime/effectDuration);
+  vec3 col = jupyter_warp(p, q, lig, ttime, 1.0);
+  
+  col = clamp(col, 0.0, 1.0);
+  col = pow(col, vec3(1.5, 2.5, 3.5));
+
+  return col;
+}
+
+vec3 jupyter_effect(int minor, float input0, float input1, float gtime, float ltime, vec2 p, vec2 q) {
+  float ttime = (ltime + input0)*TAU;
+
+  vec3 col = vec3(0.5);
+
+  switch(minor) {
+  case MINOR_PLANET:
+    col = jupyter_planet(p, q, ltime, ttime);
+    break;
+  case MINOR_FLAT:
+    col = jupyter_flat(p, q, ltime, ttime);
+    break;
+  case MINOR_MIRROR:
+    col = jupyter_mirror(p, q, ltime, ttime);
+    break;
+  case MINOR_KALEIDO:
+    col = jupyter_kaleido(p, q, ltime, ttime);
+    break;
+  default:
+    col = vec3(0.5, 0.0, 0.0);
+  }
+
+  col = postProcess(col, q);
   return col;
 }
 
@@ -1494,9 +1583,11 @@ void mainImage(out vec4 fragColor, vec2 p, vec2 q) {
   
   float initialFade = smoothstep(0.5, effectDuration, dtime);
   float exitFade = 1.0 - smoothstep((effects.length - 1)*effectDuration, effects.length*effectDuration, dtime);
-  
+
+#ifndef EXPERIMENTING
   col *= sqrt(initialFade);
   col *= sqrt(exitFade);
+#endif
  
   fragColor = vec4(col.xyz, 1.0);
 }
