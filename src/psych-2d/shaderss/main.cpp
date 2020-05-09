@@ -67,6 +67,13 @@ int APIENTRY wWinMain (
 
     assert (match.size () == 5);
 
+    MessageBoxW(
+        nullptr
+      , L"Impulse psychedelic dreams in 2D\n\nMusic 'Sprung' by 'Astroboy'\nLicensed under CC BY-NC-ND 3.0\nDownloaded from: https://sampleswap.org/"
+      , L"Impulse psychedelic dreams in 2D"
+      , MB_OK
+      );
+
     if (match[2].matched)
     {
       show__screen (nCmdShow, false);
