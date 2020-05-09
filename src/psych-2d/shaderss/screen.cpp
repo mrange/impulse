@@ -26,7 +26,7 @@
 
 extern HINSTANCE get__hinstance () noexcept;
 
-#define PERIOD 6.74f
+#define PERIOD 6.75f
 #undef max
 
 namespace
@@ -460,6 +460,7 @@ void main()
     {
       CHECK_MCI (mciSendStringW (LR"PATH(open "music.mp3" alias music)PATH", nullptr, 0, hwnd));
       CHECK_MCI (mciSendStringW (L"set music time format milliseconds", nullptr, 0, hwnd));
+//      CHECK_MCI (mciSendStringW (L"seek music to 415000", nullptr, 0, hwnd));
       CHECK_MCI (mciSendStringW (L"play music", nullptr, 0, hwnd));
 
       has_music = true;

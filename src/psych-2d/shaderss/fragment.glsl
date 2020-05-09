@@ -188,7 +188,7 @@ const Effect effects[] = Effect[](
 #endif
 const vec2 sca0 = SCA(0.0);
 
-const float effectDuration  = 6.74;
+const float effectDuration  = 6.75;
 const float fadeTime        = 1.0;
 const float startDelay      = START_DELAY;
 
