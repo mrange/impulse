@@ -175,19 +175,20 @@ const Effect effects[] = Effect[](
   , Effect(MAJOR_FORT    , MINOR_NONE      , 0.0, 3.0        , 0.1)
   , Effect(MAJOR_JUPYTER , MINOR_NONE      , 0.0, 0.0        , 0.0)
   , Effect(MAJOR_FORT    , MINOR_NONE      , 0.0, 3.0        , 1.0)
-  , Effect(MAJOR_JUPYTER , MINOR_MIRROR    , 0.0, 47.0       , 0.0)
-  , Effect(MAJOR_IMPULSE , MINOR_80S       , 0.0, 0.0        , 0.0)
+  , Effect(MAJOR_JUPYTER , MINOR_MIRROR    , 0.0, 130.0       , 0.0)
+  , Effect(MAJOR_JUPYTER , MINOR_MIRROR    , 1.0, 130.0       , 0.0)
   , Effect(MAJOR_DREAMS  , MINOR_NONE      , 0.0, 24.0       , 0.0)
   , Effect(MAJOR_DREAMS  , MINOR_NONE      , 1.0, 24.0       , 0.0)
   , Effect(MAJOR_DREAMS  , MINOR_NONE      , 2.0, 24.0       , 0.0)
   , Effect(MAJOR_DREAMS  , MINOR_NONE      , 3.0, 24.0       , 0.0)
-  , Effect(MAJOR_DREAMS  , MINOR_NONE      , 4.0, 24.0       , 0.0)
+  , Effect(MAJOR_IMPULSE , MINOR_80S       , 0.0, 0.0        , 0.0)
+//  , Effect(MAJOR_DREAMS  , MINOR_NONE      , 4.0, 24.0       , 0.0)
   );
 
 #endif
 const vec2 sca0 = SCA(0.0);
 
-const float effectDuration  = 6.733;
+const float effectDuration  = 6.74;
 const float fadeTime        = 1.0;
 const float startDelay      = START_DELAY;
 
@@ -1434,7 +1435,7 @@ vec3 jupyter_flat(vec2 p, vec2 q, float ltime, float ttime) {
 }
 
 vec3 jupyter_mirror(vec2 p, vec2 q, float ltime, float ttime) {  
-  p*=2.0;
+  p*=2.0 - ltime*0.0125;
   p.x = SABS(p.x, 0.125);
   p.y *= -1.0;
 

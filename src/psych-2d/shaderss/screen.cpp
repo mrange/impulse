@@ -440,8 +440,9 @@ int show__screen (int nCmdShow, bool fsm)
 
   auto      freq_multiplier = 1. / freq.QuadPart;
   int       frames          = 0;
+  int       total_frames    = 0;
   long long last_second     = 0;
-  wchar_t window_title[64]  {};
+  wchar_t window_title[256] {};
 
   // Main message loop:
   while (true)
@@ -472,14 +473,17 @@ int show__screen (int nCmdShow, bool fsm)
 
     SwapBuffers (hdc);
 
+    ++total_frames;
     ++frames;
 
-    auto second = static_cast<long long >(time);
+    auto second = static_cast<long long>(time);
 
     if (!full_screen_mode && second > last_second)
     {
+      auto frame_time = total_frames*1.0/60.0;  // Assuming 60FPS
+      auto time_diff = time - frame_time;
       last_second = second;
-      std::swprintf (window_title, (sizeof window_title)/2, L"FPS: %i", frames);
+      std::swprintf (window_title, (sizeof window_title)/2, L"FPS: %i, DIFF: %0.2f, TIME: %0.2f", frames, time_diff, time);
       SetWindowText (hwnd, window_title);
       frames = 0;
     }

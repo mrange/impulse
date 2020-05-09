@@ -11,7 +11,7 @@ shader_configuration get__current_configuration ()
   return shader_configuration
   {
       0
-    , 69*7+4  // 69 effects + 4 seconds delay in beginning
+    , 488 // Length of the song
     , 1
     , {  }
   };
