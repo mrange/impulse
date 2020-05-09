@@ -63,7 +63,7 @@ namespace
   LARGE_INTEGER counter_freq        ;
   LARGE_INTEGER counter_start       ;
 
-  bool          has_music           ;
+  MCIDEVICEID   music_device        ;
 
   constexpr int gl_functions_count = 20;
 
@@ -459,11 +459,10 @@ void main()
     if (file_exists (L"music.mp3"))
     {
       CHECK_MCI (mciSendStringW (LR"PATH(open "music.mp3" alias music)PATH", nullptr, 0, hwnd));
+      music_device = mciGetDeviceIDW (L"music");
       CHECK_MCI (mciSendStringW (L"set music time format milliseconds", nullptr, 0, hwnd));
 //      CHECK_MCI (mciSendStringW (L"seek music to 415000", nullptr, 0, hwnd));
       CHECK_MCI (mciSendStringW (L"play music", nullptr, 0, hwnd));
-
-      has_music = true;
     }
   }
 
@@ -471,12 +470,17 @@ void main()
 
 double get__now ()
 {
-  if (has_music)
+  if (music_device != 0)
   {
-    wchar_t buffer[128] {};
-    CHECK_MCI (mciSendStringW (L"status music position", buffer, 128, hwnd));
+    MCI_STATUS_PARMS mci_status {};
+    mci_status.dwItem = MCI_STATUS_POSITION;
+    CHECK_MCI (mciSendCommandW(
+        music_device
+      , MCI_STATUS
+      , MCI_STATUS_ITEM | MCI_WAIT
+      , reinterpret_cast<DWORD_PTR> (&mci_status)));
 
-    auto ms = _wtoi64 (buffer);
+    auto ms = mci_status.dwReturn;
 
     return ms / 1000.0;
   }
