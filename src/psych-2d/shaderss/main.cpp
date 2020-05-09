@@ -65,7 +65,7 @@ int APIENTRY wWinMain (
       throw std::runtime_error (invalid_command_line_msg.c_str ());
     }
 
-    assert (match.size () == 5);
+    assert (match.size () == 6);
 
     MessageBoxW(
         nullptr

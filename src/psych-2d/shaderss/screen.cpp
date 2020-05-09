@@ -60,6 +60,11 @@ namespace
   float         duration   = 1E22F  ;
   float         speed      = 1      ;
 
+  LARGE_INTEGER counter_freq        ;
+  LARGE_INTEGER counter_start       ;
+
+  bool          has_music           ;
+
   constexpr int gl_functions_count = 20;
 
   char const * const gl_names[gl_functions_count] =
@@ -454,10 +459,36 @@ void main()
     if (file_exists (L"music.mp3"))
     {
       CHECK_MCI (mciSendStringW (LR"PATH(open "music.mp3" alias music)PATH", nullptr, 0, hwnd));
+      CHECK_MCI (mciSendStringW (L"set music time format milliseconds", nullptr, 0, hwnd));
       CHECK_MCI (mciSendStringW (L"play music", nullptr, 0, hwnd));
+
+      has_music = true;
     }
   }
 
+}
+
+double get__now ()
+{
+  if (has_music)
+  {
+    wchar_t buffer[128] {};
+    CHECK_MCI (mciSendStringW (L"status music position", buffer, 128, hwnd));
+
+    auto ms = _wtoi64 (buffer);
+
+    return ms / 1000.0;
+  }
+  else
+  {
+    auto freq_multiplier = 1. / counter_freq.QuadPart;
+
+    LARGE_INTEGER now {};
+
+    QueryPerformanceCounter (&now);
+
+    return freq_multiplier*(now.QuadPart - counter_freq.QuadPart);
+  }
 }
 
 int show__screen (int nCmdShow, bool fsm, int div)
@@ -477,14 +508,10 @@ int show__screen (int nCmdShow, bool fsm, int div)
 
   MSG msg;
 
-  LARGE_INTEGER freq {};
-  LARGE_INTEGER start {};
+  CHECK (QueryPerformanceFrequency (&counter_freq));
 
-  CHECK (QueryPerformanceFrequency (&freq));
+  CHECK (QueryPerformanceCounter (&counter_start));
 
-  CHECK (QueryPerformanceCounter (&start));
-
-  auto      freq_multiplier = 1. / freq.QuadPart;
   int       frames          = 0;
   int       total_frames    = 0;
   long long last_second     = 0;
@@ -504,11 +531,7 @@ int show__screen (int nCmdShow, bool fsm, int div)
 
     if (done) break;
 
-    LARGE_INTEGER now {};
-
-    QueryPerformanceCounter (&now);
-
-    auto time = freq_multiplier*(now.QuadPart - start.QuadPart);
+    auto time = get__now ();
 
     if (time > duration)
     {
