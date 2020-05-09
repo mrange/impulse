@@ -22,7 +22,7 @@
 
 #pragma comment(linker, "\"/manifestdependency:type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 
-extern int show__screen (int nCmdShow, bool full_screen_mode);
+extern int show__screen (int nCmdShow, bool full_screen_mode, int divider);
 
 namespace
 {
@@ -55,9 +55,9 @@ int APIENTRY wWinMain (
     InitCommonControls ();
 
     std::wstring command_line (lpCmdLine);
-    std::wregex re_commands (LR"*(^\s*(()|(/window)|(/fullscreen))\s*$)*", std::regex_constants::ECMAScript | std::regex_constants::icase);
+    std::wregex re_commands (LR"*(^\s*(()|(/window)|(/fullscreen)|(/fullscreen2x))\s*$)*", std::regex_constants::ECMAScript | std::regex_constants::icase);
 
-    auto invalid_command_line_msg = std::string ("Invalid argument, expecting no arguments, /window or /fullscreen\r\n") + utf8_encode (command_line);
+    auto invalid_command_line_msg = std::string ("Invalid argument, expecting no arguments, /window, /fullscreen or /fullscreen2x\r\n") + utf8_encode (command_line);
 
     std::wcmatch match;
     if (!std::regex_match (command_line.c_str (), match, re_commands))
@@ -76,17 +76,22 @@ int APIENTRY wWinMain (
 
     if (match[2].matched)
     {
-      show__screen (nCmdShow, false);
+      show__screen (nCmdShow, false, 1);
       return 0;
     }
     else if (match[3].matched)
     {
-      show__screen (nCmdShow, false);
+      show__screen (nCmdShow, false, 1);
       return 0;
     }
     else if (match[4].matched)
     {
-      show__screen (nCmdShow, true);
+      show__screen (nCmdShow, true, 1);
+      return 0;
+    }
+    else if (match[5].matched)
+    {
+      show__screen (nCmdShow, true, 2);
       return 0;
     }
     else

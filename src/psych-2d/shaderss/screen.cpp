@@ -26,7 +26,8 @@
 
 extern HINSTANCE get__hinstance () noexcept;
 
-#define PERIOD 22.f
+#define PERIOD 6.74f
+#undef max
 
 namespace
 {
@@ -41,53 +42,72 @@ namespace
   LONG          width               ;
   LONG          height              ;
 
+  int           divider             ;
+
+  LONG          rbwidth             ;
+  LONG          rbheight            ;
+
   HGLRC         hrc                 ;
   GLuint        pid                 ;
+  GLuint        fbo                 ;
+  GLuint        rbo                 ;
   GLuint        fsid                ;
   GLuint        vsid                ;
-  
-  GLuints       tids                ;
 
-  bool          open_gl_initialized ;
+  GLuints       tids                ;
 
   float         start_time = 0      ;
   float         duration   = 1E22F  ;
   float         speed      = 1      ;
 
-  constexpr int gl_functions_count = 13;
+  constexpr int gl_functions_count = 20;
 
   char const * const gl_names[gl_functions_count] =
   {
-    "glCreateShaderProgramv",
-    "glGenProgramPipelines" ,
-    "glBindProgramPipeline" ,
-    "glUseProgramStages"    ,
-    "glProgramUniform4fv"   ,
-    "glGetProgramiv"        ,
-    "glGetProgramInfoLog"   ,   
-    "glProgramUniform1f"    ,
-    "glProgramUniform2fv"   ,
-    "glActiveTexture"       ,
-    "glBindSampler"         ,
-    "glProgramUniform1i"    ,
-    "glGenerateMipmap"      ,
+    "glCreateShaderProgramv"    ,
+    "glGenProgramPipelines"     ,
+    "glBindProgramPipeline"     ,
+    "glUseProgramStages"        ,
+    "glProgramUniform4fv"       ,
+    "glGetProgramiv"            ,
+    "glGetProgramInfoLog"       ,
+    "glProgramUniform1f"        ,
+    "glProgramUniform2fv"       ,
+    "glActiveTexture"           ,
+    "glBindSampler"             ,
+    "glProgramUniform1i"        ,
+    "glGenerateMipmap"          ,
+    "glGenFramebuffers"         ,
+    "glBindFramebuffer"         ,
+    "glFramebufferRenderbuffer" ,
+    "glGenRenderbuffers"        ,
+    "glBindRenderbuffer"        ,
+    "glRenderbufferStorage"     ,
+    "glBlitFramebuffer"         ,
   };
 
   void * gl_functions[gl_functions_count];
 
-  #define oglCreateShaderProgramv         ((PFNGLCREATESHADERPROGRAMVPROC)  gl_functions[0])
-  #define oglGenProgramPipelines          ((PFNGLGENPROGRAMPIPELINESPROC)   gl_functions[1])
-  #define oglBindProgramPipeline          ((PFNGLBINDPROGRAMPIPELINEPROC)   gl_functions[2])
-  #define oglUseProgramStages             ((PFNGLUSEPROGRAMSTAGESPROC)      gl_functions[3])
-  #define oglProgramUniform4fv            ((PFNGLPROGRAMUNIFORM4FVPROC)     gl_functions[4])
-  #define oglGetProgramiv                 ((PFNGLGETPROGRAMIVPROC)          gl_functions[5])
-  #define oglGetProgramInfoLog            ((PFNGLGETPROGRAMINFOLOGPROC)     gl_functions[6])
-  #define oglProgramUniform1f             ((PFNGLPROGRAMUNIFORM1FPROC)      gl_functions[7])
-  #define oglProgramUniform2fv            ((PFNGLPROGRAMUNIFORM2FVPROC)     gl_functions[8])
-  #define oglActiveTexture                ((PFNGLACTIVETEXTUREPROC)         gl_functions[9])
-  #define oglBindSampler                  ((PFNGLBINDSAMPLERPROC)           gl_functions[10])
-  #define oglProgramUniform1i             ((PFNGLPROGRAMUNIFORM1IPROC)      gl_functions[11])
-  #define oglGenerateMipmap               ((PFNGLGENERATEMIPMAPPROC)        gl_functions[12])
+  #define oglCreateShaderProgramv         ((PFNGLCREATESHADERPROGRAMVPROC)    gl_functions[0])
+  #define oglGenProgramPipelines          ((PFNGLGENPROGRAMPIPELINESPROC)     gl_functions[1])
+  #define oglBindProgramPipeline          ((PFNGLBINDPROGRAMPIPELINEPROC)     gl_functions[2])
+  #define oglUseProgramStages             ((PFNGLUSEPROGRAMSTAGESPROC)        gl_functions[3])
+  #define oglProgramUniform4fv            ((PFNGLPROGRAMUNIFORM4FVPROC)       gl_functions[4])
+  #define oglGetProgramiv                 ((PFNGLGETPROGRAMIVPROC)            gl_functions[5])
+  #define oglGetProgramInfoLog            ((PFNGLGETPROGRAMINFOLOGPROC)       gl_functions[6])
+  #define oglProgramUniform1f             ((PFNGLPROGRAMUNIFORM1FPROC)        gl_functions[7])
+  #define oglProgramUniform2fv            ((PFNGLPROGRAMUNIFORM2FVPROC)       gl_functions[8])
+  #define oglActiveTexture                ((PFNGLACTIVETEXTUREPROC)           gl_functions[9])
+  #define oglBindSampler                  ((PFNGLBINDSAMPLERPROC)             gl_functions[10])
+  #define oglProgramUniform1i             ((PFNGLPROGRAMUNIFORM1IPROC)        gl_functions[11])
+  #define oglGenerateMipmap               ((PFNGLGENERATEMIPMAPPROC)          gl_functions[12])
+  #define oglGenFramebuffers              ((PFNGLGENFRAMEBUFFERSPROC)         gl_functions[13])
+  #define oglBindFramebuffer              ((PFNGLBINDFRAMEBUFFERPROC)         gl_functions[14])
+  #define oglFramebufferRenderbuffer      ((PFNGLFRAMEBUFFERRENDERBUFFERPROC) gl_functions[15])
+  #define oglGenRenderbuffers             ((PFNGLGENRENDERBUFFERSPROC)        gl_functions[16])
+  #define oglBindRenderbuffer             ((PFNGLBINDRENDERBUFFERPROC)        gl_functions[17])
+  #define oglRenderbufferStorage          ((PFNGLRENDERBUFFERSTORAGEPROC)     gl_functions[18])
+  #define oglBlitFramebuffer              ((PFNGLBLITFRAMEBUFFERPROC)         gl_functions[19])
 
   PIXELFORMATDESCRIPTOR const pfd =
   {
@@ -186,10 +206,6 @@ void main()
       case WM_SIZE:
       width  = LOWORD (lParam);
       height = HIWORD (lParam);
-      if (open_gl_initialized)
-      {
-        glViewport (0, 0, width, height);
-      }
       return 0;
     case WM_PAINT:
       {
@@ -220,7 +236,7 @@ void main()
     wcex.hInstance      = get__hinstance ();
     wcex.hIcon          = LoadIcon (get__hinstance (), MAKEINTRESOURCE (IDI_SHADERSS));
     wcex.hCursor        = LoadCursor (nullptr, IDC_ARROW);
-    wcex.hbrBackground  = (HBRUSH) GetStockObject(BLACK_BRUSH);
+    wcex.hbrBackground  = (HBRUSH) GetStockObject (BLACK_BRUSH);
     wcex.lpszMenuName   = nullptr;
     wcex.lpszClassName  = window_class_name;
     wcex.hIconSm        = LoadIcon (wcex.hInstance, MAKEINTRESOURCE (IDI_SHADERSS));
@@ -269,7 +285,7 @@ void main()
     }
 
     RECT client;
-    CHECK (GetClientRect(hwnd, &client));
+    CHECK (GetClientRect (hwnd, &client));
     width  = client.right - client.left;
     height = client.bottom - client.top;
 
@@ -289,7 +305,7 @@ void main()
     duration    = loaded_config.shader_configuration.duration   ;
     speed       = loaded_config.shader_configuration.speed      ;
 
-    hdc = CHECK (GetDC(hwnd));
+    hdc = CHECK (GetDC (hwnd));
 
     auto pf = CHECK (ChoosePixelFormat (hdc,&pfd));
 
@@ -297,11 +313,23 @@ void main()
 
     hrc = CHECK (wglCreateContext (hdc));
 
-    CHECK (wglMakeCurrent(hdc, hrc));
+    CHECK (wglMakeCurrent (hdc, hrc));
 
     for (auto i = 0; i < gl_functions_count; ++i)
     {
-      gl_functions[i] = CHECK (wglGetProcAddress(gl_names[i]));
+      gl_functions[i] = CHECK (wglGetProcAddress (gl_names[i]));
+    }
+
+    rbwidth   = width/divider;
+    rbheight  = height/divider;
+    if (divider > 1) {
+      // Setting up off-screen render buffer if divider is greater than 1
+      oglGenFramebuffers (1, &fbo);
+      oglGenRenderbuffers (1, &rbo);
+      oglBindRenderbuffer (GL_RENDERBUFFER, rbo);
+      oglRenderbufferStorage (GL_RENDERBUFFER, GL_RGBA8, rbwidth, rbheight);
+      oglBindFramebuffer (GL_DRAW_FRAMEBUFFER, fbo);
+      oglFramebufferRenderbuffer (GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, rbo);
     }
 
     auto tsz = loaded_config.loaded_images.size ();
@@ -323,7 +351,7 @@ void main()
         glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         if (dim.first == dim.second && single_bit_number)
         {
-          oglGenerateMipmap(GL_TEXTURE_2D);
+          oglGenerateMipmap (GL_TEXTURE_2D);
         }
         ++tidx;
       }
@@ -357,17 +385,28 @@ void main()
 
   void draw_gl (float now)
   {
-    float time = start_time + fmodf(now*speed, duration);
+    float time = start_time + fmodf (now*speed, duration);
 
-    int period = static_cast<int>(time / PERIOD);
-    float timeInPeriod = std::fmodf(time, PERIOD);
+    int period = static_cast<int> (time / PERIOD);
+    float timeInPeriod = std::fmodf (time, PERIOD);
 
     float reso[2]
     {
-        width*1.f 
-      , height*1.f
+        rbwidth*1.f
+      , rbheight*1.f
     };
-    
+
+    glViewport (0, 0, rbwidth, rbheight);
+
+    if (divider > 1)
+    {
+      oglBindFramebuffer (GL_DRAW_FRAMEBUFFER, fbo);
+    }
+    else
+    {
+      oglBindFramebuffer (GL_DRAW_FRAMEBUFFER, 0);
+    }
+
     oglProgramUniform1f  (fsid, 0 , time);
     oglProgramUniform1i  (fsid, 10, period);
     oglProgramUniform1f  (fsid, 11, timeInPeriod);
@@ -377,21 +416,27 @@ void main()
 
     for (auto && tid : tids)
     {
-      oglActiveTexture(GL_TEXTURE0 + tidx);
-      glBindTexture(GL_TEXTURE_2D, tid);
-      oglProgramUniform1i(fsid, 2 + tidx, tidx);
+      oglActiveTexture (GL_TEXTURE0 + tidx);
+      glBindTexture (GL_TEXTURE_2D, tid);
+      oglProgramUniform1i (fsid, 2 + tidx, tidx);
       ++tidx;
     }
 
     glRects (-1, -1, 1, 1);
 
-    open_gl_initialized = true;
+    if (divider > 1)
+    {
+      glViewport (0, 0, width, height);
+      oglBindFramebuffer (GL_READ_FRAMEBUFFER, fbo);
+      oglBindFramebuffer (GL_DRAW_FRAMEBUFFER, 0);
+      oglBlitFramebuffer (0, 0, rbwidth, rbheight, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+    }
   }
 
   bool file_exists (wchar_t const* file_name)
   {
     WIN32_FIND_DATA ffd {};
-    auto handle = FindFirstFileW(L"music.mp3", &ffd);
+    auto handle = FindFirstFileW (L"music.mp3", &ffd);
     if (handle != INVALID_HANDLE_VALUE)
     {
       FindClose (handle);
@@ -408,16 +453,17 @@ void main()
   {
     if (file_exists (L"music.mp3"))
     {
-      CHECK_MCI (mciSendStringW(LR"PATH(open "music.mp3" alias music)PATH", nullptr, 0, hwnd));
-      CHECK_MCI (mciSendStringW(L"play music", nullptr, 0, hwnd));
+      CHECK_MCI (mciSendStringW (LR"PATH(open "music.mp3" alias music)PATH", nullptr, 0, hwnd));
+      CHECK_MCI (mciSendStringW (L"play music", nullptr, 0, hwnd));
     }
   }
 
 }
 
-int show__screen (int nCmdShow, bool fsm)
+int show__screen (int nCmdShow, bool fsm, int div)
 {
   full_screen_mode = fsm;
+  divider = std::max (1, div);
 
   register_class ();
 
@@ -434,7 +480,7 @@ int show__screen (int nCmdShow, bool fsm)
   LARGE_INTEGER freq {};
   LARGE_INTEGER start {};
 
-  CHECK (QueryPerformanceFrequency(&freq));
+  CHECK (QueryPerformanceFrequency (&freq));
 
   CHECK (QueryPerformanceCounter (&start));
 
@@ -476,14 +522,12 @@ int show__screen (int nCmdShow, bool fsm)
     ++total_frames;
     ++frames;
 
-    auto second = static_cast<long long>(time);
+    auto second = static_cast<long long> (time);
 
     if (!full_screen_mode && second > last_second)
     {
-      auto frame_time = total_frames*1.0/60.0;  // Assuming 60FPS
-      auto time_diff = time - frame_time;
       last_second = second;
-      std::swprintf (window_title, (sizeof window_title)/2, L"FPS: %i, DIFF: %0.2f, TIME: %0.2f", frames, time_diff, time);
+      std::swprintf (window_title, (sizeof window_title)/2, L"FPS: %i, TIME: %0.2f", frames, time);
       SetWindowText (hwnd, window_title);
       frames = 0;
     }

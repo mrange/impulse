@@ -89,11 +89,11 @@ struct Effect {
 };
 
 // Uncomment to speed up experimentation
-//#define EXPERIMENTING
+// #define EXPERIMENTING
 
 #ifdef EXPERIMENTING
 #define START_DELAY   0.0
-#define ENABLE_JUPYTER
+#define ENABLE_DRAGON
 const Effect effects[] = Effect[](
     Effect(MAJOR_DRAGON  , MINOR_FADEIN    , 0.0, 1.4        , 5.5)
   );
@@ -234,7 +234,7 @@ float pmin(float a, float b, float k) {
 
 float pdiff(float d1, float d2, float k) {
   float h = clamp( 0.5 - 0.5*(d2+d1)/k, 0.0, 1.0 );
-  return mix( d2, -d1, h ) + k*h*(1.0-h); 
+  return mix( d2, -d1, h ) + k*h*(1.0-h);
 }
 
 void rot(inout vec2 p, float a) {
@@ -382,7 +382,7 @@ float impulse(vec2 p) {
   d = min(d, ds);
   d = min(d, de);
   d = max(d, -dx);
-  
+
   return d;
 }
 
@@ -407,19 +407,19 @@ float cogImpulse(vec2 p, float time) {
   float a = time*TAU/60.0;
   float c = cog(p, a);
   float i = impulse(p)-0.025;
-  
+
   vec2 pp = toPolar(p);
   pp.y += a;
   mod1(pp.y, TAU/5.0);
   vec2 rp = toRect(pp);
   float ic = circle(rp - vec2(6*0.22, 0.0), 6*0.1);
-  
+
   c = max(c, -(i-0.15));
 //  c = max(c, -ic);
-  
+
   float d = i;
   d = min(d, c);
-  
+
   return d;
 }
 
@@ -428,9 +428,9 @@ float soft_noise(vec2 p) {
   const float K2 = .211324865;
 
   vec2 i = floor (p + (p.x + p.y)*K1);
-    
+
   vec2 a = p - i + (i.x + i.y)*K2;
-  vec2 o = step (a.yx, a.xy);    
+  vec2 o = step (a.yx, a.xy);
   vec2 b = a - o + K2;
   vec2 c = a - 1. + 2.*K2;
 
@@ -444,16 +444,16 @@ float soft_noise(vec2 p) {
 float soft_fbm(vec2 pos, float tm) {
   vec2 offset = vec2(cos(tm), sin(tm*sqrt(0.5)));
   float aggr = 0.0;
-    
+
   aggr += soft_noise(pos);
   aggr += soft_noise(pos + offset) * 0.5;
   aggr += soft_noise(pos + offset.yx) * 0.25;
   aggr += soft_noise(pos - offset) * 0.125;
   aggr += soft_noise(pos - offset.yx) * 0.0625;
-    
+
   aggr /= 1.0 + 0.5 + 0.25 + 0.125 + 0.0625;
-    
-  return (aggr * 0.5) + 0.5;    
+
+  return (aggr * 0.5) + 0.5;
 }
 
 const mat2 warped_frot = mat2(0.80, 0.60, -0.60, 0.80);
@@ -466,7 +466,7 @@ float warped_noise(vec2 p) {
   return d;
 }
 
-float warped_fbm(vec2 p) {    
+float warped_fbm(vec2 p) {
   float f = 0.0;
   float a = 1.0;
   float s = 0.0;
@@ -497,7 +497,7 @@ float warped_warp(vec2 p, float ttime, float offset, float dist, out vec2 v, out
   rot(wx, ttime/800.0);
   rot(wy, ttime/700.0);
 
-  vec2 vv = vec2(warped_fbm(p + vx), warped_fbm(p + vy));  
+  vec2 vv = vec2(warped_fbm(p + vx), warped_fbm(p + vy));
   vec2 ww = vec2(warped_fbm(p + 3.0*vv + wx), warped_fbm(p + 3.0*vv + wy));
 
   float f = warped_fbm(p + 2.25*ww);
@@ -512,17 +512,17 @@ vec3 warped_normal(vec2 p, float time, float offset, float dist) {
   vec2 v;
   vec2 w;
   vec2 e = vec2(0.0001, 0);
-  
+
   vec3 n;
   n.x = warped_warp(p + e.xy, time, offset, dist, v, w) - warped_warp(p - e.xy, time, offset, dist, v, w);
   n.y = 2.0*e.x;
   n.z = warped_warp(p + e.yx, time, offset, dist, v, w) - warped_warp(p - e.yx, time, offset, dist, v, w);
-  
+
   return normalize(n);
 }
 
 vec3 postProcess(vec3 col, vec2 q) {
-  col=pow(clamp(col,0.0,1.0),vec3(0.75)); 
+  col=pow(clamp(col,0.0,1.0),vec3(0.75));
   col=col*0.6+0.4*col*col*(3.0-2.0*col);  // contrast
   col=mix(col, vec3(dot(col, vec3(0.33))), -0.4);  // satuation
   col*=vec3(0.5+0.5*pow(19.0*q.x*q.y*(1.0-q.x)*(1.0-q.y),0.7));  // vigneting
@@ -551,7 +551,7 @@ vec3 tunnel_stars(int minor, float input0, float input1, float gtime, float ltim
   vec2 pp = toPolar(p);
   pp.x = pp.x*(1.0 + 1.0*pow(length(1.0*p), 0.5));
   pp.y += 0.5*gi;
-  p = toRect(pp); 
+  p = toRect(pp);
 //  rot(p, 0.5*gi);
   float m  = smallRadii*mix(1, 30, pow(smoothstep(0.0, fadeTime+1.0, ltime), 0.25));
   float nx = mod1(p.x, m);
@@ -560,11 +560,11 @@ vec3 tunnel_stars(int minor, float input0, float input1, float gtime, float ltim
   float x  = rand(n + vec2(gi));
   float y  = rand(n - sqrt(0.5)*vec2(gi));
   vec2 off = (0.5*m - 2.0*smallRadii)*vec2(x, y);
-  
+
   p -= off;
-  
+
   rot(p, 0.5*gtime + TAU*x);
-  
+
   float d = star5(p, smallRadii*1.0, 0.5);
 //  float d = circle(p, smallRadii);
 
@@ -579,14 +579,14 @@ vec3 tunnel_poly(int minor, float input0, float input1, float gtime, float ltime
   vec2 pp = toPolar(p);
   pp.y += gi*TAU/60-0.3*gtime;
   float nny = mod1(pp.y, TAU/input1);
-  p = toRect(pp); 
+  p = toRect(pp);
   float di = -p.x + largeRadii;
 
   float nx = mod1(p.x, smallRadii*2.0);
   float ny = mod1(p.y, smallRadii*(2.0 + 40*pow(tunnel_expander(gi), 4.0)));
 
   float xmul = (int(nx) & 1)*2.0 - 1.0;
-  float ymul = (int(ny) & 1)*2.0 - 1.0; 
+  float ymul = (int(ny) & 1)*2.0 - 1.0;
   rot(p, ymul*xmul*(gtime - 0.05*gi)*TAU/5.0);
 
   float d = star5(p, smallRadii*1.0, 0.5);
@@ -601,7 +601,7 @@ vec3 tunnel_circle(int minor, float input0, float input1, float gtime, float lti
 
   float divend  = 2.0*smallRadii + 2.0*pow(tunnel_expander(gi), 5.0);
   float dx      = largeRadii - 0.5*divend;
-  vec2 op = p;  
+  vec2 op = p;
 
   vec2 pp = toPolar(p);
 
@@ -614,11 +614,11 @@ vec3 tunnel_circle(int minor, float input0, float input1, float gtime, float lti
   pp.x += dx;
   float nny = mod1(pp.y, degree);
   pp.y += PI/2.0;
-  p = toRect(pp); 
+  p = toRect(pp);
   p -= vec2(0.0, largeRadii);
 
   float xmul = (int(nx) & 1)*2.0 - 1.0;
-  float ymul = (int(nny) & 1)*2.0 - 1.0; 
+  float ymul = (int(nny) & 1)*2.0 - 1.0;
   rot(p, ymul*xmul*(gtime - 0.05*gi)*TAU/5.0);
 
   float d;
@@ -640,11 +640,11 @@ vec3 tunnel_circle(int minor, float input0, float input1, float gtime, float lti
 vec3 tunnel_effect(int minor, float input0, float input1, float gtime, float ltime, vec2 p, vec2 q) {
   float smallRadii = input0;
   float largeRadii = 1.0 + 1.0*smallRadii;
-  
+
   vec3 col = vec3(0);
-  
+
   gtime *= 1.5;
- 
+
   float smoothPixel = 5.0/RESOLUTION.y;
 
   const vec3 baseCol = vec3(1.0);
@@ -655,7 +655,7 @@ vec3 tunnel_effect(int minor, float input0, float input1, float gtime, float lti
   float gz       = zspeed*gtime;
   vec2  outerOff = tunnel_offset(gtime, gz);
   float fgtime   = mod(gtime, zdtime);
-  
+
   for (int i = tunnel_furthest; i >= tunnel_nearest; --i) {
     int   gi      = i + int(gtime/zdtime);
     float lz      = zspeed*(zdtime*float(i) - fgtime);
@@ -663,29 +663,29 @@ vec3 tunnel_effect(int minor, float input0, float input1, float gtime, float lti
 
     float iz      = gz + lz;
     vec2 innerOff = tunnel_offset(gtime, iz);
-    
+
     vec2 ip       = p + 0.5*zscale*(-innerOff + outerOff);
     float ld      = length(ip)/zscale;
 
     vec2 sip = ip/zscale;
     vec3 ddd;
-    
+
     switch(minor) {
     case MINOR_STARFIELD:  ddd = tunnel_stars(minor, input0, input1, gtime, ltime, sip, gi, smallRadii, largeRadii); break;
     case MINOR_POLYGON:    ddd = tunnel_poly(minor, input0, input1, gtime, ltime, sip, gi, smallRadii, largeRadii); break;
-    case MINOR_STARS:    
-    case MINOR_CIRCLES:    
+    case MINOR_STARS:
+    case MINOR_CIRCLES:
     case MINOR_ICIRCLES:   ddd = tunnel_circle(minor, input0, input1, gtime, ltime, sip, gi, smallRadii, largeRadii); break;
     default:               ddd = vec3(0.0); break;
     }
-    
+
     ddd *= zscale;
-    
+
     float d       = ddd.x;
     vec3 scol     = baseCol*vec3(0.6 + 0.4*sin(TAU*ddd.y*0.005 - 0.2*iz), pow(0.6 + 0.4*cos(-2.0*abs(ddd.z)-0.4*iz-0.5*gtime), 1.0), 0.8);
-    
+
     float diff = exp(-0.0125*lz)*(1.0 - 1.0*tanh(pow(0.4*max(ld - largeRadii, 0.0), 2.0) + 3.0*smallRadii*max(ddd.y, 0.0)));
-    
+
     vec4 icol = diff*vec4(scol, smoothstep(0.0, -smoothPixel, d));
 
     icol.w += diff*diff*diff*0.75*clamp(1.0 - 30.0*d, 0.0, 1.0);
@@ -693,13 +693,13 @@ vec3 tunnel_effect(int minor, float input0, float input1, float gtime, float lti
 
     icol.w *= clamp(1.0 - fgtime/zdtime, 1.0 - step(float(i), tunnel_nearest), 1.0);
     icol.w *= clamp(fgtime/zdtime, step(float(i), tunnel_furthest-1), 1.0);
-    
-    
+
+
     col = mix(col, icol.xyz, clamp(icol.w, 0.0, 1.0));
   }
- 
+
   col = postProcess(col, q);
- 
+
   return col;
 }
 
@@ -729,13 +729,13 @@ vec3 impulse_80S(float gtime, float ltime, float z, vec2 p, vec2 rp) {
   float ds = impulse_df(ltime, (rp - 0.05*vec2(1.0, -1.0))/z, impulse_coff, 1.0)*z;
 
   float smoothPixel = 5.0/RESOLUTION.y;
-    
+
   vec3 col = vec3(0.75);
 
   col = mix(col, vec3(0.5), exp(-200.0*max(ds, 0.0)*ds));
 
   vec4 icol = vec4(0.0, 0.0, 0.0, 1.0);
-  
+
   const float sz = 0.0125/2.0;
 
   icol.xyz += vec3(1.0*max((sz*sz - p.y*p.y)/(sz*sz), 0.0));
@@ -744,7 +744,7 @@ vec3 impulse_80S(float gtime, float ltime, float z, vec2 p, vec2 rp) {
 
   icol.xyz = mix(icol.xyz, vec3(0.25), smoothstep(0.0, smoothPixel, d));
   icol.w = smoothstep(0.025, 0.025 + smoothPixel, d);
- 
+
   col = mix(col, icol.xyz, 1.0 - icol.w);
 
 
@@ -754,12 +754,12 @@ vec3 impulse_80S(float gtime, float ltime, float z, vec2 p, vec2 rp) {
 vec3 impulse_pulsar(float gtime, float ltime, float z, vec2 p, vec2 rp) {
   float dist = 1.0/(0.5 + pow(abs(tan(-PI/2 + 0.75*length((rp - impulse_coff*z))-ltime*PI*0.5)), 1.0));
   float d  = impulse_df(ltime, rp/z, impulse_coff, dist)*z;
- 
+
 
   float smoothPixel = 5.0/RESOLUTION.y;
-    
+
   vec3 col = vec3(0.0);
-  const vec3 glow = vec3(1.0, 0.8, 0.8); 
+  const vec3 glow = vec3(1.0, 0.8, 0.8);
   col += vec3(1.0 - pow(smoothstep(0.0, 0.02, -d), 0.5))*1.15*glow;
   vec3 ccol = vec3(1.0 - pow(smoothstep(0.0, 0.04, d), 0.25))*glow;
   col = mix(col, ccol, smoothstep(0.0, 0.005, d));
@@ -773,7 +773,7 @@ vec3 impulse_effect(int minor, float input0, float input1, float gtime, float lt
   rot(p, input0);
 
   float z = 0.425 - ltime*0.0125;
-  vec2 pp = toPolar(p);  
+  vec2 pp = toPolar(p);
   float fadeOut = pow(smoothstep(effectDuration - fadeTime, effectDuration, ltime), 2.5);
   float period = mix(TAU*10, TAU*20, fadeOut);
   pp.x += 0.75*fadeOut*sin(period*p.x)*sin(period*p.y);
@@ -785,7 +785,7 @@ vec3 impulse_effect(int minor, float input0, float input1, float gtime, float lt
   case MINOR_PULSAR:
     col = impulse_pulsar(gtime, ltime, z, p, rp); break;
   default:
-    col = vec3(0.5, 0.5, 0.0);  
+    col = vec3(0.5, 0.5, 0.0);
   }
 
   col = postProcess(col, q);
@@ -837,17 +837,17 @@ float dragon_fbm(float distort, vec2 p, float time) {
 vec3 dragon_lightning(float distort, vec2 pos, float offset, float time) {
   vec3 col = vec3(0.0);
   vec2 f = vec2(0);
-         
+
   const float w=0.15;
-          
+
   for (int i = 0; i < DRAGON_LIGHTNING; i++) {
-    float time = time + 0.5*float(i);   
+    float time = time + 0.5*float(i);
     float d1 = abs(offset * w / (0.0 + offset - dragon_fbm(distort, (pos + f) * 3.0, time)));
     float d2 = abs(offset * w / (0.0 + offset - dragon_fbm(distort, (pos + f) * 2.0, 0.9 * time + 10.0)));
     col += vec3(clamp(d1, 0.0, 1.0) * vec3(0.1, 0.5, 0.8));
     col += vec3(clamp(d2, 0.0, 1.0) * vec3(0.7, 0.5, 0.3));
   }
-          
+
   return (col);
 }
 
@@ -855,12 +855,12 @@ vec3 dragon_normal(float distort, vec2 p, float time) {
   vec2 v;
   vec2 w;
   vec2 e = vec2(0.00001, 0);
-  
+
   vec3 n;
   n.x = dragon_fbm(distort, p + e.xy, time) - dragon_fbm(distort, p - e.xy, time);
   n.y = 2.0*e.x;
   n.z = dragon_fbm(distort, p + e.yx, time) - dragon_fbm(distort, p - e.yx, time);
-  
+
   return normalize(n);
 }
 
@@ -874,10 +874,10 @@ vec3 dragon_effect(int minor, float input0, float input1, float gtime, float lti
 
   ltime += 0;
 
-  rot(p, -0.75); 
+  rot(p, -0.75);
   p *= vec2(1.1/tanh(1.0 + length(p)), 1.0);
   float l = length(p);
-  
+
   float dd = 0.2 + 0.65*(-0.5 + 1.75*(0.5 + 0.5*cos(3.0*l-ltime*TAU/period)))*tanh(1.0/((pow(l, 4.0) + 2.0)));
   switch(minor) {
   case MINOR_FADEIN:
@@ -933,9 +933,9 @@ float acid_dodec(vec3 z, float ttime) {
   z = abs(z);
 
   float dmin=dot(z-vec3(acid_size,0.,0.),dodec_plnormal);
-        
+
   dmin = abs(dmin) - acid_width*7.5*(0.55 + 0.45*sin(10.0*length(p) - 0.5*p.y + ttime/9.0));
-        
+
   return dmin;
 }
 
@@ -946,9 +946,9 @@ float acid_wheel(vec2 p, float ttime, float s) {
   pp.y += PI/2.0;
   p = toRect(pp);
   float ds = box(p, s*vec2(0.075, 0.5), s*0.04);
-  
+
   float dc = circle(p, s*0.375);
-  
+
   return pmin(ds, dc, s*0.0125);
 }
 
@@ -980,7 +980,7 @@ float acid_df(vec2 p, float soft, float k, float ttime) {
 }
 
 vec3 acid_postProcess(vec3 col, vec2 q, vec2 p) {
-  col=pow(clamp(col,0.0,1.0),vec3(0.75)); 
+  col=pow(clamp(col,0.0,1.0),vec3(0.75));
   col=col*0.6+0.4*col*col*(3.0-2.0*col);  // contrast
   col=mix(col, vec3(dot(col, vec3(0.33))), -0.4);  // satuation
   const float r = 1.5;
@@ -997,24 +997,24 @@ vec3 acid_effect(int minor, float input0, float input1, float gtime, float ltime
   float d = acid_df(p, soft, k, ttime);
 
   float smoothPixel = 5.0/RESOLUTION.y;
-    
+
   vec3 col = vec3(0.0);
 
   const vec3 baseCol = vec3(240.0, 175.0, 20.0)/255.0;
-  
+
   col += 0.9*baseCol*vec3(smoothstep(smoothPixel, -smoothPixel, d));
 
   vec3 rgb = 0.5 + 0.5*vec3(sin(TAU*vec3(50.0, 49.0, 48.0)*(d - 0.050) + ltime*TAU/3.0));
 
-  col += baseCol.xyz*pow(rgb, vec3(8.0, 9.0, 7.0)); 
+  col += baseCol.xyz*pow(rgb, vec3(8.0, 9.0, 7.0));
   col *= 1.0 - tanh(0.05+length(8.0*d));
 
   ltime -= 1.25;
   float phase = TAU/4.0*(-length(p) - 0.5*p.y) + ltime*TAU/11.0;
- 
+
   float wave = sin(phase);
   float fwave = sign(wave)*pow(abs(wave), 0.75);
- 
+
   col = abs(0.79*(0.5 + 0.5*fwave) - col);
   col = pow(col, vec3(0.25, 0.5, 0.75));
 
@@ -1031,7 +1031,7 @@ vec3 acid_effect(int minor, float input0, float input1, float gtime, float ltime
 
 #ifdef ENABLE_SMEAR
 
-float smear_df(vec2 p, float time) {  
+float smear_df(vec2 p, float time) {
   return cogImpulse(p, time);
 }
 
@@ -1040,12 +1040,12 @@ vec3 smear_effect(int minor, float input0, float input1, float gtime, float ltim
   float ttime = TAU*time;
   p *= 1.65;
   vec3 col = vec3(1.0);
- 
+
   float z = 0.9 - ltime*0.025;
- 
+
   float d = smear_df(p/z, time)*z;
   p += -0.025*time*vec2(-1.0, 1.0);
- 
+
   vec2 v;
   vec2 w;
   float f = warped_warp(p, ttime, d, 1.0, v, w);
@@ -1057,10 +1057,10 @@ vec3 smear_effect(int minor, float input0, float input1, float gtime, float ltim
 
   const vec3 col1 = vec3(0.1, 0.3, 0.8);
   const vec3 col2 = vec3(0.7, 0.3, 0.5);
-  
+
   float c1 = dot(normalize(lig.xz), v)/length(v);
   float c2 = dot(normalize(lig.xz), w)/length(w);
-  
+
   col = pow(dif, 0.75)*tanh(pow(abs(f + 0.5), 1.5)) + c1*col1 + c2*col2;
   col += 0.25*vec3(smoothstep(0.0, -0.0125, d));
 
@@ -1082,7 +1082,7 @@ const float glowball_period = 600.0;
 vec3 glowball_lightning(vec2 pos, float ptime, float offset) {
   vec3 col = vec3(0.0);
   vec2 f = 10.0*SCA(PI/2.0 + ptime);
-    
+
   for (int i = 0; i < 3; i++) {
     float btime = 85.0*ptime + float(i);
     float rtime = 75.0*ptime + float(i) + 10.0;
@@ -1091,7 +1091,7 @@ vec3 glowball_lightning(vec2 pos, float ptime, float offset) {
     col += vec3(d1 * vec3(0.1, 0.3, 0.8));
     col += vec3(d2 * vec3(0.7, 0.3, 0.5));
   }
-    
+
   return col;
 }
 
@@ -1106,16 +1106,16 @@ vec3 glowball_effect(int minor, float input0, float input1, float gtime, float l
   float ptime = ltime*TAU/glowball_period;
 
   float d = glowball_df(p, ltime);
-  
+
   const vec3  background   = vec3(0.0)/vec3(255.0);
 
   vec3 col = background;
 
   float borderStep = 0.0075;
- 
+
   vec3 baseCol = vec3(1.0);
   vec4 logoCol = vec4(baseCol, 1.0)*smoothstep(-borderStep, 0.0, -d);
-  
+
   if (d >= 0.0) {
     vec2 pp = toPolar(p);
     float funky = 0.7*pow((0.5 - 0.5*cos(ptime)), 4.0);
@@ -1123,13 +1123,13 @@ vec3 glowball_effect(int minor, float input0, float input1, float gtime, float l
     p = toRect(pp);
     col += glowball_lightning(p, ptime, (pow(abs(d), 0.25 + 0.125*sin(0.5*ltime + p.x + p.y))));
   }
-  
+
   col = clamp(col, 0.0, 1.0);
 
   col *= 1.0 - logoCol.xyz;
 
   col = postProcess(col, q);
-  
+
   return col;
 }
 
@@ -1144,9 +1144,9 @@ vec3 glowball_effect(int minor, float input0, float input1, float gtime, float l
 vec3 dreams_lightning(vec2 pos, float ttime, float offset, float dl) {
   vec3 col = vec3(0.0);
   vec2 f = 10.0*SCA(PI/2.0 + ttime/1000.0);
-    
+
   float width = 0.003*dl;
-    
+
   for (int i = 0; i < 2; i++) {
     float btime = ttime/35.0 + float(i);
     float rtime = ttime/40.0 + float(i) + 10.0;
@@ -1155,13 +1155,13 @@ vec3 dreams_lightning(vec2 pos, float ttime, float offset, float dl) {
     col += vec3(d1 * vec3(0.1, 0.3, 0.8));
     col += vec3(d2 * vec3(0.7, 0.3, 0.5));
   }
-    
+
   return clamp(col, 0.0, 1.0);;
 }
 
 float dreams_tile0(vec2 p, float hwidth, float lwidth) {
-  float c0 = circle(p - vec2(hwidth), hwidth);  
-  float c1 = circle(p + vec2(hwidth), hwidth);  
+  float c0 = circle(p - vec2(hwidth), hwidth);
+  float c1 = circle(p + vec2(hwidth), hwidth);
   c0 = abs(c0) - lwidth;
   c1 = abs(c1) - lwidth;
 
@@ -1184,9 +1184,9 @@ float dreams_tile(vec2 p, vec2 n, float hwidth, float lwidth) {
 float dreams_df(vec2 p) {
   float hwidth = 1.0;
   float lwidth = 0.25;
-  vec2 n = mod2(p, vec2(hwidth*2.0));  
+  vec2 n = mod2(p, vec2(hwidth*2.0));
   float d = dreams_tile(p, n, hwidth, lwidth);
-  
+
   return d;
 }
 
@@ -1206,16 +1206,16 @@ vec2 dreams_coordinateTransform(vec2 p, float ttime) {
 vec4 dreams_dCoordinateTransform(vec2 p, float ttime) {
   vec4 nor;
   vec2 eps = vec2(0.0001, 0.0);
-  
+
   nor.xy = (dreams_coordinateTransform(p + eps.xy, ttime) - dreams_coordinateTransform(p - eps.xy, ttime));
   nor.zw = (dreams_coordinateTransform(p + eps.yx, ttime) - dreams_coordinateTransform(p - eps.yx, ttime));
-  
+
   return nor/eps.x;
 }
 
 vec3 dreams_postProcess(vec3 col, vec2 p, vec2 q) {
   float l = length(p);
-  col=pow(clamp(col,0.0,1.0),(l+0.5)*vec3(0.75, 0.9, 0.25)); 
+  col=pow(clamp(col,0.0,1.0),(l+0.5)*vec3(0.75, 0.9, 0.25));
   col=col*0.6+0.4*col*col*(3.0-2.0*col);  // contrast
   col=mix(col, vec3(dot(col, vec3(0.33))), -0.4+0.5*l);  // satuation
   col*=0.5+0.5*pow(19.0*q.x*q.y*(1.0-q.x)*(1.0-q.y),0.7);  // vigneting
@@ -1226,20 +1226,20 @@ vec3 dreams_effect(int minor, float input0, float input1, float gtime, float lti
   float ttime = TAU*(ltime + input0);
   vec2 op = p;
   float z = 0.5;
-    
+
   vec3 col = vec3(0.0);
- 
+
   vec4 dp = dreams_dCoordinateTransform(p, ttime);
   float dl = length(dp);
   p = dreams_coordinateTransform(p, ttime);
   p.y += ttime/200.0;
- 
+
   float d = dreams_df(p/z)*z;
 
   const float pp = 0.3;
   vec3 li = dreams_lightning(p, ttime, tanh(pow(max(d, 0.0), pp)), 20.0*pow(1.5*dl, pp));
   col = 1.0 - li;
-  
+
   float f = tanh(0.01*dl);
   col = pow(col, vec3(1.0 - f))*vec3(1.2, 0.7, 0.5);
   col = clamp(col, 0.0, 1.0);
@@ -1247,7 +1247,7 @@ vec3 dreams_effect(int minor, float input0, float input1, float gtime, float lti
 
   col = dreams_postProcess(col, op, q);
 
-  return col;  
+  return col;
 }
 
 #endif
@@ -1264,7 +1264,7 @@ float fort_nfield(vec2 p, vec2 c) {
   float a = 0.0;
   float s = 1.0;
 
-  
+
   for (int i = 0; i < 25; ++i) {
     float m = dot(u,u);
     u = SABS(u, 0.0125)/m + c;
@@ -1272,7 +1272,7 @@ float fort_nfield(vec2 p, vec2 c) {
     a += s*m;
     s *= 0.75;
   }
-  
+
   return -tanh(0.125*a);
 }
 
@@ -1280,12 +1280,12 @@ vec3 fort_normal(vec2 p, vec2 c) {
   vec2 v;
   vec2 w;
   vec2 e = vec2(0.00005, 0);
-  
+
   vec3 n;
   n.x = fort_nfield(p + e.xy, c) - fort_nfield(p - e.xy, c);
   n.y = 2.0*e.x;
   n.z = fort_nfield(p + e.yx, c) - fort_nfield(p - e.yx, c);
-  
+
   return normalize(n);
 }
 
@@ -1299,10 +1299,10 @@ vec3 fort_field(vec2 p, vec2 c, float ttime) {
   rot(tc, ttime/30.0);
   vec2 tpn = normalize(vec2(1.0));
   float tpm = 0.0 + 1.4*tanh(length(p));
-  
+
   float tcd = 1E10;
   float tcp = 1E10;
-  
+
   for (int i = 0; i < 18; ++i) {
     float m = dot(u,u);
     u = SABS(u, 0.0125)/m + c;
@@ -1312,19 +1312,19 @@ vec3 fort_field(vec2 p, vec2 c, float ttime) {
     a += pow(s, 1.0)*m;
     s *= 0.75;
   }
-  
+
   return vec3(tanh(0.125*a), tanh(tcd), tanh(tcp));
 
 }
 
 vec3 fort_effect(int minor, float input0, float input1, float gtime, float ltime, vec2 p, vec2 q) {
   p *= input0;
-  
+
   float ttime = TAU*ltime;
   float scale = input1  + 0.05*ltime/effectDuration;
 //  vec2 c = (vec2(-0.5, -0.45)-0.15*pow((1.0-q.y)*1.25, 0.5))*scale;
   vec2 c = vec2(-0.5, -0.35)*scale;
-   
+
   vec3 gp = vec3(p.x, 1.0*tanh(1.0 - (length(p))), p.y);
   vec3 lp1 = vec3(-1.0, 1.5, 1.0);
   vec3 ld1 = normalize(lp1 - gp);
@@ -1336,23 +1336,23 @@ vec3 fort_effect(int minor, float input0, float input1, float gtime, float ltime
 
   float diff1 = max(dot(ld1, n), 0.0);
   float diff2 = max(dot(ld2, n), 0.0);
-  
+
   vec3 col = vec3(0.0);
-  
+
   const vec3 dcol1 = vec3(0.3, 0.5, 0.7).xyz;
   const vec3 dcol2 = 0.5*vec3(0.7, 0.5, 0.3).xyz;
   const vec3 scol1 = 0.5*vec3(1.0);
   const vec3 scol2 = 0.5*0.5*vec3(1.0);
-  
+
   col += diff1*dcol1;
   col += diff2*dcol2;
   col += scol1*pow(diff1, 10.0);
   col += scol2*pow(diff2, 3.0);
   col -= vec3(tanh(f.y-0.1));
   col += 0.5*(diff1+diff2)*(1.25*pow(vec3(f.z), 5.0*vec3(1.0, 4.0, 5.0)));
- 
+
   col = postProcess(col, q);
- 
+
   return col;
 }
 
@@ -1373,7 +1373,7 @@ vec3 jupyter_warp(vec2 p, vec2 q, vec3 lig, float ttime, float d) {
   vec3 col;
   vec2 v;
   vec2 w;
- 
+
   float f = warped_warp(p, ttime, d, 0.0, v, w);
   vec3 n = warped_normal(p, ttime, d, 0.0);
 
@@ -1382,7 +1382,7 @@ vec3 jupyter_warp(vec2 p, vec2 q, vec3 lig, float ttime, float d) {
   f *= td;
   v *= td;
   w *= td;
-  
+
   float dif = max(dot(lig, n), 0.5);
 
   const vec3 col11 = vec3(0.1, 0.3, 0.8);
@@ -1392,7 +1392,7 @@ vec3 jupyter_warp(vec2 p, vec2 q, vec3 lig, float ttime, float d) {
 
   vec3 col1 = mix(col11, col12, q.x);
   vec3 col2 = mix(col21, col22, q.y);
- 
+
   return pow(dif, 0.75)*tanh(pow(abs(f + 0.5), 1.5)) + (length(v)*col1 + length(w)*col2);
 }
 
@@ -1400,7 +1400,7 @@ vec3 jupyter_planet(vec2 p, vec2 q, float ltime, float ttime) {
   float smoothPixel = 10.0/RESOLUTION.y;
 
   float z = 0.5;
-  
+
   p /= z;
 
   float d = jupyter_df(p)*z;
@@ -1419,7 +1419,7 @@ vec3 jupyter_planet(vec2 p, vec2 q, float ltime, float ttime) {
   return col;
 }
 
-vec3 jupyter_flat(vec2 p, vec2 q, float ltime, float ttime) {  
+vec3 jupyter_flat(vec2 p, vec2 q, float ltime, float ttime) {
   p += ltime*0.0125;
   p *= 2.0 - ltime*0.0125;
   rot(p, (ltime-effectDuration)*TAU/900.0);
@@ -1427,32 +1427,32 @@ vec3 jupyter_flat(vec2 p, vec2 q, float ltime, float ttime) {
   vec3 lig = normalize(vec3(0., 0.2, -0.4));
   rot(lig.xy, ttime/10.0);
   vec3 col = jupyter_warp(p, q, lig, ttime, 1.0);
-  
+
   col = clamp(col, 0.0, 1.0);
   col = pow(col, vec3(1.5, 2.5, 3.5));
 
   return col;
 }
 
-vec3 jupyter_mirror(vec2 p, vec2 q, float ltime, float ttime) {  
+vec3 jupyter_mirror(vec2 p, vec2 q, float ltime, float ttime) {
   p*=2.0 - ltime*0.0125;
   p.x = SABS(p.x, 0.125);
   p.y *= -1.0;
 
   vec3 lig = normalize(vec3(0.2, 0.2, -0.2));
   vec3 col = jupyter_warp(p, q, lig, ttime, 1.0);
-  
+
   col = clamp(col, 0.0, 1.0);
   col = pow(col, vec3(1.5, 2.5, 3.5)*1.5);
 
   return col;
 }
 
-vec3 jupyter_kaleido(vec2 p, vec2 q, float ltime, float ttime) {  
+vec3 jupyter_kaleido(vec2 p, vec2 q, float ltime, float ttime) {
   p += ltime*0.0125;
   p *= 2.0 - ltime*0.0125;
   rot(p, (ltime-effectDuration)*TAU/900.0);
-  
+
   vec2 pp = toPolar(p);
   modMirror1(pp.y, PI/15.0);
   p = toRect(pp);
@@ -1460,7 +1460,7 @@ vec3 jupyter_kaleido(vec2 p, vec2 q, float ltime, float ttime) {
   vec3 lig = normalize(vec3(0.2, 0.2, 0.2));
 //  rot(lig.xz, ttime/effectDuration);
   vec3 col = jupyter_warp(p, q, lig, ttime, 1.0);
-  
+
   col = clamp(col, 0.0, 1.0);
   col = pow(col, vec3(1.5, 2.5, 3.5));
 
@@ -1493,7 +1493,7 @@ vec3 jupyter_effect(int minor, float input0, float input1, float gtime, float lt
   return col;
 }
 
-#endif 
+#endif
 
 // ------------------------------==> JUPYTER <==-------------------------------
 
@@ -1503,7 +1503,7 @@ void mainImage(out vec4 fragColor, vec2 p, vec2 q) {
   p.x *= RESOLUTION.x/RESOLUTION.y;
 
   const float effectNo = 0.0;
-  
+
   float dtime = TIME - startDelay;
 
   float timeInEffect = mod(dtime, effectDuration);
@@ -1511,21 +1511,21 @@ void mainImage(out vec4 fragColor, vec2 p, vec2 q) {
   Effect effect = effects[effectIndex];
   Effect nextEffect = effects[int(mod(effectIndex + 1, effects.length))];
 
-  vec3 col = vec3(0.5);  
+  vec3 col = vec3(0.5);
 
   float ltime = timeInEffect + effect.seq*effectDuration;
-   
+
   switch(effect.major) {
 #ifdef ENABLE_TUNNEL
   case MAJOR_TUNNEL:
     col = tunnel_effect(effect.minor, effect.input0, effect.input1, dtime, ltime, p, q);
     break;
-#endif    
+#endif
 #ifdef ENABLE_IMPULSE
   case MAJOR_IMPULSE:
     col = impulse_effect(effect.minor, effect.input0, effect.input1, dtime, ltime, p, q);
     break;
-#endif    
+#endif
 #ifdef ENABLE_DRAGON
   case MAJOR_DRAGON:
     col = dragon_effect(effect.minor, effect.input0, effect.input1, dtime, ltime, p, q);
@@ -1562,10 +1562,10 @@ void mainImage(out vec4 fragColor, vec2 p, vec2 q) {
     break;
 #endif
   default:
-    col = vec3(0.5, 0.0, 0.0);  
+    col = vec3(0.5, 0.0, 0.0);
     break;
   }
-  
+
   float fadeIn = (1.0 - smoothstep(0.0, fadeTime, timeInEffect));
   float fadeOut = smoothstep(effectDuration - fadeTime, effectDuration, timeInEffect);
 
@@ -1575,13 +1575,13 @@ void mainImage(out vec4 fragColor, vec2 p, vec2 q) {
   if (effect.seq == 0.0) {
     col += fadeCol*fadeIn*fadeIn;
   }
- 
+
   if (nextEffect.seq == 0.0){
     col += fadeCol*pow(fadeOut, 30);
   }
-  
+
   col = clamp(col, 0.0, 1.0);
-  
+
   float initialFade = smoothstep(0.5, effectDuration, dtime);
   float exitFade = 1.0 - smoothstep((effects.length - 1)*effectDuration, effects.length*effectDuration, dtime);
 
@@ -1589,7 +1589,7 @@ void mainImage(out vec4 fragColor, vec2 p, vec2 q) {
   col *= sqrt(initialFade);
   col *= sqrt(exitFade);
 #endif
- 
+
   fragColor = vec4(col.xyz, 1.0);
 }
 
