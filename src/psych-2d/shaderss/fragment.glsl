@@ -88,14 +88,18 @@ struct Effect {
   float    input1 ;
 };
 
+const float effectDuration  = 6.75;
+const float fadeTime        = 1.0;
+
 // Uncomment to speed up experimentation
-// #define EXPERIMENTING
+//#define EXPERIMENTING
 
 #ifdef EXPERIMENTING
 #define START_DELAY   0.0
 #define ENABLE_DRAGON
 const Effect effects[] = Effect[](
-    Effect(MAJOR_DRAGON  , MINOR_FADEIN    , 0.0, 1.4        , 5.5)
+    Effect(MAJOR_DRAGON  , MINOR_NONE      , 0.0, 0.0       , effectDuration/8.0)
+  , Effect(MAJOR_DRAGON  , MINOR_NONE      , 1.0, 0.0       , effectDuration/8.0)
   );
 #else
 #define START_DELAY   3.24
@@ -138,7 +142,7 @@ const Effect effects[] = Effect[](
   , Effect(MAJOR_DRAGON  , MINOR_NONE      , 0.0, 1.4        , 5.0)
   , Effect(MAJOR_DRAGON  , MINOR_NONE      , 1.0, 1.4        , 5.0)
   , Effect(MAJOR_TUNNEL  , MINOR_STARFIELD , 0.0, pow(0.5, 5), 0.0)
-  , Effect(MAJOR_DRAGON  , MINOR_NONE      , 0.0, 0.0        , 1.6)
+  , Effect(MAJOR_DRAGON  , MINOR_NONE      , 0.0, 0.0        , effectDuration/8.0)
   , Effect(MAJOR_TUNNEL  , MINOR_POLYGON   , 0.0, pow(0.5, 4), 2.0)
   , Effect(MAJOR_TUNNEL  , MINOR_POLYGON   , 1.0, pow(0.5, 4), 2.0)
   , Effect(MAJOR_JUPYTER , MINOR_MIRROR    , 0.0, 47.0       , 0.0)
@@ -188,8 +192,6 @@ const Effect effects[] = Effect[](
 #endif
 const vec2 sca0 = SCA(0.0);
 
-const float effectDuration  = 6.75;
-const float fadeTime        = 1.0;
 const float startDelay      = START_DELAY;
 
 highp float rand(vec2 co) {
@@ -752,7 +754,7 @@ vec3 impulse_80S(float gtime, float ltime, float z, vec2 p, vec2 rp) {
 }
 
 vec3 impulse_pulsar(float gtime, float ltime, float z, vec2 p, vec2 rp) {
-  float dist = 1.0/(0.5 + pow(abs(tan(-PI/2 + 0.75*length((rp - impulse_coff*z))-ltime*PI*0.5)), 1.0));
+  float dist = 1.0/(0.5 + pow(abs(tan(-PI/2 + 0.75*length((rp - impulse_coff*z))-ltime*PI*2.0/effectDuration)), 1.0));
   float d  = impulse_df(ltime, rp/z, impulse_coff, dist)*z;
 
 
