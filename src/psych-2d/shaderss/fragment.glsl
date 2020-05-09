@@ -156,7 +156,7 @@ const Effect effects[] = Effect[](
   , Effect(MAJOR_DREAMS  , MINOR_NONE      , 4.0, -35.0      , 0.0)
   , Effect(MAJOR_DREAMS  , MINOR_NONE      , 5.0, -35.0      , 0.0)
   , Effect(MAJOR_DREAMS  , MINOR_NONE      , 6.0, -35.0      , 0.0)
-  , Effect(MAJOR_TUNNEL  , MINOR_STARFIELD , 0.0, pow(0.5, 4), 0.0)
+  , Effect(MAJOR_DREAMS  , MINOR_NONE      , 7.0, -35.0      , 0.0)
   , Effect(MAJOR_GLOWBALL, MINOR_NONE      , 0.0, 1.0        , 0.5)
   , Effect(MAJOR_GLOWBALL, MINOR_NONE      , 0.0, 11.0       , 0.5)
   , Effect(MAJOR_GLOWBALL, MINOR_NONE      , 0.0, 317.0      , 0.5)
