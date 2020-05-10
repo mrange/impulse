@@ -90,6 +90,7 @@ struct Effect {
 
 const float effectDuration  = 6.75;
 const float fadeTime        = 1.0;
+const float songLength      = 488.0;
 
 // Uncomment to speed up experimentation
 //#define EXPERIMENTING
@@ -1585,7 +1586,7 @@ void mainImage(out vec4 fragColor, vec2 p, vec2 q) {
   col = clamp(col, 0.0, 1.0);
 
   float initialFade = smoothstep(0.5, effectDuration, dtime);
-  float exitFade = 1.0 - smoothstep((effects.length - 1)*effectDuration, effects.length*effectDuration, dtime);
+  float exitFade = 1.0 - smoothstep((effects.length - 1)*effectDuration, min(songLength-startDelay, effects.length*effectDuration), dtime);
 
 #ifndef EXPERIMENTING
   col *= sqrt(initialFade);

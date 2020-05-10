@@ -461,7 +461,15 @@ void main()
       CHECK_MCI (mciSendStringW (LR"PATH(open "music.mp3" alias music)PATH", nullptr, 0, hwnd));
       music_device = mciGetDeviceIDW (L"music");
       CHECK_MCI (mciSendStringW (L"set music time format milliseconds", nullptr, 0, hwnd));
-//      CHECK_MCI (mciSendStringW (L"seek music to 415000", nullptr, 0, hwnd));
+//      CHECK_MCI (mciSendStringW (L"seek music to 480000", nullptr, 0, hwnd));
+      CHECK_MCI (mciSendStringW (L"cue music", nullptr, 0, hwnd));
+    }
+  }
+
+  void play_music ()
+  {
+    if (music_device != 0)
+    {
       CHECK_MCI (mciSendStringW (L"play music", nullptr, 0, hwnd));
     }
   }
@@ -492,7 +500,7 @@ double get__now ()
 
     QueryPerformanceCounter (&now);
 
-    return freq_multiplier*(now.QuadPart - counter_freq.QuadPart);
+    return freq_multiplier*(now.QuadPart - counter_start.QuadPart);
   }
 }
 
@@ -508,6 +516,15 @@ int show__screen (int nCmdShow, bool fsm, int div)
   init_opengl ();
 
   init_music ();
+
+  MessageBoxW (
+    hwnd
+  , L"Impulse psychedelic dreams in 2D\n\nMusic 'Sprung' by 'Astroboy'\nLicensed under CC BY-NC-ND 3.0\nDownloaded from: https://sampleswap.org/"
+  , L"Impulse psychedelic dreams in 2D"
+  , MB_OK
+  );
+
+  play_music ();
 
   HACCEL hAccelTable = LoadAccelerators (get__hinstance (), MAKEINTRESOURCE (IDC_SHADERSS));
 
