@@ -98,6 +98,7 @@ const float songLength      = 488.0;
 #ifdef EXPERIMENTING
 #define START_DELAY   0.0
 #define ENABLE_DRAGON
+#define ENABLE_DREAMS
 const Effect effects[] = Effect[](
     Effect(MAJOR_DRAGON  , MINOR_NONE      , 0.0, 0.0       , effectDuration/8.0)
   , Effect(MAJOR_DRAGON  , MINOR_NONE      , 1.0, 0.0       , effectDuration/8.0)
@@ -115,79 +116,78 @@ const Effect effects[] = Effect[](
 #define ENABLE_JUPYTER
 
 const Effect effects[] = Effect[](
-    Effect(MAJOR_DRAGON  , MINOR_FADEIN    , 0.0, 1.4        , 5.5)
-  , Effect(MAJOR_DRAGON  , MINOR_FADEIN    , 1.0, 1.4        , 5.5)
-  , Effect(MAJOR_IMPULSE , MINOR_80S       , 0.0, 0.0        , 0.0)
-  , Effect(MAJOR_DRAGON  , MINOR_NONE      , 0.0, 1.0        , 5.0)
-  , Effect(MAJOR_DRAGON  , MINOR_NONE      , 1.0, 1.0        , 5.0)
-  , Effect(MAJOR_TUNNEL  , MINOR_STARFIELD , 0.0, pow(0.5, 4), 0.0)
-  , Effect(MAJOR_TUNNEL  , MINOR_CIRCLES   , 0.0, pow(0.5, 2), 0.0)
-  , Effect(MAJOR_TUNNEL  , MINOR_CIRCLES   , 0.0, pow(0.5, 5), 0.0)
-  , Effect(MAJOR_TUNNEL  , MINOR_CIRCLES   , 0.0, pow(0.5, 8), 0.0)
-  , Effect(MAJOR_IMPULSE , MINOR_PULSAR    , 0.0, PI/10      , 0.0) // FIXED
-  , Effect(MAJOR_TUNNEL  , MINOR_POLYGON   , 0.0, pow(0.5, 5), 3.0)
-  , Effect(MAJOR_TUNNEL  , MINOR_POLYGON   , 1.0, pow(0.5, 5), 3.0)
-  , Effect(MAJOR_TUNNEL  , MINOR_STARS     , 0.0, pow(0.5, 5), 0.0)
-  , Effect(MAJOR_TUNNEL  , MINOR_POLYGON   , 0.0, pow(0.5, 5), 5.0)
-  , Effect(MAJOR_TUNNEL  , MINOR_POLYGON   , 1.0, pow(0.5, 5), 5.0)
-  , Effect(MAJOR_JUPYTER , MINOR_FLAT      , 0.0, 45.0       , 0.0)
-  , Effect(MAJOR_JUPYTER , MINOR_FLAT      , 1.0, 45.0       , 0.0)
-  , Effect(MAJOR_TUNNEL  , MINOR_ICIRCLES  , 0.0, pow(0.5, 2), 0.0)
-  , Effect(MAJOR_TUNNEL  , MINOR_ICIRCLES  , 0.0, pow(0.5, 4), 0.0)
-  , Effect(MAJOR_DRAGON  , MINOR_NONE      , 0.0, -1.0       , 5.0)
-  , Effect(MAJOR_DRAGON  , MINOR_NONE      , 1.0, -1.0       , 5.0)
-  , Effect(MAJOR_ACID    , MINOR_NONE      , 0.0, 1.0        , 0.1)
-  , Effect(MAJOR_ACID    , MINOR_NONE      , 1.0, 1.0        , 0.1)
-  , Effect(MAJOR_SMEAR   , MINOR_NONE      , 0.0, 140.0      , 0.0) // FIXED
-  , Effect(MAJOR_SMEAR   , MINOR_NONE      , 1.0, 140.0      , 0.0)
-  , Effect(MAJOR_DRAGON  , MINOR_NONE      , 0.0, 1.4        , 5.0)
-  , Effect(MAJOR_DRAGON  , MINOR_NONE      , 1.0, 1.4        , 5.0)
-  , Effect(MAJOR_TUNNEL  , MINOR_STARFIELD , 0.0, pow(0.5, 5), 0.0)
-  , Effect(MAJOR_DRAGON  , MINOR_NONE      , 0.0, 0.0        , effectDuration/8.0)
-  , Effect(MAJOR_TUNNEL  , MINOR_POLYGON   , 0.0, pow(0.5, 4), 2.0)
-  , Effect(MAJOR_TUNNEL  , MINOR_POLYGON   , 1.0, pow(0.5, 4), 2.0)
-  , Effect(MAJOR_JUPYTER , MINOR_MIRROR    , 0.0, 47.0       , 0.0)
-  , Effect(MAJOR_JUPYTER , MINOR_MIRROR    , 1.0, 47.0       , 0.0)
-  , Effect(MAJOR_TUNNEL  , MINOR_ICIRCLES  , 0.0, pow(0.5, 3), 0.0)
-  , Effect(MAJOR_TUNNEL  , MINOR_ICIRCLES  , 1.0, pow(0.5, 3), 0.0)
-  , Effect(MAJOR_FORT    , MINOR_NONE      , 0.0, 1.0        , 0.2)
-  , Effect(MAJOR_FORT    , MINOR_NONE      , 0.0, 2.0        , 0.5)
-  , Effect(MAJOR_FORT    , MINOR_NONE      , 0.0, 3.0        , 0.8)
-  , Effect(MAJOR_IMPULSE , MINOR_PULSAR    , 0.0, PI/10      , 0.0) // FIXED
-  , Effect(MAJOR_DREAMS  , MINOR_NONE      , 0.0, -35.0      , 0.0) // FIXED
-  , Effect(MAJOR_DREAMS  , MINOR_NONE      , 1.0, -35.0      , 0.0)
-  , Effect(MAJOR_DREAMS  , MINOR_NONE      , 2.0, -35.0      , 0.0)
-  , Effect(MAJOR_DREAMS  , MINOR_NONE      , 3.0, -35.0      , 0.0)
-  , Effect(MAJOR_DREAMS  , MINOR_NONE      , 4.0, -35.0      , 0.0)
-  , Effect(MAJOR_DREAMS  , MINOR_NONE      , 5.0, -35.0      , 0.0)
-  , Effect(MAJOR_DREAMS  , MINOR_NONE      , 6.0, -35.0      , 0.0)
-  , Effect(MAJOR_DREAMS  , MINOR_NONE      , 7.0, -35.0      , 0.0)
-  , Effect(MAJOR_GLOWBALL, MINOR_NONE      , 0.0, 1.0        , 0.5)
-  , Effect(MAJOR_GLOWBALL, MINOR_NONE      , 0.0, 11.0       , 0.5)
-  , Effect(MAJOR_GLOWBALL, MINOR_NONE      , 0.0, 317.0      , 0.5)
-  , Effect(MAJOR_TUNNEL  , MINOR_POLYGON   , 0.0, pow(0.5, 5), 5.0)
-  , Effect(MAJOR_JUPYTER , MINOR_KALEIDO   , 0.0, 70.0       , 0.0)
-  , Effect(MAJOR_JUPYTER , MINOR_KALEIDO   , 1.0, 70.0       , 0.0)
-  , Effect(MAJOR_TUNNEL  , MINOR_ICIRCLES  , 0.0, pow(0.5, 2), 0.0)
-  , Effect(MAJOR_TUNNEL  , MINOR_ICIRCLES  , 1.0, pow(0.5, 2), 0.0)
-  , Effect(MAJOR_TUNNEL  , MINOR_ICIRCLES  , 0.0, pow(0.5, 5), 0.0)
-  , Effect(MAJOR_TUNNEL  , MINOR_ICIRCLES  , 1.0, pow(0.5, 5), 0.0)
-  , Effect(MAJOR_ACID    , MINOR_NONE      , 0.0, 3.0        , 0.5)
-  , Effect(MAJOR_ACID    , MINOR_NONE      , 1.0, 3.0        , 0.5)
-  , Effect(MAJOR_JUPYTER , MINOR_KALEIDO   , 0.0, 80.0       , 0.0)
-  , Effect(MAJOR_DRAGON  , MINOR_NONE      , 0.0, 1.0        , 5.0)
-  , Effect(MAJOR_DRAGON  , MINOR_NONE      , 1.0, 1.0        , 5.0)
-  , Effect(MAJOR_FORT    , MINOR_NONE      , 0.0, 3.0        , 0.1)
-  , Effect(MAJOR_JUPYTER , MINOR_NONE      , 0.0, 0.0        , 0.0)
-  , Effect(MAJOR_FORT    , MINOR_NONE      , 0.0, 3.0        , 1.0)
-  , Effect(MAJOR_JUPYTER , MINOR_MIRROR    , 0.0, 130.0       , 0.0)
-  , Effect(MAJOR_JUPYTER , MINOR_MIRROR    , 1.0, 130.0       , 0.0)
-  , Effect(MAJOR_DREAMS  , MINOR_NONE      , 0.0, 24.0       , 0.0)
-  , Effect(MAJOR_DREAMS  , MINOR_NONE      , 1.0, 24.0       , 0.0)
-  , Effect(MAJOR_DREAMS  , MINOR_NONE      , 2.0, 24.0       , 0.0)
-  , Effect(MAJOR_DREAMS  , MINOR_NONE      , 3.0, 24.0       , 0.0)
-  , Effect(MAJOR_IMPULSE , MINOR_80S       , 0.0, 0.0        , 0.0)
-//  , Effect(MAJOR_DREAMS  , MINOR_NONE      , 4.0, 24.0       , 0.0)
+    Effect(MAJOR_DRAGON  , MINOR_FADEIN    , 0.0, 1.4          , 5.5)
+  , Effect(MAJOR_DRAGON  , MINOR_FADEIN    , 1.0, 1.4          , 5.5)
+  , Effect(MAJOR_IMPULSE , MINOR_80S       , 0.0, 0.0          , 0.0)
+  , Effect(MAJOR_DRAGON  , MINOR_NONE      , 0.0, 1.0          , 5.0)
+  , Effect(MAJOR_DRAGON  , MINOR_NONE      , 1.0, 1.0          , 5.0)
+  , Effect(MAJOR_TUNNEL  , MINOR_STARFIELD , 0.0, pow(0.5, 4.0), 0.0)
+  , Effect(MAJOR_TUNNEL  , MINOR_CIRCLES   , 0.0, pow(0.5, 2.0), 0.0)
+  , Effect(MAJOR_TUNNEL  , MINOR_CIRCLES   , 0.0, pow(0.5, 5.0), 0.0)
+  , Effect(MAJOR_TUNNEL  , MINOR_CIRCLES   , 0.0, pow(0.5, 8.0), 0.0)
+  , Effect(MAJOR_IMPULSE , MINOR_PULSAR    , 0.0, PI/10.0      , 0.0)
+  , Effect(MAJOR_TUNNEL  , MINOR_POLYGON   , 0.0, pow(0.5, 5.0), 3.0)
+  , Effect(MAJOR_TUNNEL  , MINOR_POLYGON   , 1.0, pow(0.5, 5.0), 3.0)
+  , Effect(MAJOR_TUNNEL  , MINOR_STARS     , 0.0, pow(0.5, 5.0), 0.0)
+  , Effect(MAJOR_TUNNEL  , MINOR_POLYGON   , 0.0, pow(0.5, 5.0), 5.0)
+  , Effect(MAJOR_TUNNEL  , MINOR_POLYGON   , 1.0, pow(0.5, 5.0), 5.0)
+  , Effect(MAJOR_JUPYTER , MINOR_FLAT      , 0.0, 45.0         , 0.0)
+  , Effect(MAJOR_JUPYTER , MINOR_FLAT      , 1.0, 45.0         , 0.0)
+  , Effect(MAJOR_TUNNEL  , MINOR_ICIRCLES  , 0.0, pow(0.5, 2.0), 0.0)
+  , Effect(MAJOR_TUNNEL  , MINOR_ICIRCLES  , 0.0, pow(0.5, 4.0), 0.0)
+  , Effect(MAJOR_DRAGON  , MINOR_NONE      , 0.0, -1.0         , 5.0)
+  , Effect(MAJOR_DRAGON  , MINOR_NONE      , 1.0, -1.0         , 5.0)
+  , Effect(MAJOR_ACID    , MINOR_NONE      , 0.0, 1.0          , 0.1)
+  , Effect(MAJOR_ACID    , MINOR_NONE      , 1.0, 1.0          , 0.1)
+  , Effect(MAJOR_SMEAR   , MINOR_NONE      , 0.0, 140.0        , 0.0)
+  , Effect(MAJOR_SMEAR   , MINOR_NONE      , 1.0, 140.0        , 0.0)
+  , Effect(MAJOR_DRAGON  , MINOR_NONE      , 0.0, 1.4          , 5.0)
+  , Effect(MAJOR_DRAGON  , MINOR_NONE      , 1.0, 1.4          , 5.0)
+  , Effect(MAJOR_TUNNEL  , MINOR_STARFIELD , 0.0, pow(0.5, 5.0), 0.0)
+  , Effect(MAJOR_DRAGON  , MINOR_NONE      , 0.0, 0.0          , effectDuration/8.0)
+  , Effect(MAJOR_TUNNEL  , MINOR_POLYGON   , 0.0, pow(0.5, 4.0), 2.0)
+  , Effect(MAJOR_TUNNEL  , MINOR_POLYGON   , 1.0, pow(0.5, 4.0), 2.0)
+  , Effect(MAJOR_JUPYTER , MINOR_MIRROR    , 0.0, 47.0         , 0.0)
+  , Effect(MAJOR_JUPYTER , MINOR_MIRROR    , 1.0, 47.0         , 0.0)
+  , Effect(MAJOR_TUNNEL  , MINOR_ICIRCLES  , 0.0, pow(0.5, 3.0), 0.0)
+  , Effect(MAJOR_TUNNEL  , MINOR_ICIRCLES  , 1.0, pow(0.5, 3.0), 0.0)
+  , Effect(MAJOR_FORT    , MINOR_NONE      , 0.0, 1.0          , 0.2)
+  , Effect(MAJOR_FORT    , MINOR_NONE      , 0.0, 2.0          , 0.5)
+  , Effect(MAJOR_FORT    , MINOR_NONE      , 0.0, 3.0          , 0.8)
+  , Effect(MAJOR_IMPULSE , MINOR_PULSAR    , 0.0, PI/10.0      , 0.0)
+  , Effect(MAJOR_DREAMS  , MINOR_NONE      , 0.0, -35.0        , 0.0)
+  , Effect(MAJOR_DREAMS  , MINOR_NONE      , 1.0, -35.0        , 0.0)
+  , Effect(MAJOR_DREAMS  , MINOR_NONE      , 2.0, -35.0        , 0.0)
+  , Effect(MAJOR_DREAMS  , MINOR_NONE      , 3.0, -35.0        , 0.0)
+  , Effect(MAJOR_DREAMS  , MINOR_NONE      , 4.0, -35.0        , 0.0)
+  , Effect(MAJOR_DREAMS  , MINOR_NONE      , 5.0, -35.0        , 0.0)
+  , Effect(MAJOR_DREAMS  , MINOR_NONE      , 6.0, -35.0        , 0.0)
+  , Effect(MAJOR_DREAMS  , MINOR_NONE      , 7.0, -35.0        , 0.0)
+  , Effect(MAJOR_GLOWBALL, MINOR_NONE      , 0.0, 1.0          , 0.5)
+  , Effect(MAJOR_GLOWBALL, MINOR_NONE      , 0.0, 11.0         , 0.5)
+  , Effect(MAJOR_GLOWBALL, MINOR_NONE      , 0.0, 317.0        , 0.5)
+  , Effect(MAJOR_TUNNEL  , MINOR_POLYGON   , 0.0, pow(0.5, 5.0), 5.0)
+  , Effect(MAJOR_JUPYTER , MINOR_KALEIDO   , 0.0, 70.0         , 0.0)
+  , Effect(MAJOR_JUPYTER , MINOR_KALEIDO   , 1.0, 70.0         , 0.0)
+  , Effect(MAJOR_TUNNEL  , MINOR_ICIRCLES  , 0.0, pow(0.5, 2.0), 0.0)
+  , Effect(MAJOR_TUNNEL  , MINOR_ICIRCLES  , 1.0, pow(0.5, 2.0), 0.0)
+  , Effect(MAJOR_TUNNEL  , MINOR_ICIRCLES  , 0.0, pow(0.5, 5.0), 0.0)
+  , Effect(MAJOR_TUNNEL  , MINOR_ICIRCLES  , 1.0, pow(0.5, 5.0), 0.0)
+  , Effect(MAJOR_ACID    , MINOR_NONE      , 0.0, 3.0          , 0.5)
+  , Effect(MAJOR_ACID    , MINOR_NONE      , 1.0, 3.0          , 0.5)
+  , Effect(MAJOR_JUPYTER , MINOR_KALEIDO   , 0.0, 80.0         , 0.0)
+  , Effect(MAJOR_DRAGON  , MINOR_NONE      , 0.0, 1.0          , 5.0)
+  , Effect(MAJOR_DRAGON  , MINOR_NONE      , 1.0, 1.0          , 5.0)
+  , Effect(MAJOR_FORT    , MINOR_NONE      , 0.0, 3.0          , 0.1)
+  , Effect(MAJOR_JUPYTER , MINOR_NONE      , 0.0, 0.0          , 0.0)
+  , Effect(MAJOR_FORT    , MINOR_NONE      , 0.0, 3.0          , 1.0)
+  , Effect(MAJOR_JUPYTER , MINOR_MIRROR    , 0.0, 130.0        , 0.0)
+  , Effect(MAJOR_JUPYTER , MINOR_MIRROR    , 1.0, 130.0        , 0.0)
+  , Effect(MAJOR_DREAMS  , MINOR_NONE      , 0.0, 24.0         , 0.0)
+  , Effect(MAJOR_DREAMS  , MINOR_NONE      , 1.0, 24.0         , 0.0)
+  , Effect(MAJOR_DREAMS  , MINOR_NONE      , 2.0, 24.0         , 0.0)
+  , Effect(MAJOR_DREAMS  , MINOR_NONE      , 3.0, 24.0         , 0.0)
+  , Effect(MAJOR_IMPULSE , MINOR_80S       , 0.0, 0.0          , 0.0)
   );
 
 #endif
@@ -220,7 +220,7 @@ float modMirror1(inout float p, float size) {
     float halfsize = size*0.5;
     float c = floor((p + halfsize)/size);
     p = mod(p + halfsize,size) - halfsize;
-    p *= mod(c, 2.0)*2 - 1;
+    p *= mod(c, 2.0)*2.0 - 1.0;
     return c;
 }
 
@@ -396,12 +396,12 @@ float spokes(vec2 p, float a) {
   mod1(pp.y, TAU/10.0);
   pp.y += PI/2.0;
   p = toRect(pp);
-  float ds = box(p, vec2(0.075, 0.5)*6, 0.04*6);
+  float ds = box(p, vec2(0.075, 0.5)*6.0, 0.04*6.0);
   return ds;
 }
 
 float cog(vec2 p, float a) {
-  float c = circle(p, 6*0.375);
+  float c = circle(p, 6.0*0.375);
   float s = spokes(p, a);
   return min(c, s);
 }
@@ -415,7 +415,7 @@ float cogImpulse(vec2 p, float time) {
   pp.y += a;
   mod1(pp.y, TAU/5.0);
   vec2 rp = toRect(pp);
-  float ic = circle(rp - vec2(6*0.22, 0.0), 6*0.1);
+  float ic = circle(rp - vec2(6.0*0.22, 0.0), 6.0*0.1);
 
   c = max(c, -(i-0.15));
 //  c = max(c, -ic);
@@ -546,17 +546,17 @@ vec2 tunnel_offset(float gtime, float z) {
   vec2 o = vec2(0.0);
   vec2 r = vec2(2.2);
   o += r*vec2(cos(z), sin((sqrt(0.5))*z + pow(0.5 + 0.5*sin(sqrt(0.25)*z),5.0)));
-  return o*1;
+  return o;
 }
 
 
 vec3 tunnel_stars(int minor, float input0, float input1, float gtime, float ltime, vec2 p, int gi, float smallRadii, float largeRadii) {
   vec2 pp = toPolar(p);
   pp.x = pp.x*(1.0 + 1.0*pow(length(1.0*p), 0.5));
-  pp.y += 0.5*gi;
+  pp.y += 0.5*float(gi);
   p = toRect(pp);
 //  rot(p, 0.5*gi);
-  float m  = smallRadii*mix(1, 30, pow(smoothstep(0.0, fadeTime+1.0, ltime), 0.25));
+  float m  = smallRadii*mix(1.0, 30.0, pow(smoothstep(0.0, fadeTime+1.0, ltime), 0.25));
   float nx = mod1(p.x, m);
   float ny = mod1(p.y, m);
   vec2 n   = vec2(nx, ny);
@@ -571,31 +571,31 @@ vec3 tunnel_stars(int minor, float input0, float input1, float gtime, float ltim
   float d = star5(p, smallRadii*1.0, 0.5);
 //  float d = circle(p, smallRadii);
 
-  return vec3(d, 0.75*length(n), 0.0005*gi);
+  return vec3(d, 0.75*length(n), 0.0005*float(gi));
 }
 
 float tunnel_expander(int gi) {
-  return 0.5 - 0.5*cos(0.05*gi);
+  return 0.5 - 0.5*cos(0.05*float(gi));
 }
 
 vec3 tunnel_poly(int minor, float input0, float input1, float gtime, float ltime, vec2 p, int gi, float smallRadii, float largeRadii) {
   vec2 pp = toPolar(p);
-  pp.y += gi*TAU/60-0.3*gtime;
+  pp.y += float(gi)*TAU/60.0-0.3*gtime;
   float nny = mod1(pp.y, TAU/input1);
   p = toRect(pp);
   float di = -p.x + largeRadii;
 
   float nx = mod1(p.x, smallRadii*2.0);
-  float ny = mod1(p.y, smallRadii*(2.0 + 40*pow(tunnel_expander(gi), 4.0)));
+  float ny = mod1(p.y, smallRadii*(2.0 + 40.0*pow(tunnel_expander(gi), 4.0)));
 
-  float xmul = (int(nx) & 1)*2.0 - 1.0;
-  float ymul = (int(ny) & 1)*2.0 - 1.0;
-  rot(p, ymul*xmul*(gtime - 0.05*gi)*TAU/5.0);
+  float xmul = float(int(nx) & 1)*2.0 - 1.0;
+  float ymul = float(int(ny) & 1)*2.0 - 1.0;
+  rot(p, ymul*xmul*(gtime - 0.05*float(gi))*TAU/5.0);
 
   float d = star5(p, smallRadii*1.0, 0.5);
   d = max(d, di);
 
-  return vec3(d, (nx-largeRadii/(smallRadii*2.0)), (smallRadii*ny-0.05*smallRadii*gi));
+  return vec3(d, (nx-largeRadii/(smallRadii*2.0)), (smallRadii*ny-0.05*smallRadii*float(gi)));
 }
 
 vec3 tunnel_circle(int minor, float input0, float input1, float gtime, float ltime, vec2 p, int gi, float smallRadii, float largeRadii) {
@@ -609,7 +609,7 @@ vec3 tunnel_circle(int minor, float input0, float input1, float gtime, float lti
   vec2 pp = toPolar(p);
 
   float ny = pp.y;
-  pp.y += gi*TAU/3.0;
+  pp.y += float(gi)*TAU/3.0;
 //  pp.y +=-0.33*smallRadii*float(gi) + 0.25*sin(0.3*gi)*time;
   pp.x -= dx;
   float nx = pp.x/divend;
@@ -620,9 +620,9 @@ vec3 tunnel_circle(int minor, float input0, float input1, float gtime, float lti
   p = toRect(pp);
   p -= vec2(0.0, largeRadii);
 
-  float xmul = (int(nx) & 1)*2.0 - 1.0;
-  float ymul = (int(nny) & 1)*2.0 - 1.0;
-  rot(p, ymul*xmul*(gtime - 0.05*gi)*TAU/5.0);
+  float xmul = float(int(nx) & 1)*2.0 - 1.0;
+  float ymul = float(int(nny) & 1)*2.0 - 1.0;
+  rot(p, ymul*xmul*(gtime - 0.05*float(gi))*TAU/5.0);
 
   float d;
   switch(minor) {
@@ -694,8 +694,8 @@ vec3 tunnel_effect(int minor, float input0, float input1, float gtime, float lti
     icol.w += diff*diff*diff*0.75*clamp(1.0 - 30.0*d, 0.0, 1.0);
     icol.w += tanh(0.025*lz)*0.5*ld*clamp(1.5 - ld, 0.0, 1.0);
 
-    icol.w *= clamp(1.0 - fgtime/zdtime, 1.0 - step(float(i), tunnel_nearest), 1.0);
-    icol.w *= clamp(fgtime/zdtime, step(float(i), tunnel_furthest-1), 1.0);
+    icol.w *= clamp(1.0 - fgtime/zdtime, 1.0 - step(float(i), float(tunnel_nearest)), 1.0);
+    icol.w *= clamp(fgtime/zdtime, step(float(i), float(tunnel_furthest-1)), 1.0);
 
 
     col = mix(col, icol.xyz, clamp(icol.w, 0.0, 1.0));
@@ -755,7 +755,7 @@ vec3 impulse_80S(float gtime, float ltime, float z, vec2 p, vec2 rp) {
 }
 
 vec3 impulse_pulsar(float gtime, float ltime, float z, vec2 p, vec2 rp) {
-  float dist = 1.0/(0.5 + pow(abs(tan(-PI/2 + 0.75*length((rp - impulse_coff*z))-ltime*PI*2.0/effectDuration)), 1.0));
+  float dist = 1.0/(0.5 + pow(abs(tan(-PI/2.0 + 0.75*length((rp - impulse_coff*z))-ltime*PI*2.0/effectDuration)), 1.0));
   float d  = impulse_df(ltime, rp/z, impulse_coff, dist)*z;
 
 
@@ -778,7 +778,7 @@ vec3 impulse_effect(int minor, float input0, float input1, float gtime, float lt
   float z = 0.425 - ltime*0.0125;
   vec2 pp = toPolar(p);
   float fadeOut = pow(smoothstep(effectDuration - fadeTime, effectDuration, ltime), 2.5);
-  float period = mix(TAU*10, TAU*20, fadeOut);
+  float period = mix(TAU*10.0, TAU*20.0, fadeOut);
   pp.x += 0.75*fadeOut*sin(period*p.x)*sin(period*p.y);
   vec2 rp = toRect(pp);
 
@@ -871,11 +871,11 @@ vec3 dragon_effect(int minor, float input0, float input1, float gtime, float lti
   float distort = input0;
   float period = input1;
   p += ltime*0.0125;
-  p *= 1 - ltime*0.0125;
+  p *= 1.0 - ltime*0.0125;
   rot(p, (ltime-effectDuration)*TAU/900.0);
   vec2 pp = 10.0*p;
 
-  ltime += 0;
+  ltime += 0.0;
 
   rot(p, -0.75);
   p *= vec2(1.1/tanh(1.0 + length(p)), 1.0);
@@ -1100,7 +1100,7 @@ vec3 glowball_lightning(vec2 pos, float ptime, float offset) {
 
 float glowball_df(vec2 p, float time) {
   float ptime = time*TAU/glowball_period;
-  float z = 0.125 + 0.125*(0.5 - 0.5*cos(20*ptime));
+  float z = 0.125 + 0.125*(0.5 - 0.5*cos(20.0*ptime));
   return cogImpulse(p/z,  time)*z;
 }
 
@@ -1175,9 +1175,9 @@ float dreams_tile0(vec2 p, float hwidth, float lwidth) {
 }
 
 float dreams_tile(vec2 p, vec2 n, float hwidth, float lwidth) {
-  float rnd = hash(1000*n).x;
+  float rnd = hash(1000.0*n).x;
 
-  rot(p, int(mod(1000.0*rnd, 4.0))*PI/2);
+  rot(p, float(int(mod(1000.0*rnd, 4.0)))*PI/2.0);
 
   float d = dreams_tile0(p, hwidth, lwidth);
 
@@ -1510,9 +1510,9 @@ void mainImage(out vec4 fragColor, vec2 p, vec2 q) {
   float dtime = TIME - startDelay;
 
   float timeInEffect = mod(dtime, effectDuration);
-  int effectIndex = int(effectNo + mod(dtime/effectDuration, effects.length));
+  int effectIndex = int(effectNo + mod(dtime/effectDuration, float(effects.length())));
   Effect effect = effects[effectIndex];
-  Effect nextEffect = effects[int(mod(effectIndex + 1, effects.length))];
+  Effect nextEffect = effects[int(effectIndex + 1% effects.length())];
 
   vec3 col = vec3(0.5);
 
@@ -1580,13 +1580,13 @@ void mainImage(out vec4 fragColor, vec2 p, vec2 q) {
   }
 
   if (nextEffect.seq == 0.0){
-    col += fadeCol*pow(fadeOut, 30);
+    col += fadeCol*pow(fadeOut, 30.0);
   }
 
   col = clamp(col, 0.0, 1.0);
 
   float initialFade = smoothstep(0.5, effectDuration, dtime);
-  float exitFade = 1.0 - smoothstep((effects.length - 1)*effectDuration, min(songLength-startDelay, effects.length*effectDuration), dtime);
+  float exitFade = 1.0 - smoothstep(float(effects.length() - 1)*effectDuration, min(songLength-startDelay, effects.length()*effectDuration), dtime);
 
 #ifndef EXPERIMENTING
   col *= sqrt(initialFade);
