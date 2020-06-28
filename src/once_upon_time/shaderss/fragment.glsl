@@ -105,7 +105,7 @@ const Effect effects[] = Effect[](
   , Effect(MAJOR_GALAXY      , MINOR_NONE           , 0.0, true  , 2.0       , 2.5)
   , Effect(MAJOR_GALAXY      , MINOR_NONE           , 1.0, true  , 2.0       , 2.5)
   );
-  
+
 #else
 #define ENABLE_NOEFFECT
 #define ENABLE_IMPULSE
@@ -225,17 +225,17 @@ vec3 hsv2rgb(vec3 c) {
   return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
 }
 
-float parabola(vec2 pos, float k) {    
+float parabola(vec2 pos, float k) {
   pos.x = abs(pos.x);
-    
+
   float p = (1.0-2.0*k*pos.y)/(6.0*k*k);
   float q = -abs(pos.x)/(4.0*k*k);
-    
+
   float h = q*q + p*p*p;
   float r = sqrt(abs(h));
 
   float x = (h>0.0) ? pow(-q+r,1.0/3.0) - pow(abs(-q-r),1.0/3.0)*sign(q+r) : 2.0*cos(atan(r,-q)/3.0)*sqrt(-p);
-    
+
   return length(pos-vec2(x,k*x*x)) * sign(pos.x-x);
 }
 
@@ -374,12 +374,12 @@ vec2 raySphere(vec3 ro, vec3 rd, vec4 sph) {
   float b = dot(oc, rd);
   float c = dot(oc, oc) - sph.w*sph.w;
   float h = b*b - c;
-  
+
   if (h<0.0) return vec2(-1.0);
   h = sqrt(h);
   float t1 = -b - h;
   float t2 = -b + h;
-  
+
   return mix(vec2(-1.0), vec2(t1, t2),step(0.0, t2));
 }
 
@@ -387,7 +387,7 @@ vec2 raySphere(vec3 ro, vec3 rd, vec4 sph) {
 vec3 raySphereDensity(vec3 ro, vec3 rd, vec4 sph, float dbuffer) {
   float ndbuffer = dbuffer/sph.w;
   vec3  rc = (ro - sph.xyz)/sph.w;
-    
+
   float b = dot(rd,rc);
   float c = dot(rc,rc) - 1.0;
   float h = b*b - c;
@@ -409,20 +409,20 @@ vec3 raySphereDensity(vec3 ro, vec3 rd, vec4 sph, float dbuffer) {
 float vnoise(vec2 x) {
   vec2 i = floor(x);
   vec2 w = fract(x);
-    
+
 #if 1
   // quintic interpolation
   vec2 u = w*w*w*(w*(w*6.0-15.0)+10.0);
 #else
   // cubic interpolation
   vec2 u = w*w*(3.0-2.0*w);
-#endif    
+#endif
 
   float a = hash(i+vec2(0.0,0.0));
   float b = hash(i+vec2(1.0,0.0));
   float c = hash(i+vec2(0.0,1.0));
   float d = hash(i+vec2(1.0,1.0));
-    
+
   float k0 =   a;
   float k1 =   b - a;
   float k2 =   c - a;
@@ -431,7 +431,7 @@ float vnoise(vec2 x) {
   float aa = mix(a, b, u.x);
   float bb = mix(c, d, u.x);
   float cc = mix(aa, bb, u.y);
-  
+
   return k0 + k1*u.x + k2*u.y + k3*u.x*u.y;
 }
 
@@ -525,7 +525,7 @@ float impulse(vec2 p) {
   d = min(d, ds);
   d = min(d, de);
   d = max(d, -dx);
-  
+
   return d;
 }
 
@@ -545,7 +545,7 @@ float star(vec2 p, float r, float rf) {
 vec3 gasGiant(vec3 ro, vec3 rd, vec3 sunDir) {
   vec2 si = raySphere(ro, rd, planet);
   float pi = rayPlane(ro, rd, rings);
-  
+
   vec3 planetSurface = ro + si.x*rd;
   vec3 planetNormal = normalize(planetSurface - planet.xyz);
   float planetDiff = max(dot(planetNormal, sunDir), 0.0);
@@ -556,7 +556,7 @@ vec3 gasGiant(vec3 ro, vec3 rd, vec3 sunDir) {
   vec3 ringsSurface = ro + pi*rd;
 
   float borderTransparency = smoothstep(0.0, 0.1, planetBorder);
-  
+
   float ringsDist = length(ringsSurface - planet.xyz)*1.0;
   float ringsPeriod = ringsDist*0.001;
   const float ringsMax = 150000.0*0.655;
@@ -565,11 +565,11 @@ vec3 gasGiant(vec3 ro, vec3 rd, vec3 sunDir) {
   float ringsMix = psin(ringsPeriod*10.0)*psin(ringsPeriod*10.0*sqrt(2.0))*(1.0 - smoothstep(50000.0, 200000.0, pi));
 
   vec3 ringsCol = mix(vec3(0.125), 0.75*ringColor, ringsMix)*step(-pi, 0.0)*step(ringsDist, ringsMax)*step(-ringsDist, -ringsMin)*ringsMul;
-  
+
   vec3 final = vec3(0.0);
-    
+
   final += ringsCol*(step(pi, si.x) + step(si.x, 0.0));
-  
+
   final += step(0.0, si.x)*pow(planetDiff, 0.75)*mix(planetCol, ringsCol, 0.0)*borderTransparency + ringsCol*(1.0 - borderTransparency);
 
   return final;
@@ -577,7 +577,7 @@ vec3 gasGiant(vec3 ro, vec3 rd, vec3 sunDir) {
 
 vec3 postProcess(vec3 col, vec2 q) {
   //col = saturate(col);
-  col=pow(clamp(col,0.0,1.0),vec3(0.75)); 
+  col=pow(clamp(col,0.0,1.0),vec3(0.75));
   col=col*0.6+0.4*col*col*(3.0-2.0*col);  // contrast
   col=mix(col, vec3(dot(col, vec3(0.33))), -0.4);  // satuation
 //  col*=0.5+0.5*pow(19.0*q.x*q.y*(1.0-q.x)*(1.0-q.y),0.7);  // vigneting
@@ -608,14 +608,14 @@ float impulse_planet(vec2 p) {
   float dc2 = circle(p+vec2(0.0, 0.035), 2.0);
   float dc = max(dc1, -dc2)+0.0025;
   return dc;
-}    
-    
+}
+
 float impulse_moon(vec2 p) {
   float dc5 = circle(p-vec2(-3.6, 1.45), 0.25);
   float dc6 = circle(p-vec2(-3.6, 1.45)+0.025*vec2(-1.0, 1.0), 0.25);
   float dc0 = max(dc5, -dc6);
   return dc0;
-}    
+}
 
 
 float impulse_stars(vec2 p, float ltime) {
@@ -628,9 +628,9 @@ float impulse_stars(vec2 p, float ltime) {
   p -= vec2(radius, 0.0);
   float ds = (star(p, 0.35, 0.35));
   return ds;
-}    
+}
 
-float impulse_df(vec2 p, float s, float ltime) {
+float impulse_df(vec2 p, float s, float ltime, bool stars) {
   p /= s;
 
   float di = impulse(p);
@@ -641,7 +641,7 @@ float impulse_df(vec2 p, float s, float ltime) {
   float d = di;
   d = min(d, dp);
   d = min(d, dm);
-  d = min(d, ds);
+  if (stars) d = min(d, ds);
   return d*s;
 }
 
@@ -651,12 +651,12 @@ float impulse_fbm(vec2 p) {
   const float ff   = 2.03;
   const float tt   = PI/2.5;
   const float oo   = 1.93;
-  
+
   float a = 1.0;
   float o = 0.4;
   float s = 0.0;
   float d = 0.0;
-  
+
   p*=0.55;
   for (int i; i < 3;++i) {
     float nn = a*vnoise(p);
@@ -672,7 +672,7 @@ float impulse_fbm(vec2 p) {
   return 0.65*(s/d);
 }
 
-float impulse_warp(vec2 p, float ltime, out vec2 v, out vec2 w) { 
+float impulse_warp(vec2 p, float ltime, out vec2 v, out vec2 w) {
   rot(p, -1.0);
   p.x += 0.75;
 
@@ -703,12 +703,12 @@ vec3 impulse_normal(vec2 p, float ltime) {
   vec2 v;
   vec2 w;
   vec2 e = vec2(0.00001, 0);
-  
+
   vec3 n;
   n.x = impulse_height(p + e.xy, ltime) - impulse_height(p - e.xy, ltime);
   n.y = 2.0*e.x;
   n.z = impulse_height(p + e.yx, ltime) - impulse_height(p - e.yx, ltime);
-  
+
   return normalize(n);
 }
 
@@ -716,23 +716,23 @@ vec3 impulse_intro(float ltime, vec2 p, vec2 q) {
   // Hard coded to 7 fadein and fadeout
   float pixel = 5.0/RESOLUTION.y;
   float s = 30.0/(10.0 + ltime*(100.0/DURATION1));
-  float d = impulse_df(p, s, ltime);
+  float d = impulse_df(p, s, ltime, true);
   vec2 op = p;
   vec3 col = vec3(0.0);
   p *= 0.5;
   p -= 0.2;
-  
+
   vec2 v;
   vec2 w;
-   
+
   float h = impulse_warp(p, ltime, v, w);
   vec3 n = impulse_normal(p, ltime);
   vec3 lp1 = vec3(-4.0, -2.0, 3.0);
   vec3 ld1 = normalize(vec3(p.x, h, p.y) - lp1);
   float dif1 = max(dot(n, ld1), 0.0);
-  
+
   float vv = 0.8;
-  
+
   vec3 col1 = hsv2rgb(vec3(0.95*v.yx, vv));
   vec3 col2 = hsv2rgb(vec3(-0.65*w, vv));
 
@@ -741,7 +741,7 @@ vec3 impulse_intro(float ltime, vec2 p, vec2 q) {
   col = mix(col, vec3(1.0), smoothstep(0.0, pixel, -d));
 
   col = postProcess(col, q);
-  
+
   float fadeIn  = smoothstep(0.0, 2.0, ltime);
   float fadeOut = smoothstep(DURATION1 - 4.0, DURATION1, ltime);
 
@@ -755,13 +755,13 @@ vec3 impulse_outro(float ltime, vec2 p, vec2 q) {
   float pixel = 5.0/RESOLUTION.y;
   float s = 10.0/(10.0 + 0.5*ltime*(3.0/DURATION));
   s *= 0.2;
-  float d = impulse_df(p, s, ltime);
+  float d = impulse_df(p, s, ltime, false);
 
   vec3 col = vec3(0.0);
   col = mix(col, vec3(1.0), smoothstep(0.0, pixel, -d));
 
   col = postProcess(col, q);
-  
+
   return col;
 }
 
@@ -798,11 +798,11 @@ vec3 orrery_skyColor(vec3 rd) {
   vec3 col = vec3(0.0);
   col += pow(diff, 800.0)*sunColor1*8.0;
   col += pow(diff, 150.0)*sunColor2*1.0;
-  
+
   col += pow(smallDiff, 10000.0)*smallSunColor1*1.0;
   col += pow(smallDiff, 1000.0)*smallSunColor2*0.25;
   col += pow(smallDiff, 400.0)*smallSunColor2*0.25;
-  
+
   return col;
 }
 
@@ -832,9 +832,9 @@ vec4 orrery_rings(float input0, vec3 ro, vec3 rd, inout float pd) {
   pcol.w = psin(20.0*pl)*psin(14.0*pl)*psin(21.0*pl);
   pcol.w *= 0.5*step(pdf, 0.0);
   pcol.xyz += pfres*pref;
-  
+
   vec3 rsn = vec3(0.0, 1.0, 0.0);
-  
+
   pcol.w = pow(pcol.w, 1.0*pow(abs(dot(rd, rsn)), 0.4));
 
   vec2 psi1 = raySphere(p, sunDirection, orrery_vgasGiant);
@@ -873,9 +873,9 @@ vec4 orrery_gasGiant(float input0, vec3 ro, vec3 rd, vec3 skyCol, inout float pd
 
   scol = mix(scol, vec3(0.7, 0.7, 0.8), pow(pcos(20.0*slat), 5.0));
   scol = mix(scol, vec3(0.75, 0.7, 0.8), pow(pcos(14.0*slat), 20.0));
-  scol = mix(scol, vec3(0.2), pow(pcos(21.0*slat)*pcos(13.0*slat+1.0), 15.0));  
+  scol = mix(scol, vec3(0.2), pow(pcos(21.0*slat)*pcos(13.0*slat+1.0), 15.0));
   scol = tanh(scol);
-  scol *= pow(sunColor1, vec3(0.66));  
+  scol *= pow(sunColor1, vec3(0.66));
   scol += vec3(0.0, 0.0, srayl*0.5) ;
 
   vec4 vm = orrery_moon(input0);
@@ -926,9 +926,9 @@ vec4 orrery_ship(float ltime, float input0, float input1, vec3 ro, vec3 rd, vec3
   const vec3 xx = cross(up, normal);
   const vec3 yy = cross(xx, normal);
   const float exc = 0.1;
-  
+
   vec4 vm = orrery_moon(input0);
-  
+
   vec4 p = vec4(normal, -dot(normal, vm.xyz));
   float d = rayPlane(ro, rd, p);
   vec3 pp = ro + rd*d - vm.xyz;
@@ -939,34 +939,34 @@ vec4 orrery_ship(float ltime, float input0, float input1, vec3 ro, vec3 rd, vec3
 
   const float posY = 0.15;
   const float posX = sqrt(posY/exc);
-  
+
   float dp = parabola(p2, exc);
   dp = abs(dp)-0.001;
-  
+
   float trailt = smoothstep(0.0125+p2.y*p2.y*0.01, 0.0, dp);
 
   float fadeOut = (smoothstep(10.0, posY, p2.y));
-  
+
   trailt *= fadeOut*(step(posY, p2.y))*step(p2.x, 0.0);
   trailt *= 1.5-1.0*smoothstep(0.0, 0.75, p2.y);
-  
+
   vec4 trailCol = vec4(hsv2rgb(vec3(0.99, 0.0, 1.0)-vec3(0.5, -1.0, 0.5)*(1.0-fadeOut)), trailt);
-  
+
   float sc = circle(p2-vec2(-posX, posY), 0.0);
-  
+
   vec4 shipCol = vec4(2.0*vec3(1.5, 1.0, 2.0), 1.0)*smoothstep(-7.0, 1.0, sin(ltime*4.0*TAU))*smoothstep(0.125, 0.0, sc);
-  
+
   vec4 col = mix(trailCol, shipCol, shipCol.w)*input1;
-  
+
   pd = mix(pd, d, col.w > 0.0);
-  
-  
+
+
   return col;
 }
 
 vec3 orrery_render(float ltime, float input0, float input1, vec3 ro, vec3 rd) {
-  vec3 skyCol = orrery_skyColor(rd);  
-  
+  vec3 skyCol = orrery_skyColor(rd);
+
   vec4 col = vec4(skyCol, 1.0);
   float cold = orrery_farAway;
 
@@ -976,17 +976,17 @@ vec3 orrery_render(float ltime, float input0, float input1, vec3 ro, vec3 rd) {
 
   float md = orrery_farAway;
   vec4 mcol = orrery_moon(input0, ro, rd, skyCol, md);
-  
+
   col.xyz = mix(col.xyz, mcol.xyz, mcol.w*step(md, cold));
   cold = mix(cold, md, step(md, cold));
-  
+
   float rsd = orrery_farAway;
   vec3 rsp;
-  vec4 rscol = orrery_rings(input0, ro, rd, rsd); 
- 
+  vec4 rscol = orrery_rings(input0, ro, rd, rsd);
+
   col.xyz = mix(col.xyz, rscol.xyz, rscol.w*step(rsd, cold));
   cold = mix(cold, rsd, step(rsd, cold));
-  
+
   float sd = orrery_farAway;
   vec4 scol = orrery_ship(ltime, input0, input1, ro, rd, skyCol, sd);
 
@@ -1033,7 +1033,7 @@ vec3 orrery_effect(int minor, float input0, float input1, float ltime, vec2 p, v
   default:
     break;
   }
-  
+
 
 
   vec3 ww = normalize(la - ro);
@@ -1047,19 +1047,19 @@ vec3 orrery_effect(int minor, float input0, float input1, float ltime, vec2 p, v
 
   vec3 col = vec3(0.0);
 
-  // https://blog.demofox.org/2015/04/23/4-rook-antialiasing-rgss/  
+  // https://blog.demofox.org/2015/04/23/4-rook-antialiasing-rgss/
   col += orrery_fragment(ltime, input0, input1, ro, uu, vv, ww, p+o1);
 
   col = clamp(col, 0.0, 1.0);
 
-  // Adaptive AA? Is that a good idea?  
+  // Adaptive AA? Is that a good idea?
   vec3 dcolx = dFdx(col);
   vec3 dcoly = dFdy(col);
   vec3 dcol = sqrt(dcolx*dcolx+dcoly*dcoly)/(col+0.01);
 //  vec3 dcol = sqrt(dcolx*dcolx+dcoly*dcoly);
 
   float de = max(dcol.x, max(dcol.y, dcol.z));
-  
+
   if (de > 0.1) {
     col += orrery_fragment(ltime, input0, input1, ro, uu, vv, ww, p-o1);
     col += orrery_fragment(ltime, input0, input1, ro, uu, vv, ww, p+o2);
@@ -1069,7 +1069,7 @@ vec3 orrery_effect(int minor, float input0, float input1, float ltime, vec2 p, v
   }
 
   col = postProcess(col, q);
- 
+
   return col;
 }
 
@@ -1097,17 +1097,17 @@ float waterworld_height(vec2 p, float dd, int mx) {
   const float ff   = 2.03;
   const float tt   = 1.3;
   const float oo   = 0.93;
-  
+
   float hm = waterworld_heightMod(p);
-  
+
   vec2 s = vec2(0.0);
   float a = 1.0;
   float o = 0.2;
-  
+
   int i = 0;
-  
+
   p *= 2.0;
-  
+
   for (; i < mx;++i) {
     float nn = a*(vnoise(p));
     s.x += nn;
@@ -1123,7 +1123,7 @@ float waterworld_height(vec2 p, float dd, int mx) {
   s.x -= 1.0;
   s.x += 0.7*hm;
   s.x = smoother(s.x, 0.125);
-  
+
   return max(s.x+0.125, 0.0)*0.5;
 }
 
@@ -1138,16 +1138,16 @@ float waterworld_height(vec2 p, float d) {
 float waterworld_hiheight(vec2 p, float d) {
   return waterworld_height(p, d, 6);
 }
-  
+
 vec3 waterworld_normal(vec2 p, float d) {
   vec2 eps = vec2(0.000125, 0.0);
-  
+
   vec3 n;
-  
+
   n.x = (waterworld_hiheight(p - eps.xy, d) - waterworld_hiheight(p + eps.xy, d));
   n.y = 2.0*eps.x;
   n.z = (waterworld_hiheight(p - eps.yx, d) - waterworld_hiheight(p + eps.yx, d));
-  
+
   return normalize(n);
 }
 
@@ -1159,7 +1159,7 @@ float waterworld_march(vec3 ro, vec3 rd, float id, out int max_iter) {
   for (int i = 0; i < WATERWORLD_MAX_ITER; ++i) {
     vec3 p = ro + d*rd;
     float h = waterworld_height(p.xz, d);
-    
+
     if (d > WATERWORLD_MAX_DISTANCE) {
       max_iter = i;
       return WATERWORLD_MAX_DISTANCE;
@@ -1177,7 +1177,7 @@ float waterworld_march(vec3 ro, vec3 rd, float id, out int max_iter) {
     lastd = d;
     d += dt;
   }
-  
+
   max_iter = WATERWORLD_MAX_ITER;
   return WATERWORLD_MAX_DISTANCE;
 }
@@ -1196,7 +1196,7 @@ vec3 waterworld_skyColor(vec3 ro, vec3 rd) {
 
   float sunDot = max(dot(rd, sunDir), 0.0);
   float smallSunDot = max(dot(rd, smallSunDir), 0.0);
-  
+
   float angle = atan(rd.y, length(rd.xz))*2.0/PI;
 
   vec3 sunCol = 0.5*sunCol1*pow(sunDot, 20.0) + 8.0*sunCol2*pow(sunDot, 2000.0);
@@ -1207,8 +1207,8 @@ vec3 waterworld_skyColor(vec3 ro, vec3 rd) {
   vec3 skyCol = mix(skyCol1, skyCol2, sqrt(dustTransparency));
   skyCol *= (1.0-dustTransparency);
 
-  vec3 planetCol = gasGiant(ro, rd, sunDir)*dustTransparency;  
-    
+  vec3 planetCol = gasGiant(ro, rd, sunDir)*dustTransparency;
+
   vec3 final = planetCol + skyCol + sunCol + smallSunCol;
 
   return final;
@@ -1225,15 +1225,15 @@ vec3 waterworld_shipColor(vec2 p, float ltime) {
   float td = abs(p.x) - (0.005-p.y*0.002);
   td = abs(td) - (0.02*pow(-p.y, 0.25));
   float sd = circle(p, 0.05);
-  
+
   vec3 trailCol = vec3(0.5)*smoothstep(-5.0, 0.0, p.y)*step(p.y, 0.0)*smoothstep(0.0, 0.025, -td);
   vec3 shipCol = vec3(0.5+smoothstep(-1.0, 1.0, sin(ltime*15.0*TAU+n)))*smoothstep(0.0, 0.075, -sd);
-  
+
   vec3 col = trailCol;
   col += shipCol;
 
   float sm = step(abs(n), 2.0);
-  
+
   return col*sm;
 }
 
@@ -1241,14 +1241,14 @@ vec3 waterworld_getColor(vec3 ro, vec3 rd, float ltime) {
   int max_iter = 0;
   vec3 skyCol = waterworld_skyColor(ro, rd);
   vec3 col = vec3(0);
-  
+
   const float shipHeight = 1.0;
   const float seaHeight = 0.0;
   const float cloudHeight = 0.2;
   const float upperCloudHeight = 0.5;
-  
+
   float id = (cloudHeight - ro.y)/rd.y;
-  
+
   if (id > 0.0) {
     float d = waterworld_march(ro, rd, id, max_iter);
     vec3 sunDir = waterworld_sunDirection();
@@ -1261,21 +1261,21 @@ vec3 waterworld_getColor(vec3 ro, vec3 rd, float ltime) {
     vec3 normal = waterworld_normal(p.xz, d);
 
     float ud = (upperCloudHeight - 4.0*loh - ro.y)/rd.y;
-    
+
     float sd = (seaHeight - ro.y)/rd.y;
     vec3 sp = ro + sd*rd;
     float scd = (cloudHeight - sp.y)/sunDir.y;
     vec3 scp = sp + sunDir*scd;
-    
+
     float sloh = waterworld_loheight(scp.xz, d);
     float cshd = exp(-15.0*sloh);
 
     float amb = 0.3;
- 
+
     vec3 seaNormal = normalize(vec3(0.0, 1.0, 0.0));
-    vec3 seaRef = reflect(rd, seaNormal);    
+    vec3 seaRef = reflect(rd, seaNormal);
     vec3 seaCol = .25*waterworld_skyColor(p, seaRef);
-    seaCol += pow(max(dot(seaNormal, sunDir), 0.0), 2.0); 
+    seaCol += pow(max(dot(seaNormal, sunDir), 0.0), 2.0);
     seaCol *= cshd;
     seaCol += 0.075*pow(vec3(0.1, 1.3, 4.0), vec3(max(dot(seaNormal, seaRef), 0.0)));
 
@@ -1291,15 +1291,15 @@ vec3 waterworld_getColor(vec3 ro, vec3 rd, float ltime) {
     col = mix(vec3(1.0), col, exp(-17.0*(hih-0.25*loh)));
     col = mix(vec3(0.75), col, exp(-10.0*loh*(max(d-ud, 0.0))));
     col += scol;
-    
-    col += vec3(0.5)*spe*fre;    
-    
+
+    col += vec3(0.5)*spe*fre;
+
     float ssd = (shipHeight - ro.y)/rd.y;
 
     col += waterworld_shipColor((ro + rd*ssd).xz, ltime);
 
     col = mix(col, skyCol, smoothstep(0.5*WATERWORLD_MAX_DISTANCE, 1.*WATERWORLD_MAX_DISTANCE, d));
-    
+
   } else {
     col = skyCol;
   }
@@ -1318,7 +1318,7 @@ vec3 waterworld_effect(int minor, float input0, float input1, float ltime, vec2 
   vec3 rd = normalize(p.x*uu + p.y*vv + 2.0*ww);
 
   vec3 col = waterworld_getColor(ro, rd, ltime)  ;
- 
+
   col = postProcess(col, q);
 
   return col;
@@ -1326,7 +1326,7 @@ vec3 waterworld_effect(int minor, float input0, float input1, float ltime, vec2 
 
 #endif
 
-// 
+//
 
 
 // ----------------------------==> WATERWORLD <==------------------------------
@@ -1357,11 +1357,11 @@ float barrenmoon_circles(vec2 p) {
   vec2 n = mod2_1(p);
   vec2 hh = barrenmoon_hash(sqrt(2.0)*(n+1000.0));
   hh.x *= hh.y;
-  
+
   const float r = 0.225;
- 
+
   float d = circle(p, 2.0*r);
-  
+
   float h = hh.x*smoothstep(0.0, r, -d);
 
   return h*0.25;
@@ -1374,9 +1374,9 @@ float barrenmoon_craters(vec2 p) {
 
   rot(p, TAU*hh.y);
   const float r = 0.45;
- 
+
   float d = egg(p, 0.75*r, 0.5*r*abs(hh.y));
-  
+
   float h = -abs(hh.x)*(smoothstep(0.0, r, -2.0*d)-0.3*smoothstep(0.0, 0.2*r, -d));
 
   return h*0.275;
@@ -1388,14 +1388,14 @@ float barrenmoon_height(vec2 p, float dd, int mx) {
   const float ff   = 2.03;
   const float tt   = 1.2;
   const float oo   = 3.93;
-  
+
   float a = 1.0;
   float o = 0.2;
   float s = 0.075*sin(p.x+p.y);
   float d = 0.0;
-  
+
   int i = 0;
-  
+
   for (; i < 4;++i) {
     float nn = a*barrenmoon_craters(p);
     s += nn;
@@ -1411,7 +1411,7 @@ float barrenmoon_height(vec2 p, float dd, int mx) {
 
   float rdd = dd/BARRENMOON_MAX_DISTANCE;
   mx = int(mix(float(4), float(mx), step(rdd, barrenmoon_far)));
-  
+
   for (; i < mx; ++i) {
     float nn = a*barrenmoon_circles(p);
     s += nn;
@@ -1422,7 +1422,7 @@ float barrenmoon_height(vec2 p, float dd, int mx) {
     o *= oo;
     rot(p, tt);
   }
-  
+
   float hid = (s/d);
 
   float m = smoothstep(barrenmoon_near, barrenmoon_far, rdd);
@@ -1436,16 +1436,16 @@ float barrenmoon_height(vec2 p, float d) {
 float barrenmoon_hiheight(vec2 p, float d) {
   return barrenmoon_height(p, d, 8);
 }
-  
+
 vec3 barrenmoon_normal(vec2 p, float d) {
   vec2 eps = vec2(0.000125, 0.0);
-  
+
   vec3 n;
-  
+
   n.x = (barrenmoon_hiheight(p - eps.xy, d) - barrenmoon_hiheight(p + eps.xy, d));
   n.y = 2.0*eps.x;
   n.z = (barrenmoon_hiheight(p - eps.yx, d) - barrenmoon_hiheight(p + eps.yx, d));
-  
+
   return normalize(n);
 }
 
@@ -1460,7 +1460,7 @@ float barrenmoon_march(vec3 ro, vec3 rd, float id, out int max_iter) {
   for (int i = 0; i < BARRENMOON_MAX_ITER; ++i) {
     vec3 p = ro + d*rd;
     float h = barrenmoon_height(p.xz, d);
-    
+
     if (d > BARRENMOON_MAX_DISTANCE) {
       max_iter = i;
       return BARRENMOON_MAX_DISTANCE;
@@ -1473,7 +1473,7 @@ float barrenmoon_march(vec3 ro, vec3 rd, float id, out int max_iter) {
         max_iter = i;
         return d;
       }
-      
+
       d = lastd;
       currentStepDist = secondaryStep;
       continue;
@@ -1483,7 +1483,7 @@ float barrenmoon_march(vec3 ro, vec3 rd, float id, out int max_iter) {
     lastd = d;
     d += dt;
   }
-  
+
   max_iter = BARRENMOON_MAX_ITER;
   return BARRENMOON_MAX_DISTANCE;
 }
@@ -1506,11 +1506,11 @@ vec3 barrenmoon_skyColor(float ltime, vec3 ro, vec3 rd) {
 
   float sunDot = max(dot(rd, sunDir), 0.0);
   float smallSunDot = max(dot(rd, smallSunDir), 0.0);
-  
+
   float angle = atan(rd.y, length(rd.xz))*2.0/PI;
 
   vec3 skyCol = mix(mix(skyCol1, vec3(0.0), smoothstep(0.0 , 1.0, 5.0*angle)), skyCol3, smoothstep(0.0, 1.0, -5.0*angle));
-  
+
   vec3 sunCol = 0.5*barrenmoon_sunCol1*pow(sunDot, 20.0) + 8.0*barrenmoon_sunCol2*pow(sunDot, 2000.0);
   vec3 smallSunCol = 0.5*barrenmoon_smallSunCol1*pow(smallSunDot, 200.0) + 4.0*barrenmoon_smallSunCol2*pow(smallSunDot, 20000.0);
 
@@ -1518,7 +1518,7 @@ vec3 barrenmoon_skyColor(float ltime, vec3 ro, vec3 rd) {
 
   vec2 si = raySphere(ro, rd, planet);
   float pi = rayPlane(ro, rd, rings);
-  
+
   float dustTransparency = smoothstep(-0.075, 0.0, rd.y);
 
   vec3 rocketDir = barrenmoon_rocketDirection(ltime);
@@ -1527,7 +1527,7 @@ vec3 barrenmoon_skyColor(float ltime, vec3 ro, vec3 rd) {
   vec3 rocketCol = vec3(0.25)*(3.0*smoothstep(-1.0, 1.0, psin(ltime*15.0*TAU))*pow(rocketDot, 70000.0) + smoothstep(-0.25, 0.0, rd.y - rocketDir.y)*step(rd.y, rocketDir.y)*pow(rocketDot2, 1000000.0))*dustTransparency;
 
   vec3 planetCol = gasGiant(ro, rd, sunDir)*dustTransparency;
-  
+
   vec3 final = planetCol + skyCol + sunCol + smallSunCol + dust + rocketCol;
 
   return final;
@@ -1537,9 +1537,9 @@ vec3 barrenmoon_getColor(float ltime, vec3 ro, vec3 rd) {
   int max_iter = 0;
   vec3 skyCol = barrenmoon_skyColor(ltime, ro, rd);
   vec3 col = vec3(0);
-  
+
   float id = (0.125 - ro.y)/rd.y;
-  
+
   if (id > 0.0)   {
     float d = barrenmoon_march(ro, rd, id, max_iter);
     vec3 sunDir = barrenmoon_sunDirection();
@@ -1551,7 +1551,7 @@ vec3 barrenmoon_getColor(float ltime, vec3 ro, vec3 rd) {
     vec3 dny = dFdy(normal);
     float ff = dot(dnx, dnx) + dot(dny, dny);
     normal = normalize(normal+ vec3(0.0, 5.0*ff, 0.0));
-    
+
     float amb = 0.2;
 
     float dif1 = max(0.0, dot(sunDir, normal));
@@ -1564,14 +1564,14 @@ vec3 barrenmoon_getColor(float ltime, vec3 ro, vec3 rd) {
     vec3 rcol = barrenmoon_skyColor(ltime, p, ref);
 
     col = mountainColor*amb*skyCol3;
-    col += mix(shd1, shd2, -0.5)*mountainColor;   
+    col += mix(shd1, shd2, -0.5)*mountainColor;
     float fre = max(dot(normal, -rd), 0.0);
     fre = pow(1.0 - fre, 5.0);
     col += rcol*fre*0.5;
     col += (1.0*p.y);
     col = tanh(col);
     col = mix(col, skyCol, smoothstep(0.5*BARRENMOON_MAX_DISTANCE, BARRENMOON_MAX_DISTANCE, d));
-  
+
   } else {
     col = skyCol;
   }
@@ -1592,7 +1592,7 @@ vec3 barrenmoon_effect(int minor, float input0, float input1, float ltime, vec2 
   vec3 rd = normalize(p.x*uu + p.y*vv + 2.0*ww);
 
   vec3 col = barrenmoon_getColor(ltime, ro, rd)  ;
- 
+
 //  col = postProcess(col, q);
 
   return col;
@@ -1628,15 +1628,15 @@ vec2 galaxy_twirl(vec2 p, float a, float z) {
   vec2 pp = toPolar(p);
   pp.y += pp.x*galaxy_twirly + a;
   p = toRect(pp);
-  
+
   p *= z;
-  
+
   return p;
 }
 
 float galaxy_galaxy(float ttime, vec2 p, float a, float z) {
   p = galaxy_twirl(p, a, z);
-  
+
   return galaxy_noise(ttime, p);
 }
 
@@ -1648,10 +1648,10 @@ vec3 galaxy_stars(vec2 p) {
   p = toRect(pp);
 
   float sz = 0.0075;
-  
+
   vec3 s = vec3(10000.0);
-    
-  for (int i = 0; i < 3; ++i) {  
+
+  for (int i = 0; i < 3; ++i) {
     rot(p, 0.5);
     vec2 ip = p;
     vec2 n = mod2(ip, vec2(sz));
@@ -1660,7 +1660,7 @@ vec3 galaxy_stars(vec2 p) {
     s.x = min(s.x, length(ip-0.25*sz*o));
     s.yz = n*0.1;
   }
-  
+
   return s;
 }
 
@@ -1679,21 +1679,21 @@ float galaxy_height(float ttime, vec2 p) {
     f *= sqrt(2.0);
     d += a;
   }
-  
+
   s *= sp;
-  
+
   return SABS((-0.25+ s/d), 0.5)*exp(-5.5*l*l);
 }
 
 vec3 galaxy_normal(float ttime, vec2 p) {
   vec2 eps = vec2(0.000125, 0.0);
-  
+
   vec3 n;
-  
+
   n.x = galaxy_height(ttime, p - eps.xy) - galaxy_height(ttime, p + eps.xy);
   n.y = 2.0*eps.x;
   n.z = galaxy_height(ttime, p - eps.yx) - galaxy_height(ttime, p + eps.yx);
-  
+
   return normalize(n);
 }
 
@@ -1704,7 +1704,7 @@ vec3 galaxy_galaxy(float ttime, vec2 p, vec3 ro, vec3 rd, float d) {
   vec3 s = galaxy_stars(p);
   float th = tanh(h);
   vec3 n = galaxy_normal(ttime, p);
-  
+
   vec3 p3 = vec3(p.x, th, p.y);
   float lh = 0.5;
   vec3 lp1 = vec3(-0.0, lh, 0.0);
@@ -1732,7 +1732,7 @@ vec3 galaxy_galaxy(float ttime, vec2 p, vec3 ro, vec3 rd, float d) {
   float sd = length(ro);
   scol = clamp(scol, 0.0, 1.0);
   col += step(sd, 1.5)*scol*smoothstep(0.0, 0.35, 1.0-n.y);
-  
+
   float ddust = (h - ro.y)/rd.y;
   if (ddust < d) {
     float t = d - ddust;
@@ -1744,20 +1744,20 @@ vec3 galaxy_galaxy(float ttime, vec2 p, vec3 ro, vec3 rd, float d) {
 
 vec3 galaxy_render(float ttime, vec3 ro, vec3 rd) {
   float dgalaxy = (0.0 - ro.y)/rd.y;
-  
+
   vec3 col = vec3(0);
-  
+
   if (dgalaxy > 0.0) {
     col = vec3(0.5);
     vec3 p = ro + dgalaxy*rd;
-    
+
     col = galaxy_galaxy(ttime, p.xz, ro, rd, dgalaxy);
   }
-  
+
   vec2 cgalaxy = raySphere(ro, rd, vec4(vec3(0.0), 0.125));
 
   float t;
-  
+
   if (dgalaxy > 0.0 && cgalaxy.x > 0.0) {
     float t0 = max(dgalaxy - cgalaxy.x, 0.0);
     float t1 = cgalaxy.y - cgalaxy.x;
@@ -1765,10 +1765,10 @@ vec3 galaxy_render(float ttime, vec3 ro, vec3 rd) {
   } else if (cgalaxy.x < cgalaxy.y){
     t = cgalaxy.y - cgalaxy.x;
   }
-  
+
   col += 1.7*galaxy_colDust*(1.0-exp(-1.0*t));
-  
-  
+
+
   return col;
 }
 
@@ -1780,7 +1780,7 @@ vec3 galaxy_effect(int minor, float input0, float input1, float ltime, vec2 p, v
   vec3 uu = normalize(cross(up, ww));
   vec3 vv = normalize(cross(ww,uu));
   vec3 rd = normalize(p.x*uu + p.y*vv + 2.5*ww);
-  
+
   float ttime = 0.05*ltime;
   vec3 col = galaxy_render(ttime, ro, rd);
 
@@ -1837,7 +1837,7 @@ vec3 spaceship_skyColor(vec3 ro, vec3 rd, float input0, float input1) {
   rot(rd.xz, input0);
   vec3 scol = spaceship_sunColor(ro, rd, input0, input1);
   vec3 gcol = gasGiant(ro+vec3(input0*input1/TAU, 0.0, input1), rd, sunDirection);
-  
+
   return scol+gcol;
 }
 
@@ -1851,7 +1851,7 @@ vec3 spaceship_refColor(vec3 ro, vec3 rd, float input0, float input1) {
   final += vec3(0.8)* pow(saturate(1.0 - roundBox*0.5), 6.0);
   final *= 0.5;
   final += scol;
-  
+
   return final;
 }
 
@@ -1861,7 +1861,7 @@ vec3 spaceship_domeColor(vec3 ro, vec3 rd, float input0, float input1) {
 
   vec3 final = mix(vec3(0.125, 0.25, 0.5), vec3(0.25), 0.5 + 0.5*rd.y)*0.5;
   final += scol;
-  
+
   return final;
 }
 
@@ -1881,10 +1881,10 @@ vec4 spaceship_backplane(vec3 ro, vec3 rd, inout vec3 scol) {
   mod1(emangle, TAU/60.0);
 
   vec3 elinec = vec3(1.0)*1.25;
-  
+
   float efadeout = 1.0 - smoothstep(0.0, 0.9, eradius);
 
-  scol = vec3(0.0);  
+  scol = vec3(0.0);
   scol += 8.0*spaceship_sunCol1*pow(clamp(er, 0.0, 1.0), 8.0);
   scol += spaceship_sunCol1*pow(clamp(er, 0.0, 1.0), 1.0);
   scol += spaceship_sunCol2*efadeout*efadeout;
@@ -1893,7 +1893,7 @@ vec4 spaceship_backplane(vec3 ro, vec3 rd, inout vec3 scol) {
   ecol += scol;
   ecol += elinec*smoothstep(0.01, 0.0, abs(emradius))*efadeout;
   ecol += elinec*smoothstep(0.015, 0.0, abs(emangle))*efadeout;
- 
+
   return vec4(ecol, eradius < 1.0);
 }
 
@@ -1901,11 +1901,11 @@ float spaceship_fbm(vec2 p, int mx) {
   const float aa = 0.45;
   const float pp = 2.08;
   const float rr = 1.0;
-  
+
   float a = 1.0;
   float s = 0.0;
   float d = 0.0;
-  
+
   for (int i = 0; i < mx; ++i) {
     s += a*vnoise(p);
     d += abs(a);
@@ -1913,19 +1913,19 @@ float spaceship_fbm(vec2 p, int mx) {
     p *= pp;
     rot(p, rr);
   }
-  
+
   return 1.0*s/d;
 }
 
 vec3 spaceship_normal(vec2 p, int mx) {
   vec2 eps = -vec2(0.0001, 0.0);
-  
+
   vec3 nor;
-  
+
   nor.x = spaceship_fbm(p + eps.xy, mx) - spaceship_fbm(p - eps.xy, mx);
   nor.y = 2.0*eps.x;
   nor.z = spaceship_fbm(p + eps.yx, mx) - spaceship_fbm(p - eps.yx, mx);
-  
+
   return normalize(nor);
 }
 
@@ -1945,7 +1945,7 @@ vec3 spaceship_islands(vec3 col, vec3 p, vec3 n, vec2 sp, float level) {
   const vec3 sandCol = vec3(1.0, 0.95, 0.9);
 
   float fdiff = pow(max(dot(sunDir, nn), 0.0), 0.5);
-  
+
   vec4 treePattern = voronoi(sp*40.0);
   vec3 islandCol  = mix(vec3(0.5, 0.75, 0.0), vec3(0.1, 0.45, 0.0), treePattern.y*fdiff*2.0);
   islandCol *= 1.0 - treePattern.x * 0.75;
@@ -2015,18 +2015,18 @@ vec3 spaceship_sea(vec3 ro, vec3 rd, vec3 n, vec3 p, vec2 sp) {
   float sunIll = 20.0/(10.0+sunL2);
   float spe2 = pow(max(dot(sunDir, ref), 0.0), 100.0);
 
-  vec3 seaCol = vec3(0.0);    
+  vec3 seaCol = vec3(0.0);
   seaCol += 1.0*spaceship_seaCol2*pow(1.0-max(dot(n, ref), 0.0), 0.45);
   seaCol += spaceship_seaCol1*0.5*sunIll;
   seaCol += spaceship_seaCol1*spaceship_sunCol1*sunDiff*sunIll;
   seaCol += spaceship_sunCol1*spe2;
-  
-  return seaCol;  
+
+  return seaCol;
 }
 
 vec3 spaceship_shipInterior(vec3 ro, vec3 rd, float input0, float input1) {
   ro += rd*0.05;
-  
+
   float fd = (0.0 - ro.z)/rd.z;
   vec2 di = raySphere(ro, rd, vec4(spaceship_start, 1.0));
   vec2 ci = rayCylinder(ro, rd, spaceship_start, vec4(0.0, 0.0, 1.0, 0.8));
@@ -2046,7 +2046,7 @@ vec3 spaceship_shipInterior(vec3 ro, vec3 rd, float input0, float input1) {
   vec3 cn = -normalize(vec3(cp.xy-spaceship_start.xy, 0.0));
 
   vec3 fpcol = vec3(0.0);
-  
+
   vec3 scol;
   vec4 bpcol = spaceship_backplane(ro, rd, scol);
   vec3 bpn = vec3(0.0, 0.0, 1.0);
@@ -2068,7 +2068,7 @@ vec3 spaceship_shipInterior(vec3 ro, vec3 rd, float input0, float input1) {
     level += 1.0-smoothstep(-PI, -PI+0.5, gp2.y);
     level += 1.0-smoothstep(PI, PI-0.5, gp2.y);
     */
-    
+
     level *= 0.125;
     vec3 gcol = spaceship_sea(ro, rd, gn, gp, gp2);
     gcol = spaceship_islands(gcol, gp, gn, gp2, level);
@@ -2076,7 +2076,7 @@ vec3 spaceship_shipInterior(vec3 ro, vec3 rd, float input0, float input1) {
     gcol = spaceship_clouds(gcol, ro, rd, cp, cn, cylinderCoord(cp), level);
     col = gcol;
   }
-  
+
   float id = max(gi.y-max(gi.x, 0.0), 0.0);
   col = mix(col, spaceship_sunCol1, 1.0-exp(-0.05*id*id));
   col = mix(col, 0.75*scol + 1.25*spaceship_sunCol1, pow(bpdiff, 35.0));
@@ -2093,7 +2093,7 @@ float spaceship_theShip(float ltime, vec3 p, out float nx, out float ny, out int
   float dcapsule = capsule(p, spaceship_outerLength, 1.0);
   dcapsule = pmin(dcapsule, softBox(p, 0.75), 0.25);
   float dglobe = max(dcapsule, p.z);
-  
+
   vec3 pc = p;
   pc.z -= 0.5*sstep;
   float n = mod1(pc.z, sstep);
@@ -2123,8 +2123,8 @@ float spaceship_theShip(float ltime, vec3 p, out float nx, out float ny, out int
   d = min(d, dengine);
   d = chamfer(d, dbattery, 0.035);
   d = min(d, dtorus);
-  
- 
+
+
   m = 1;
 
   if (d == dglobe) m = 3;
@@ -2137,7 +2137,7 @@ float spaceship_theShip(float ltime, vec3 p, out float nx, out float ny, out int
 
   nx = n;
   ny = nm;
-  
+
   return d;
 }
 
@@ -2157,9 +2157,9 @@ float spaceship_rayMarch(float ltime, vec3 ro, vec3 rd, out float nx, out float 
     t += d; // 0.9
   }
   iter = i;
-  
+
   if (abs(d) > 10.0*SPACESHIP_TOLERANCE) return SPACESHIP_MAX_RAY_LENGTH;
-  
+
   return t;
 }
 
@@ -2177,7 +2177,7 @@ vec3 spaceship_normal(float ltime, vec3 pos) {
 
 vec3 spaceship_innerColor(float ltime, vec3 ro, vec3 rd, vec3 nor, float nx, float ny) {
   vec2 f = hash2(137.0*vec2(nx, ny)+27.0);
-  vec3 refr = refract(rd, nor, 3.0); 
+  vec3 refr = refract(rd, nor, 3.0);
   float dim = smoothstep(0.6, 0.7, f.x);
   dim *= mix(0.5, 1.0, psin(2.0*ltime+f.y*TAU));
   float s1 = mix(0.3, 2.0, dim);
@@ -2196,15 +2196,15 @@ vec3 engineColor(vec3 ro, vec3 rd, vec3 nor) {
   mod1(emangle, TAU/20.0);
 
   vec3 elinec = vec3(1.0)*1.25;
-  
+
   float efadeout = 1.0 - smoothstep(0.0, 0.75, eradius);
   float ifadeout = smoothstep(0.2, 0.225, eradius);
 
-  vec3 refr = refract(rd, nor, 1.25); 
+  vec3 refr = refract(rd, nor, 1.25);
   float m = max(dot(nor, -refr), 0.0);
- 
- 
-  vec3 scol = vec3(0.0);  
+
+
+  vec3 scol = vec3(0.0);
   scol += 4.0*spaceship_engineCol1*pow(m, 4.0);
   scol += spaceship_engineCol2*2.0;
   scol *= 1.0- ifadeout;
@@ -2214,7 +2214,7 @@ vec3 engineColor(vec3 ro, vec3 rd, vec3 nor) {
   ecol += elinec*smoothstep(0.05, 0.0, abs(emangle))*efadeout;
   ecol += spaceship_engineCol2*2.0*efadeout*efadeout;
   ecol *= ifadeout;
- 
+
   return ecol + scol;
 }
 
@@ -2231,7 +2231,7 @@ vec3 spaceship_render(float ltime, float input0, float input1, vec3 ro, vec3 rd)
 //  vec3 icol = 1.0*vec3(1.0, 0.0, 0.9)*smoothstep(0.5, 1.0, float(iter)/MAX_RAY_MARCHES);
   const  vec3 icol = vec3(0.0);
 
-  vec3 pos = ro + t*rd;    
+  vec3 pos = ro + t*rd;
   vec3 nor = spaceship_normal(ltime, pos);
 
   float ndif = 1.0;
@@ -2240,10 +2240,10 @@ vec3 spaceship_render(float ltime, float input0, float input1, vec3 ro, vec3 rd)
   vec3 ref  = reflect(rd, nor);
   vec3 rcol = spaceship_refColor(pos, ref, input0, input1);
   vec3 refr = refract(rd, nor, spaceship_refractRatio);
-    
+
   if (t < SPACESHIP_MAX_RAY_LENGTH) {
     // Ray intersected object
-    
+
     switch(mat) {
     case 0:
       color = mix(vec3(1.0), nor*nor, 0.5);
@@ -2280,7 +2280,7 @@ vec3 spaceship_render(float ltime, float input0, float input1, vec3 ro, vec3 rd)
       color = nor*nor;
       break;
     }
-      
+
   }
   else {
     // Ray intersected sky
@@ -2326,7 +2326,7 @@ vec3 spaceship_effect(int minor, float input0, float input1, float ltime, vec2 p
   vec3 ro  =vec3(1.0, 0.0, -3.0);
   vec3 la = vec3(0.0, 0.0, 0.0);
   vec3 up = vec3(0.0, 1.0, 0.0);
- 
+
   switch(minor) {
   case MINOR_FROM_BEHIND:
     ro = 3.0*vec3(0.5-ltime/10., 1.0+ltime/5.0, 15.0-ltime);
@@ -2353,11 +2353,11 @@ vec3 spaceship_effect(int minor, float input0, float input1, float ltime, vec2 p
 
   vec3 col = vec3(0.0);
 
-  // https://blog.demofox.org/2015/04/23/4-rook-antialiasing-rgss/  
+  // https://blog.demofox.org/2015/04/23/4-rook-antialiasing-rgss/
   col += spaceship_fragment(ltime, input0, input1, ro, uu, vv, ww, p+o1);
 
 #ifdef AA
-  // Adaptive AA? Is that a good idea?  
+  // Adaptive AA? Is that a good idea?
   vec3 dcolx = dFdx(col);
   vec3 dcoly = dFdy(col);
   vec3 dcol = sqrt(dcolx*dcolx+dcoly*dcoly)/(col+1.0/256);
@@ -2397,7 +2397,7 @@ vec3 mainImage(vec2 p, vec2 q) {
     timeInEffect = dtime+DURATION1 - DURATION;
     effectIndex = 0;
   }
-  
+
   Effect effect = effects[effectIndex];
   Effect nextEffect = effects[int(((effectIndex + 1)%effects.length()))];
   float ltime = timeInEffect + effect.seq*DURATION;
@@ -2461,7 +2461,7 @@ vec3 mainImage(vec2 p, vec2 q) {
   }
 
   col = mix(col, vec3(0.0), tfadeout*tfadeout);
-  
+
   return col;
 }
 

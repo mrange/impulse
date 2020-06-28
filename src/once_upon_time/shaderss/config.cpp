@@ -11,7 +11,7 @@ shader_configuration get__current_configuration ()
   return shader_configuration
   {
       0
-    , 488 // Length of the song
+    , 172 // Length of the song
     , 1
     , {  }
   };
