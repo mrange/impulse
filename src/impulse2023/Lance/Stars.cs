@@ -4,7 +4,10 @@ using static System.Math;
 
 using static Shared;
 
-record struct Star(Vector3 HSV, Vector4 Pos);
+record Star(Vector3 HSV, Vector4 Pos, Vector2[] ScreenPos)
+{
+  public int Current = 0;
+}
 
 sealed class StarsScreen : Screen
 {
@@ -14,7 +17,7 @@ sealed class StarsScreen : Screen
 
   public static Star[] Stars()
   {
-    const int count = 800;
+    const int count = 600;
     var stars = new Star[count];
     var rnd = new Random(19740531);
 
@@ -26,9 +29,10 @@ sealed class StarsScreen : Screen
     for (int i = 0; i < count; ++i)
     {
       var r = (float)rnd.NextDouble();
-      var hsv = new Vector3(0.5F+0.33F*r*r, 0.5F, 3.0F);
+      var hsv = new Vector3(0.6F+0.33F*r*r, 0.5F, 1.0F+2.0F*(float)rnd.NextDouble());
       var pos = new Vector4(Rnd(), Rnd(), Rnd(), 1.0F);
-      stars[i] = new(hsv, pos);
+      var screenPos = Enumerable.Range(0, 10).Select(x => new Vector2(-1.0F)).ToArray();
+      stars[i] = new(hsv, pos, screenPos);
     }
 
     return stars;
@@ -54,9 +58,9 @@ sealed class StarsScreen : Screen
     );
 
     var m = 
-      Matrix4x4.CreateRotationY(0.5F*(float)time)
-      *Matrix4x4.CreateRotationZ(0.71F*(float)time)
-      *Matrix4x4.CreateRotationX(0.33F*(float)time)
+        Matrix4x4.CreateRotationZ(0.5F*(float)time)
+//      * Matrix4x4.CreateRotationZ(0.71F*(float)time)
+//      * Matrix4x4.CreateRotationX(0.33F*(float)time)
       ;
 
     var t = m*v*p;
@@ -70,7 +74,8 @@ sealed class StarsScreen : Screen
 
     for (var i = 0; i < _stars.Length; ++i)
     {
-      var mstar = _stars[i].Pos;
+      var stari = _stars[i];
+      var mstar = stari.Pos;
       mstar.Z -= offZ;
       mstar.X = -1.0F + 2.0F*Fract(0.5F+0.5F*mstar.X);
       mstar.Y = -1.0F + 2.0F*Fract(0.5F+0.5F*mstar.Y);
@@ -84,23 +89,31 @@ sealed class StarsScreen : Screen
         &&  ndc.Z <  1.0F
       )
       {
-        var screen = Vector2.Transform(new(ndc.X, ndc.Y), final);
+        var newScreen = Vector2.Transform(new(ndc.X, ndc.Y), final);
 
-        var x = (int)Round(screen.X);
-        var y = (int)Round(screen.Y);
+        stari.ScreenPos[stari.Current] = newScreen;
 
-        if (
-              x >= 0 
-          &&  x < canvas.Width
-          &&  y >= 0
-          &&  y < canvas.Height
-          )
+        for (int j = stari.ScreenPos.Length - 1; j >= 0; j -= 3)
         {
-          var hsv = _stars[i].HSV;
-          hsv.Z *= 0.5F-0.5F*ndc.Z;
-          var col = HSV2RGB(hsv);
-          canvas.SetPixel(x, y, col);
+          var screen = stari.ScreenPos[(stari.ScreenPos.Length-j+stari.Current)%stari.ScreenPos.Length];
+          var x = (int)Round(screen.X);
+          var y = (int)Round(screen.Y);
+
+          if (
+                x >= 0 
+            &&  x < canvas.Width
+            &&  y >= 0
+            &&  y < canvas.Height
+            )
+          {
+            var hsv = stari.HSV;
+            hsv.Z *= (0.5F-0.5F*ndc.Z)/(1.0F+0.5F*j*j);
+            var col = HSV2RGB(hsv);
+            canvas.SetPixel(x, y, col);
+          }
         }
+
+        stari.Current = (stari.Current+1)%stari.ScreenPos.Length;
       }
     }
 
