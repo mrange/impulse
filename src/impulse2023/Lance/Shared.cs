@@ -68,7 +68,8 @@ static class Shared
       return (pa - ba*h).Length();
   }
 
-  public static float Lug00ber(Vector2 p) {
+  public static float Lug00ber(Vector2 p) 
+  {
     var p0 = p;
     p0.Y = Abs(p0.Y);
     p0 -= new Vector2(-0.705F, 0.41F);
@@ -103,14 +104,27 @@ static class Shared
     return -(Dot(ro,p.Normal)+p.Offset)/Dot(rd,p.Normal);
   }
 
-  public static float Sphere8(Vector3 p, float r) {
+  public static float Sphere8(Vector3 p, float r) 
+  {
     p *= p;
     p *= p;
     return ((float)Pow(Dot(p, p), 0.125))-r;
   }
 
-  public static float Sphere(Vector3 p, float r) {
+  public static float Sphere(Vector3 p, float r) 
+  {
     return p.Length() - r;
+  }
+
+  public static void Clear(this Canvas canvas, Color clearCol)
+  {
+    for (int y = 0; y < canvas.Height; ++y)
+    {
+      for (int x = 0; x < canvas.Width; ++x)
+      {
+        canvas.SetPixel(x, y, clearCol);
+      }
+    }
   }
 
 }
