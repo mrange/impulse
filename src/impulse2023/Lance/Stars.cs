@@ -13,7 +13,7 @@ sealed class StarsScreen : Screen
 {
   public override string Name => "Lance/Stars";
 
-  readonly Star[] _stars = Stars();
+  readonly Star[] _stars;
 
   public static Star[] Stars()
   {
@@ -36,6 +36,11 @@ sealed class StarsScreen : Screen
     }
 
     return stars;
+  }
+
+  public StarsScreen()
+  {
+    _stars = Stars();
   }
 
   public override void Update(Canvas canvas, double time)
