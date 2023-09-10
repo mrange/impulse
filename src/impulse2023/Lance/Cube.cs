@@ -1,7 +1,5 @@
 ﻿namespace Impulse2023.Lance;
 
-using System.Numerics;
-
 using static System.Math;
 using static System.Numerics.Vector3;
 using static Shared;

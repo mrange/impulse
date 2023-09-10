@@ -6,10 +6,18 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>Impulse2023</RootNamespace>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="NetCoreAudio" Version="1.7.0" />
     <PackageReference Include="Spectre.Console" Version="0.47.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="mad-max--cuddly-comic-bakery-sid.mp3">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

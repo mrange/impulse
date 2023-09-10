@@ -1,8 +1,7 @@
 ﻿
-Action<Canvas, double> empty = (c, t) => {};
-var screen = AnsiConsole.Prompt(
+var selections =
   new SelectionPrompt<Screen>()
-    .Title("Which screen should I show?")
+    .Title("Music: Cuddly - Comic Bakery - Sid (Mad Max)\nPress Esc or Space to exit screen\nWhich screen should I show?")
     .PageSize(10)
     .AddChoices(
         new Impulse2023.GlimGlam.TheScreen    ()
@@ -11,20 +10,39 @@ var screen = AnsiConsole.Prompt(
       , new Impulse2023.Lance.RasterBarsScreen()
       , new Impulse2023.LongShot.TheScreen    ()
       , new Impulse2023.GuestStar.TheScreen   ()
-      )
-  );
+      , new ExitScreen                        ()
+      );
 
-var w     = AnsiConsole.Profile.Width/2;
-var h     = AnsiConsole.Profile.Height;
-var canvas= new Canvas(w, h)
-{
-  Scale = false
-};
+var exePath = Assembly.GetExecutingAssembly().Location;
+var path = Path.GetDirectoryName(exePath);
+var songPath = Path.Combine(path!, "mad-max--cuddly-comic-bakery-sid.mp3");
+var player = new Player();
+await player.Play(songPath);
 
 var clock = Stopwatch.StartNew();
-AnsiConsole.Live(canvas).Start(Updater);
 
-void Updater(LiveDisplayContext ldc)
+while(true)
+{
+  var screen = AnsiConsole.Prompt(selections);
+  if (screen is ExitScreen)
+  {
+    break;
+  }
+
+  var w     = AnsiConsole.Profile.Width/2;
+  var h     = AnsiConsole.Profile.Height;
+  var canvas= new Canvas(w, h)
+  {
+    Scale = false
+  };
+
+  AnsiConsole
+    .Live(canvas)
+    .Start(ldc => Updater(clock, canvas, screen, ldc))
+    ;
+}
+
+static void Updater(Stopwatch clock, Canvas canvas, Screen screen, LiveDisplayContext ldc)
 {
   var cont = true;
   while(cont)
@@ -49,7 +67,8 @@ void Updater(LiveDisplayContext ldc)
     if (waitFor > 0.0)
     {
       // Strive for 60fps
-      Thread.Sleep((int)(waitFor*1000.0));
+      var ms = (int)(waitFor*1000.0);
+      Thread.Sleep(ms);
     }
   }
 }
@@ -62,18 +81,12 @@ abstract class Screen
   public override string ToString() => Name;
 }
 
-sealed class EmptyScreen : Screen
+sealed class ExitScreen : Screen
 {
-  readonly string _name;
-
-  public EmptyScreen(string name)
-  {
-    _name = name;
-  }
-  public override string Name => _name;
+  public override string Name => "Exit";
 
   public override void Update(Canvas canvas, double time)
   {
+    throw new NotImplementedException();
   }
 }
-
