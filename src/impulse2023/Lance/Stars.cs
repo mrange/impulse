@@ -60,7 +60,7 @@ sealed class StarsScreen : Screen
     var m = 
         Matrix4x4.CreateRotationZ(0.5F*(float)time)
 //      * Matrix4x4.CreateRotationZ(0.71F*(float)time)
-//      * Matrix4x4.CreateRotationX(0.33F*(float)time)
+      * Matrix4x4.CreateRotationX(0.33F*(float)time)
       ;
 
     var t = m*v*p;
@@ -70,7 +70,7 @@ sealed class StarsScreen : Screen
       * Matrix3x2.CreateTranslation(0.5F*res.X, 0.5F*res.Y)
       ;
 
-    var offZ = (float)time;
+    var offZ = 2.0F*(float)time;
 
     for (var i = 0; i < _stars.Length; ++i)
     {
