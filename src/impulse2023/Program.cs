@@ -4,14 +4,14 @@ var selections =
     .Title("Music: Cuddly - Comic Bakery - Sid (Mad Max)\nPress Esc or Space to exit screen\nWhich screen should I show?")
     .PageSize(10)
     .AddChoices(
-        new Impulse2023.GlimGlam.TheScreen    ()
-      , new Impulse2023.Jez.TheScreen         ()
-      , new Impulse2023.Lance.CubeScreen      ()
-      , new Impulse2023.Lance.StarsScreen     ()
+        new Impulse2023.GlimGlam.TheScreen()
+      , new Impulse2023.Jez.TheScreen()
+      , new Impulse2023.Lance.CubeScreen()
+      , new Impulse2023.Lance.StarsScreen()
       , new Impulse2023.Lance.RasterBarsScreen()
-      , new Impulse2023.LongShot.TheScreen    ()
-      , new Impulse2023.GuestStar.TheScreen   ()
-      , new ExitScreen                        ()
+      , new Impulse2023.Longshot.CubeScreen()
+      , new Impulse2023.GuestStar.TheScreen()
+      , new ExitScreen()
       );
 
 var exePath = Assembly.GetExecutingAssembly().Location;
@@ -24,7 +24,7 @@ try
 {
   var clock = Stopwatch.StartNew();
 
-  while(true)
+  while (true)
   {
     var screen = AnsiConsole.Prompt(selections);
     if (screen is ExitScreen)
@@ -32,9 +32,9 @@ try
       break;
     }
 
-    var w     = AnsiConsole.Profile.Width/2;
-    var h     = AnsiConsole.Profile.Height;
-    var canvas= new Canvas(w, h)
+    var w = AnsiConsole.Profile.Width / 2;
+    var h = AnsiConsole.Profile.Height;
+    var canvas = new Canvas(w, h)
     {
       Scale = false
     };
@@ -52,9 +52,9 @@ finally
 static void Updater(Stopwatch clock, Canvas canvas, Screen screen, LiveDisplayContext ldc)
 {
   var cont = true;
-  while(cont)
+  while (cont)
   {
-    var before = clock.ElapsedMilliseconds/1000.0;
+    var before = clock.ElapsedMilliseconds / 1000.0;
     var time = before;
     screen.Update(canvas, time);
     ldc.Refresh();
@@ -64,17 +64,19 @@ static void Updater(Stopwatch clock, Canvas canvas, Screen screen, LiveDisplayCo
       cont = key.Key switch
       {
         ConsoleKey.Spacebar => false
-      , ConsoleKey.Escape   => false
-      , _                   => true
+      ,
+        ConsoleKey.Escape => false
+      ,
+        _ => true
       };
     }
 
-    var after = clock.ElapsedMilliseconds/1000.0;
-    var waitFor = 1.0/120.0 - (after-before);
+    var after = clock.ElapsedMilliseconds / 1000.0;
+    var waitFor = 1.0 / 120.0 - (after - before);
     if (waitFor > 0.0)
     {
       // Strive for 60fps
-      var ms = (int)(waitFor*1000.0);
+      var ms = (int)(waitFor * 1000.0);
       Thread.Sleep(ms);
     }
   }
