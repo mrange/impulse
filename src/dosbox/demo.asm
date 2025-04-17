@@ -119,14 +119,9 @@ r_loop:
     fabs
     fdiv    st3
 
+    fst dword [_bits]
+    mov al, [_bits+3]
 
-    fld dword [threshold]
-
-    fcomip
-    jbe set_color
-    mov al, 0x32
-set_color:
-    ; Write pixel and advance DI
     stosb
 
     ; Restore stack to expected state
@@ -159,8 +154,8 @@ set_color:
     ret
 
 ; Data section
-threshold   dd  0.01
 _1_6        dd  1.6
+_bits       dd  0.0
 
 _100        dw  100
 x           dw  0

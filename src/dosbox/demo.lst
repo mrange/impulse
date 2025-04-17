@@ -16,7 +16,7 @@
     16 00000008 8EC0                        mov es, ax
     17                                  
     18                                      ; PUSH 100
-    19 0000000A DF06[B700]                  fild word [_100]
+    19 0000000A DF06[B400]                  fild word [_100]
     20                                  
     21                                      ; PUSH 2
     22 0000000E D9E8                        fld1
@@ -27,9 +27,9 @@
     27                                      ; Reset position to start of video memory
     28 00000014 31FF                        xor di, di
     29                                  
-    30 00000016 C706[BB00]C800              mov word [y], 200
+    30 00000016 C706[B800]C800              mov word [y], 200
     31                                  y_loop:
-    32 0000001C C706[B900]4001              mov word [x], 320
+    32 0000001C C706[B600]4001              mov word [x], 320
     33                                  x_loop:
     34                                      ; expected stack
     35                                      ; ST(0) 2
@@ -42,14 +42,14 @@
     42 00000024 D9E8                        fld1
     43 00000026 D8F3                        fdiv st3
     44                                  
-    45 00000028 DF06[BB00]                  fild word [y]
+    45 00000028 DF06[B800]                  fild word [y]
     46 0000002C D8F4                        fdiv st4
     47 0000002E D9E8                        fld1
     48 00000030 DEE9                        fsub
     49                                  
-    50 00000032 DF06[B900]                  fild word [x]
+    50 00000032 DF06[B600]                  fild word [x]
     51 00000036 D8F5                        fdiv st5
-    52 00000038 D906[B300]                  fld dword [_1_6]
+    52 00000038 D906[AC00]                  fld dword [_1_6]
     53 0000003C DEE9                        fsub
     54                                  
     55                                      ; expected stack
@@ -119,50 +119,45 @@
    119 00000076 D9E1                        fabs
    120 00000078 D8F3                        fdiv    st3
    121                                  
-   122                                  
-   123 0000007A D906[AF00]                  fld dword [threshold]
+   122 0000007A D916[B000]                  fst dword [_bits]
+   123 0000007E A0[B300]                    mov al, [_bits+3]
    124                                  
-   125 0000007E DFF1                        fcomip
-   126 00000080 7602                        jbe set_color
-   127 00000082 B032                        mov al, 0x32
-   128                                  set_color:
-   129                                      ; Write pixel and advance DI
-   130 00000084 AA                          stosb
-   131                                  
-   132                                      ; Restore stack to expected state
-   133                                      ; ST(0) 2
-   134 00000085 DDD8                        fstp    st0
-   135 00000087 DDD8                        fstp    st0
-   136 00000089 DDD8                        fstp    st0
-   137 0000008B DDD8                        fstp    st0
-   138                                  
-   139 0000008D FF0E[B900]                  dec word [x]
-   140 00000091 758F                        jnz x_loop
+   125 00000081 AA                          stosb
+   126                                  
+   127                                      ; Restore stack to expected state
+   128                                      ; ST(0) 2
+   129 00000082 DDD8                        fstp    st0
+   130 00000084 DDD8                        fstp    st0
+   131 00000086 DDD8                        fstp    st0
+   132 00000088 DDD8                        fstp    st0
+   133                                  
+   134 0000008A FF0E[B600]                  dec word [x]
+   135 0000008E 7592                        jnz x_loop
+   136                                  
+   137 00000090 FF0E[B800]                  dec word [y]
+   138 00000094 7586                        jnz y_loop
+   139                                  
+   140 00000096 FF06[BA00]                  inc word [time]
    141                                  
-   142 00000093 FF0E[BB00]                  dec word [y]
-   143 00000097 7583                        jnz y_loop
-   144                                  
-   145 00000099 FF06[BD00]                  inc word [time]
+   142                                      ; Check for keypress to exit
+   143 0000009A B401                        mov ah, 1
+   144 0000009C CD16                        int 16h
+   145 0000009E 0F8472FF                    jz main_loop
    146                                  
-   147                                      ; Check for keypress to exit
-   148 0000009D B401                        mov ah, 1
-   149 0000009F CD16                        int 16h
-   150 000000A1 0F846FFF                    jz main_loop
-   151                                  
-   152                                      ; Clear keyboard buffer
-   153 000000A5 B400                        mov ah, 0
-   154 000000A7 CD16                        int 16h
+   147                                      ; Clear keyboard buffer
+   148 000000A2 B400                        mov ah, 0
+   149 000000A4 CD16                        int 16h
+   150                                  
+   151                                      ; Clear keyboard buffer
+   152 000000A6 B80300                      mov ax, 0003h
+   153 000000A9 CD10                        int 10h
+   154 000000AB C3                          ret
    155                                  
-   156                                      ; Clear keyboard buffer
-   157 000000A9 B80300                      mov ax, 0003h
-   158 000000AC CD10                        int 10h
-   159 000000AE C3                          ret
-   160                                  
-   161                                  ; Data section
-   162 000000AF 0AD7233C                threshold   dd  0.01
-   163 000000B3 CDCCCC3F                _1_6        dd  1.6
-   164                                  
-   165 000000B7 6400                    _100        dw  100
-   166 000000B9 0000                    x           dw  0
-   167 000000BB 0000                    y           dw  0
-   168 000000BD 0000                    time        dw  0
+   156                                  ; Data section
+   157 000000AC CDCCCC3F                _1_6        dd  1.6
+   158 000000B0 00000000                _bits       dd  0.0
+   159                                  
+   160 000000B4 6400                    _100        dw  100
+   161 000000B6 0000                    x           dw  0
+   162 000000B8 0000                    y           dw  0
+   163 000000BA 0000                    time        dw  0
