@@ -1,27 +1,19 @@
 ; DOS demo with FPU sine wave pattern
-; Assemble with: nasm -f bin -o fpudemo.com fpudemo.asm
+; Assemble with: nasm -f bin -o demo.com demo.asm
 
-    BITS 16          ; 16-bit code
-    ORG 100h         ; COM programs start at offset 100h
+    ; 16-bit code
+    BITS 16
+     ; COM programs start at offset 100h
+    ORG 100h
 
 start:
-    mov dx, wait_for_any_key
-    mov ah, 09h
-    int 21h
-
-    mov ah, 00h
-    int 16h
-
     ; Set video mode (320x200, 256 colors)
     mov ax, 0013h
     int 10h
 
     ; Initialize video memory segment
-    mov ax, 0A000h   ; Video memory segment
-    mov es, ax       ; ES points to video memory
-
-    ; Set up a counter for animation
-    xor bp, bp
+    mov ax, 0A000h
+    mov es, ax
 
     ; PUSH 2
     fld1
@@ -29,152 +21,128 @@ start:
     fadd
 
 main_loop:
-    ; Clear screen
-    xor di, di       ; Reset position to start of video memory
+    ; Reset position to start of video memory
+    xor di, di
 
-    ; PUSH 1 (start y)
-    fld1
-
-    ; Loop through Y coordinates (0-199)
-    xor cx, cx       ; Y = 0
+    mov word [y], 200
 y_loop:
-    ; Expected stack
-    ; ST(1) - y
-    ; ST(0) - 2
-
-    fld     dword [start_x]
-
-    ; Loop through X coordinates (0-319)
-    xor dx, dx       ; X = 0
+    mov word [x], 320
 x_loop:
-    ; Expected stack
-    ; ST(0) - x
-    ; ST(1) - y
+    ; expected stack
+    ; ST(0) 2
 
-    ; PUSH 1 (Scale)
+    ; Scale
     fld1
+
+    fild word [y]
+    fild word [_100]
+    fdiv
+    fld1
+    fsub
+
+    fild word [x]
+    fild word [_160]
+    fdiv
+    fld1
+    fsub
+
+    ; expected stack
+    ; ST(0) x
+    ; ST(1) y
+    ; ST(2) scale
+    ; ST(3) 2
 
     ; Appollian loop
-    xor ax,ax
-
+    mov ax,5
 a_loop:
-    ; Expected stack
-    ; ST(0) - scale
-    ; ST(1) - x
-    ; ST(2) - y
-    ; ST(3) - 2
+    ; p -= 2.*round(0.5*p);
 
-    ; ST(1) x -= 2*round(0.5*x)
-    fxch    st1
-    fdiv    st0, st3
+    mov cx,2
+r_loop:
+    ; Swap x and y
+    fxch
+    ; Dupe
+    fld     st0
+    ; Divide by 2
+    fdiv    st4
     frndint
-    fmul    st0, st3
-    fxch    st1
+    ; Multiply by 2
+    fmul    st4
+    fsub
+    dec cx
+    jnz r_loop
 
-    ; ST(2) y -= 2*round(0.5*y)
-    fxch    st2
-    fdiv    st0, st3
-    frndint
-    fmul    st0, st3
-    fxch    st2
+    ; dot(p,p)
+    ; Dupe x
+    fld     st0
+    fmul    st0
 
-    ; dot product
-    fld     st1
-    fmul    st0, st0
-    fld     st3
-    fmul    st0, st0
+    ; Dupe y
+    fld     st2
+    fmul    st2
+
     fadd
 
-    ; ST(0) - dot
-    ; ST(1) - scale
-    ; ST(2) - x
-    ; ST(3) - y
-    ; ST(4) - 2
+    ; k = s/dot(p,p)
+    fld dword [s]
+    fdivr
 
-    fdivr   st1, st0
-    fdivr   st2, st0
-    fdivr   st3, st0
+    ; p *= k
+    fmul    st1,st0
+    fmul    st2,st0
+    ; scale *= k
+    fmul    st3,st0
 
-    ; POP dot
+    ; Pop k
     fstp    st0
 
-    inc ax
-    cmp ax, 5
-    jl a_loop
+    dec ax
+    jnz a_loop
 
-    ; ST(0) - scale
-    ; ST(1) - x
-    ; ST(2) - y
-    ; ST(3) - 2
-
-    fld     st1
+    ; Compute distance
     fabs
-    fdivr   st0, st1
+    fdiv    st2
 
-    fld     dword [threshold]
+    fld dword [threshold]
+    fcomip
 
-    fcomip  st0, st1
-    setb    al
-    dec     al
+    mov al, 0x55
+    jbe set_color
+    mov al, 0x32
+set_color:
+    ; Write pixel and advance DI
+    stosb
 
-    stosb                  ; Write pixel and advance DI
+    ; Restore stack to expected state
+    ; ST(0) 2
+    fstp    st0
+    fstp    st0
+    fstp    st0
 
-    ; POP threshold
-    fstp st0
-    ; POP scale
-    fstp st0
+    dec word [x]
+    jnz x_loop
 
-    ; Expected stack
-    ; ST(0) - x
-    ; ST(1) - y
-    ; ST(2) - 2
-
-    ; Increment x
-    fld     dword [increment]
-    fadd
-
-    ; X loop control
-    inc dx
-    cmp dx, 320
-    jl x_loop
-
-    ; POP x
-    fstp st0
-
-    ; Expected stack
-    ; ST(0) - y
-    ; ST(1) - 2
-
-    ; Increment y
-    fld     dword [increment]
-    fadd
-
-    ; Y loop control
-    inc cx
-    cmp cx, 200
-    jl y_loop
-
-    ; POP y
-    fstp st0
+    dec word [y]
+    jnz y_loop
 
     ; Check for keypress to exit
     mov ah, 1
     int 16h
     jz main_loop
 
-    ; POP 2
-    fstp st0
-
-    ; Exit: reset video mode
-    mov ah, 0       ; Clear keyboard buffer
+    ; Clear keyboard buffer
+    mov ah, 0
     int 16h
-    mov ax, 0003h   ; Text mode
+
+    ; Clear keyboard buffer
+    mov ax, 0003h
     int 10h
     ret
 
 ; Data section
-threshold   dd 0.01
-increment   dd -0.01
-start_x     dd 1.6
-
-wait_for_any_key db 'Wait for any key$', 0
+threshold   dd  0.01
+s           dd  1.25
+_100        dw  100
+_160        dw  160
+x           dw  0
+y           dw  0
