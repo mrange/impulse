@@ -24,9 +24,9 @@
     24                                      ; Reset position to start of video memory
     25 00000010 31FF                        xor di, di
     26                                  
-    27 00000012 C706[AB00]C800              mov word [y], 200
+    27 00000012 C706[A900]C800              mov word [y], 200
     28                                  y_loop:
-    29 00000018 C706[A900]4001              mov word [x], 320
+    29 00000018 C706[A700]4001              mov word [x], 320
     30                                  x_loop:
     31                                      ; expected stack
     32                                      ; ST(0) 2
@@ -34,16 +34,16 @@
     34                                      ; Scale
     35 0000001E D9E8                        fld1
     36                                  
-    37 00000020 DF06[AB00]                  fild word [y]
-    38 00000024 DF06[A700]                  fild word [_100]
+    37 00000020 DF06[A900]                  fild word [y]
+    38 00000024 DF06[A500]                  fild word [_100]
     39 00000028 DEF9                        fdiv
     40 0000002A D9E8                        fld1
     41 0000002C DEE9                        fsub
     42                                  
-    43 0000002E DF06[A900]                  fild word [x]
-    44 00000032 DF06[A700]                  fild word [_100]
+    43 0000002E DF06[A700]                  fild word [x]
+    44 00000032 DF06[A500]                  fild word [_100]
     45 00000036 DEF9                        fdiv
-    46 00000038 D906[A300]                  fld dword [_1_6]
+    46 00000038 D906[A100]                  fld dword [_1_6]
     47 0000003C DEE9                        fsub
     48                                  
     49                                      ; expected stack
@@ -69,80 +69,80 @@
     69                                      ; Multiply by 2
     70 0000004A D8CC                        fmul    st4
     71 0000004C DEE9                        fsub
-    72 0000004E FEC9                        dec cl
-    73 00000050 75F0                        jnz r_loop
+    72 0000004E 49                          dec cx
+    73 0000004F 75F1                        jnz r_loop
     74                                  
     75                                      ; dot(p,p)
     76                                      ; Dupe x
-    77 00000052 D9C0                        fld     st0
-    78 00000054 D8C8                        fmul    st0
+    77 00000051 D9C0                        fld     st0
+    78 00000053 D8C8                        fmul    st0
     79                                  
     80                                      ; Dupe y
-    81 00000056 D9C2                        fld     st2
-    82 00000058 D8C8                        fmul    st0
+    81 00000055 D9C2                        fld     st2
+    82 00000057 D8C8                        fmul    st0
     83                                  
-    84 0000005A DEC1                        fadd
+    84 00000059 DEC1                        fadd
     85                                  
     86                                      ; k = 1/dot(p,p)
-    87 0000005C D9E8                        fld1
-    88 0000005E DEF1                        fdivr
+    87 0000005B D9E8                        fld1
+    88 0000005D DEF1                        fdivr
     89                                  
     90                                      ; p *= k
-    91 00000060 DCC9                        fmul    st1,st0
-    92 00000062 DCCA                        fmul    st2,st0
+    91 0000005F DCC9                        fmul    st1,st0
+    92 00000061 DCCA                        fmul    st2,st0
     93                                      ; scale *= k
-    94 00000064 DCCB                        fmul    st3,st0
+    94 00000063 DCCB                        fmul    st3,st0
     95                                  
     96                                      ; Pop k
-    97 00000066 DDD8                        fstp    st0
+    97 00000065 DDD8                        fstp    st0
     98                                  
-    99 00000068 FEC8                        dec al
-   100 0000006A 75D4                        jnz a_loop
+    99 00000067 48                          dec ax
+   100 00000068 75D6                        jnz a_loop
    101                                  
    102                                      ; Compute distance
-   103 0000006C D9E1                        fabs
-   104 0000006E D8F2                        fdiv    st2
+   103 0000006A D9E1                        fabs
+   104 0000006C D8F2                        fdiv    st2
    105                                  
    106                                  
-   107 00000070 D906[9F00]                  fld dword [threshold]
+   107 0000006E D906[9D00]                  fld dword [threshold]
    108                                  
-   109 00000074 DFF1                        fcomip
-   110 00000076 7602                        jbe set_color
-   111 00000078 B032                        mov al, 0x32
+   109 00000072 DFF1                        fcomip
+   110 00000074 7602                        jbe set_color
+   111 00000076 B032                        mov al, 0x32
    112                                  set_color:
    113                                      ; Write pixel and advance DI
-   114 0000007A AA                          stosb
+   114 00000078 AA                          stosb
    115                                  
    116                                      ; Restore stack to expected state
    117                                      ; ST(0) 2
-   118 0000007B DDD8                        fstp    st0
-   119 0000007D DDD8                        fstp    st0
-   120 0000007F DDD8                        fstp    st0
+   118 00000079 DDD8                        fstp    st0
+   119 0000007B DDD8                        fstp    st0
+   120 0000007D DDD8                        fstp    st0
    121                                  
-   122 00000081 FF0E[A900]                  dec word [x]
-   123 00000085 7597                        jnz x_loop
+   122 0000007F FF0E[A700]                  dec word [x]
+   123 00000083 7599                        jnz x_loop
    124                                  
-   125 00000087 FF0E[AB00]                  dec word [y]
-   126 0000008B 758B                        jnz y_loop
+   125 00000085 FF0E[A900]                  dec word [y]
+   126 00000089 758D                        jnz y_loop
    127                                  
    128                                      ; Check for keypress to exit
-   129 0000008D B401                        mov ah, 1
-   130 0000008F CD16                        int 16h
-   131 00000091 0F847BFF                    jz main_loop
+   129 0000008B B401                        mov ah, 1
+   130 0000008D CD16                        int 16h
+   131 0000008F 0F847DFF                    jz main_loop
    132                                  
    133                                      ; Clear keyboard buffer
-   134 00000095 B400                        mov ah, 0
-   135 00000097 CD16                        int 16h
+   134 00000093 B400                        mov ah, 0
+   135 00000095 CD16                        int 16h
    136                                  
    137                                      ; Clear keyboard buffer
-   138 00000099 B80300                      mov ax, 0003h
-   139 0000009C CD10                        int 10h
-   140 0000009E C3                          ret
+   138 00000097 B80300                      mov ax, 0003h
+   139 0000009A CD10                        int 10h
+   140 0000009C C3                          ret
    141                                  
    142                                  ; Data section
-   143 0000009F 0AD7233C                threshold   dd  0.01
-   144 000000A3 CDCCCC3F                _1_6        dd  1.6
+   143 0000009D 0AD7233C                threshold   dd  0.01
+   144 000000A1 CDCCCC3F                _1_6        dd  1.6
    145                                  
-   146 000000A7 6400                    _100        dw  100
-   147 000000A9 0000                    x           dw  0
-   148 000000AB 0000                    y           dw  0
+   146 000000A5 6400                    _100        dw  100
+   147 000000A7 0000                    x           dw  0
+   148 000000A9 0000                    y           dw  0

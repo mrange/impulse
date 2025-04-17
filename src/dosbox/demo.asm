@@ -69,7 +69,7 @@ r_loop:
     ; Multiply by 2
     fmul    st4
     fsub
-    dec cl
+    dec cx
     jnz r_loop
 
     ; dot(p,p)
@@ -96,7 +96,7 @@ r_loop:
     ; Pop k
     fstp    st0
 
-    dec al
+    dec ax
     jnz a_loop
 
     ; Compute distance
