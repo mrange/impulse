@@ -41,9 +41,9 @@ x_loop:
     fsub
 
     fild word [x]
-    fild word [_160]
+    fild word [_100]
     fdiv
-    fld1
+    fld dword [_1_6]
     fsub
 
     ; expected stack
@@ -79,7 +79,7 @@ r_loop:
 
     ; Dupe y
     fld     st2
-    fmul    st2
+    fmul    st0
 
     fadd
 
@@ -141,8 +141,9 @@ set_color:
 
 ; Data section
 threshold   dd  0.01
-s           dd  1.25
+s           dd  1.1
+_1_6        dd  1.6
+
 _100        dw  100
-_160        dw  160
 x           dw  0
 y           dw  0
