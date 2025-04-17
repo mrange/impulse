@@ -15,9 +15,6 @@ start:
     mov ax, 0A000h
     mov es, ax
 
-    ; PUSH 0.5
-    fld dword [_0_5]
-
 main_loop:
     ; Reset position to start of video memory
     xor di, di
@@ -26,9 +23,6 @@ main_loop:
 y_loop:
     mov word [x], 320
 x_loop:
-    ; expected stack
-    ; ST(0) - 0.5
-
     ; PUSH 0.01
     fld dword [_0_01]
 
@@ -42,28 +36,79 @@ x_loop:
 
     fild word [x]
     fmul st3
-    fld dword [_1_6]
-    fsub
+    fsub dword [_1_6]
+
+    ; Load sin cos
+    fild word [time]
+    fmul st4
+    fsincos
+
+    ; expected stack
+    ; ST(0) cos
+    ; ST(1) sin
+    ; ST(2) x
+    ; ST(3) y
+    ; ST(4) z
+
+    mov ax,1
+t_loop:
+
+    ; y' = y*cos - x*sin
+    ; y +0
+    fld     st3
+    ; *cos +1
+    fmul    st1
+    ; x +1
+    fld     st3
+    ; *sin +2
+    fmul    st3
+    fsub                ; y' = y*cos - x*sin
+
+    ; x' = x*cos + y*sin
+    ; x +1
+    fld     st3
+    ; *cos +2
+    fmul    st2
+    ; y +2
+    fld     st5
+    ; *sin +3
+    fmul    st4
+    fadd
+
+    ; expected stack
+    ; ST(0) x'
+    ; ST(1) y'
+    ; ST(2) cos
+    ; ST(3) sin
+    ; ST(4) x
+    ; ST(5) y
+    ; ST(6) z
+
+    fstp    st4
+    fstp    st4
+    dec     ax
+    jnz     t_loop
+
+    fstp    st0
+    fstp    st0
 
     ; Scale
     fld1
-    fxch st4
-    fstp st0
+    fstp st4
 
     ; expected stack
     ; ST(0) x
     ; ST(1) y
     ; ST(2) z
     ; ST(3) scale
-    ; ST(4) 0.5
 
 
     ; Appollian loop
-    mov al,5
+    mov ax,5
 a_loop:
     ; p -= 2.*round(0.5*p);
 
-    mov ah,3
+    mov bx,3
 r_loop:
     ; Rotate ST(0..2)
     fxch st2
@@ -71,12 +116,12 @@ r_loop:
     ; Dupe
     fld     st0
     ; Divide by 2
-    fmul    st5
+    fmul dword [_0_5]
     frndint
     ; Multiply by 2
     fadd    st0
     fsub
-    dec ah
+    dec bx
     jnz r_loop
 
     ; dot(p,p)
@@ -110,7 +155,7 @@ r_loop:
     ; Pop k
     fstp    st0
 
-    dec al
+    dec ax
     jnz a_loop
 
     ; Compute distance
@@ -124,11 +169,11 @@ r_loop:
     stosb
 
     ; Restore stack to expected state
-    ; ST(0) 0.5
-    fstp    st0
-    fstp    st0
-    fstp    st0
-    fstp    st0
+    ;   Not needed as nothing is kept stack
+    ; fstp    st0
+    ; fstp    st0
+    ; fstp    st0
+    ; fstp    st0
 
     dec word [x]
     jnz x_loop
