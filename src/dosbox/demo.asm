@@ -26,71 +26,67 @@ x_loop:
     ; PUSH 0.01
     fld dword [_0_01]
 
-    ; Z
-    fld  st0
+    ; Load sin cos
+    fild word [time]
+    fmul st1
+    fsincos
+
+    ; Z (0.01)
+    fld  st2
 
     fild word [y]
-    fmul st2
+    fmul st4
     fld1
     fsub
 
     fild word [x]
-    fmul st3
+    fmul st5
     fsub dword [_1_6]
 
-    ; Load sin cos
-    fild word [time]
-    fmul st4
-    fsincos
-
     ; expected stack
-    ; ST(0) cos
-    ; ST(1) sin
-    ; ST(2) x
-    ; ST(3) y
-    ; ST(4) z
+    ; ST(0) x
+    ; ST(1) y
+    ; ST(2) z
+    ; ST(3) cos
+    ; ST(4) sin
 
-    mov ax,1
+    mov ax, 3
 t_loop:
+    fxch st2
+    fxch st1
 
-    ; y' = y*cos - x*sin
-    ; y +0
-    fld     st3
-    ; *cos +1
-    fmul    st1
-    ; x +1
-    fld     st3
-    ; *sin +2
-    fmul    st3
-    fsub                ; y' = y*cos - x*sin
+    ; Calculate y' = y*cos - x*sin
+    ;---------------------------------
+    fld     st1             ; ST(0)=y,  ST(1)=x,  ST(2)=y,  ST(3)=z,  ST(4)=cos, ST(5)=sin
+    fmul    st4             ; ST(0)=y*cos, ST(1)=x,  ST(2)=y,  ST(3)=z,  ST(4)=cos, ST(5)=sin
+    fld     st1             ; ST(0)=x,  ST(1)=y*cos, ST(2)=x,  ST(3)=y,  ST(4)=z,  ST(5)=cos, ST(6)=sin
+    fmul    st6             ; ST(0)=x*sin, ST(1)=y*cos, ST(2)=x,  ST(3)=y,  ST(4)=z,  ST(5)=cos, ST(6)=sin
+    fsub                    ; ST(0)=y*cos-x*sin=y', ST(1)=x,  ST(2)=y,  ST(3)=z,  ST(4)=cos, ST(5)=sin
+                            ; Stack now: y', x, y, z, cos, sin
 
-    ; x' = x*cos + y*sin
-    ; x +1
-    fld     st3
-    ; *cos +2
-    fmul    st2
-    ; y +2
-    fld     st5
-    ; *sin +3
-    fmul    st4
-    fadd
+    ; Calculate x' = x*cos + y*sin
+    ;---------------------------------
+    fld     st1             ; ST(0)=x,  ST(1)=y', ST(2)=x,  ST(3)=y,  ST(4)=z,  ST(5)=cos, ST(6)=sin
+    fmul    st5             ; ST(0)=x*cos, ST(1)=y', ST(2)=x,  ST(3)=y,  ST(4)=z,  ST(5)=cos, ST(6)=sin
+    fld     st3             ; ST(0)=y,  ST(1)=x*cos, ST(2)=y', ST(3)=x,  ST(4)=y,  ST(5)=z,  ST(6)=cos, ST(7)=sin
+    fmul    st7             ; ST(0)=y*sin, ST(1)=x*cos, ST(2)=y', ST(3)=x,  ST(4)=y,  ST(5)=z,  ST(6)=cos, ST(7)=sin
+    fadd                    ; ST(0)=x*cos+y*sin=x', ST(1)=y', ST(2)=x,  ST(3)=y,  ST(4)=z,  ST(5)=cos, ST(6)=sin
+                            ; Stack now: x', y', x, y, z, cos, sin
+
+    ; Overwrite x with x'
+    fstp    st2
+    ; Overwrite y with y'
+    fstp    st2
 
     ; expected stack
     ; ST(0) x'
     ; ST(1) y'
-    ; ST(2) cos
-    ; ST(3) sin
-    ; ST(4) x
-    ; ST(5) y
-    ; ST(6) z
+    ; ST(2) z
+    ; ST(3) cos
+    ; ST(4) sin
 
-    fstp    st4
-    fstp    st4
-    dec     ax
-    jnz     t_loop
-
-    fstp    st0
-    fstp    st0
+    dec ax
+    jnz t_loop
 
     ; Scale
     fld1
