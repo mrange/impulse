@@ -16,10 +16,7 @@ start:
     mov es, ax
 
     ; PUSH 0.5
-    fld1
-    fchs
-    fld1
-    fscale
+    fld dword [_0_5]
 
 main_loop:
     ; Reset position to start of video memory
@@ -33,7 +30,7 @@ x_loop:
     ; ST(0) - 0.5
 
     ; PUSH 0.01
-    fld dword [_001]
+    fld dword [_0_01]
 
     ; Z
     fld  st0
@@ -157,7 +154,8 @@ r_loop:
 
 ; Data section
 _1_6        dd  1.6
-_001        dd  0.01
+_0_01       dd  0.01
+_0_5        dd  0.5
 _bits       dd  0.0
 
 x           dw  0

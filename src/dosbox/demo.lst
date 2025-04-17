@@ -16,151 +16,149 @@
     16 00000008 8EC0                        mov es, ax
     17                                  
     18                                      ; PUSH 0.5
-    19 0000000A D9E8                        fld1
-    20 0000000C D9E0                        fchs
-    21 0000000E D9E8                        fld1
-    22 00000010 D9FD                        fscale
-    23                                  
-    24                                  main_loop:
-    25                                      ; Reset position to start of video memory
-    26 00000012 31FF                        xor di, di
-    27                                  
-    28 00000014 C706[C200]C800              mov word [y], 200
-    29                                  y_loop:
-    30 0000001A C706[C000]4001              mov word [x], 320
-    31                                  x_loop:
-    32                                      ; expected stack
-    33                                      ; ST(0) - 0.5
+    19 0000000A D906[B800]                  fld dword [_0_5]
+    20                                  
+    21                                  main_loop:
+    22                                      ; Reset position to start of video memory
+    23 0000000E 31FF                        xor di, di
+    24                                  
+    25 00000010 C706[C200]C800              mov word [y], 200
+    26                                  y_loop:
+    27 00000016 C706[C000]4001              mov word [x], 320
+    28                                  x_loop:
+    29                                      ; expected stack
+    30                                      ; ST(0) - 0.5
+    31                                  
+    32                                      ; PUSH 0.01
+    33 0000001C D906[B400]                  fld dword [_0_01]
     34                                  
-    35                                      ; PUSH 0.01
-    36 00000020 D906[B800]                  fld dword [_001]
+    35                                      ; Z
+    36 00000020 D9C0                        fld  st0
     37                                  
-    38                                      ; Z
-    39 00000024 D9C0                        fld  st0
-    40                                  
-    41 00000026 DF06[C200]                  fild word [y]
-    42 0000002A D8CA                        fmul st2
-    43 0000002C D9E8                        fld1
-    44 0000002E DEE9                        fsub
-    45                                  
-    46 00000030 DF06[C000]                  fild word [x]
-    47 00000034 D8CB                        fmul st3
-    48 00000036 D906[B400]                  fld dword [_1_6]
-    49 0000003A DEE9                        fsub
-    50                                  
-    51                                      ; Scale
-    52 0000003C D9E8                        fld1
-    53 0000003E D9CC                        fxch st4
-    54 00000040 DDD8                        fstp st0
-    55                                  
-    56                                      ; expected stack
-    57                                      ; ST(0) x
-    58                                      ; ST(1) y
-    59                                      ; ST(2) z
-    60                                      ; ST(3) scale
-    61                                      ; ST(4) 0.5
-    62                                  
-    63                                  
-    64                                      ; Appollian loop
-    65 00000042 B005                        mov al,5
-    66                                  a_loop:
-    67                                      ; p -= 2.*round(0.5*p);
-    68                                  
-    69 00000044 B403                        mov ah,3
-    70                                  r_loop:
-    71                                      ; Rotate ST(0..2)
-    72 00000046 D9CA                        fxch st2
-    73 00000048 D9C9                        fxch st1
-    74                                      ; Dupe
-    75 0000004A D9C0                        fld     st0
-    76                                      ; Divide by 2
-    77 0000004C D8CD                        fmul    st5
-    78 0000004E D9FC                        frndint
-    79                                      ; Multiply by 2
-    80 00000050 D8C0                        fadd    st0
-    81 00000052 DEE9                        fsub
-    82 00000054 FECC                        dec ah
-    83 00000056 75EE                        jnz r_loop
-    84                                  
-    85                                      ; dot(p,p)
-    86                                      ; Dupe x
-    87 00000058 D9C0                        fld     st0
-    88 0000005A D8C8                        fmul    st0
-    89                                  
-    90                                      ; Dupe y
-    91 0000005C D9C2                        fld     st2
-    92 0000005E D8C8                        fmul    st0
-    93                                  
-    94 00000060 DEC1                        fadd
-    95                                  
-    96                                      ; Dupe z
-    97 00000062 D9C3                        fld     st3
-    98 00000064 D8C8                        fmul    st0
-    99                                  
-   100 00000066 DEC1                        fadd
-   101                                  
-   102                                      ; k = 1/dot(p,p)
-   103 00000068 D9E8                        fld1
-   104 0000006A DEF1                        fdivr
-   105                                  
-   106                                      ; p *= k
-   107 0000006C DCC9                        fmul    st1,st0
-   108 0000006E DCCA                        fmul    st2,st0
-   109 00000070 DCCB                        fmul    st3,st0
-   110                                      ; scale *= k
-   111 00000072 DCCC                        fmul    st4,st0
+    38 00000022 DF06[C200]                  fild word [y]
+    39 00000026 D8CA                        fmul st2
+    40 00000028 D9E8                        fld1
+    41 0000002A DEE9                        fsub
+    42                                  
+    43 0000002C DF06[C000]                  fild word [x]
+    44 00000030 D8CB                        fmul st3
+    45 00000032 D906[B000]                  fld dword [_1_6]
+    46 00000036 DEE9                        fsub
+    47                                  
+    48                                      ; Scale
+    49 00000038 D9E8                        fld1
+    50 0000003A D9CC                        fxch st4
+    51 0000003C DDD8                        fstp st0
+    52                                  
+    53                                      ; expected stack
+    54                                      ; ST(0) x
+    55                                      ; ST(1) y
+    56                                      ; ST(2) z
+    57                                      ; ST(3) scale
+    58                                      ; ST(4) 0.5
+    59                                  
+    60                                  
+    61                                      ; Appollian loop
+    62 0000003E B005                        mov al,5
+    63                                  a_loop:
+    64                                      ; p -= 2.*round(0.5*p);
+    65                                  
+    66 00000040 B403                        mov ah,3
+    67                                  r_loop:
+    68                                      ; Rotate ST(0..2)
+    69 00000042 D9CA                        fxch st2
+    70 00000044 D9C9                        fxch st1
+    71                                      ; Dupe
+    72 00000046 D9C0                        fld     st0
+    73                                      ; Divide by 2
+    74 00000048 D8CD                        fmul    st5
+    75 0000004A D9FC                        frndint
+    76                                      ; Multiply by 2
+    77 0000004C D8C0                        fadd    st0
+    78 0000004E DEE9                        fsub
+    79 00000050 FECC                        dec ah
+    80 00000052 75EE                        jnz r_loop
+    81                                  
+    82                                      ; dot(p,p)
+    83                                      ; Dupe x
+    84 00000054 D9C0                        fld     st0
+    85 00000056 D8C8                        fmul    st0
+    86                                  
+    87                                      ; Dupe y
+    88 00000058 D9C2                        fld     st2
+    89 0000005A D8C8                        fmul    st0
+    90                                  
+    91 0000005C DEC1                        fadd
+    92                                  
+    93                                      ; Dupe z
+    94 0000005E D9C3                        fld     st3
+    95 00000060 D8C8                        fmul    st0
+    96                                  
+    97 00000062 DEC1                        fadd
+    98                                  
+    99                                      ; k = 1/dot(p,p)
+   100 00000064 D9E8                        fld1
+   101 00000066 DEF1                        fdivr
+   102                                  
+   103                                      ; p *= k
+   104 00000068 DCC9                        fmul    st1,st0
+   105 0000006A DCCA                        fmul    st2,st0
+   106 0000006C DCCB                        fmul    st3,st0
+   107                                      ; scale *= k
+   108 0000006E DCCC                        fmul    st4,st0
+   109                                  
+   110                                      ; Pop k
+   111 00000070 DDD8                        fstp    st0
    112                                  
-   113                                      ; Pop k
-   114 00000074 DDD8                        fstp    st0
+   113 00000072 FEC8                        dec al
+   114 00000074 75CA                        jnz a_loop
    115                                  
-   116 00000076 FEC8                        dec al
-   117 00000078 75CA                        jnz a_loop
-   118                                  
-   119                                      ; Compute distance
-   120 0000007A D9E1                        fabs
-   121 0000007C D8F3                        fdiv    st3
-   122                                  
-   123 0000007E D916[BC00]                  fst dword [_bits]
-   124 00000082 A0[BF00]                    mov al, [_bits+3]
-   125 00000085 2C10                        sub al,16
-   126                                  
-   127 00000087 AA                          stosb
-   128                                  
-   129                                      ; Restore stack to expected state
-   130                                      ; ST(0) 0.5
-   131 00000088 DDD8                        fstp    st0
-   132 0000008A DDD8                        fstp    st0
-   133 0000008C DDD8                        fstp    st0
-   134 0000008E DDD8                        fstp    st0
+   116                                      ; Compute distance
+   117 00000076 D9E1                        fabs
+   118 00000078 D8F3                        fdiv    st3
+   119                                  
+   120 0000007A D916[BC00]                  fst dword [_bits]
+   121 0000007E A0[BF00]                    mov al, [_bits+3]
+   122 00000081 2C10                        sub al,16
+   123                                  
+   124 00000083 AA                          stosb
+   125                                  
+   126                                      ; Restore stack to expected state
+   127                                      ; ST(0) 0.5
+   128 00000084 DDD8                        fstp    st0
+   129 00000086 DDD8                        fstp    st0
+   130 00000088 DDD8                        fstp    st0
+   131 0000008A DDD8                        fstp    st0
+   132                                  
+   133 0000008C FF0E[C000]                  dec word [x]
+   134 00000090 758A                        jnz x_loop
    135                                  
-   136 00000090 FF0E[C000]                  dec word [x]
-   137 00000094 758A                        jnz x_loop
+   136 00000092 FF0E[C200]                  dec word [y]
+   137 00000096 0F857CFF                    jnz y_loop
    138                                  
-   139 00000096 FF0E[C200]                  dec word [y]
-   140 0000009A 0F857CFF                    jnz y_loop
-   141                                  
-   142 0000009E FF06[C400]                  inc word [time]
-   143                                  
-   144                                      ; Check for keypress to exit
-   145 000000A2 B401                        mov ah, 1
-   146 000000A4 CD16                        int 16h
-   147 000000A6 0F8468FF                    jz main_loop
-   148                                  
-   149                                      ; Clear keyboard buffer
-   150 000000AA B400                        mov ah, 0
-   151 000000AC CD16                        int 16h
-   152                                  
-   153                                      ; Clear keyboard buffer
-   154 000000AE B80300                      mov ax, 0003h
-   155 000000B1 CD10                        int 10h
-   156 000000B3 C3                          ret
-   157                                  
-   158                                  ; Data section
-   159 000000B4 CDCCCC3F                _1_6        dd  1.6
-   160 000000B8 0AD7233C                _001        dd  0.01
-   161 000000BC 00000000                _bits       dd  0.0
-   162                                  
-   163 000000C0 0000                    x           dw  0
-   164 000000C2 0000                    y           dw  0
-   165 000000C4 0000                    time        dw  0
-   166                                  
+   139 0000009A FF06[C400]                  inc word [time]
+   140                                  
+   141                                      ; Check for keypress to exit
+   142 0000009E B401                        mov ah, 1
+   143 000000A0 CD16                        int 16h
+   144 000000A2 0F8468FF                    jz main_loop
+   145                                  
+   146                                      ; Clear keyboard buffer
+   147 000000A6 B400                        mov ah, 0
+   148 000000A8 CD16                        int 16h
+   149                                  
+   150                                      ; Clear keyboard buffer
+   151 000000AA B80300                      mov ax, 0003h
+   152 000000AD CD10                        int 10h
+   153 000000AF C3                          ret
+   154                                  
+   155                                  ; Data section
+   156 000000B0 CDCCCC3F                _1_6        dd  1.6
+   157 000000B4 0AD7233C                _0_01       dd  0.01
+   158 000000B8 0000003F                _0_5        dd  0.5
+   159 000000BC 00000000                _bits       dd  0.0
+   160                                  
+   161 000000C0 0000                    x           dw  0
+   162 000000C2 0000                    y           dw  0
+   163 000000C4 0000                    time        dw  0
+   164                                  
