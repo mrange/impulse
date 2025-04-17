@@ -1,0 +1,148 @@
+     1                                  ; DOS demo with FPU sine wave pattern
+     2                                  ; Assemble with: nasm -f bin -o demo.com demo.asm
+     3                                  
+     4                                      ; 16-bit code
+     5                                      BITS 16
+     6                                       ; COM programs start at offset 100h
+     7                                      ORG 100h
+     8                                  
+     9                                  start:
+    10                                      ; Set video mode (320x200, 256 colors)
+    11 00000000 B81300                      mov ax, 0013h
+    12 00000003 CD10                        int 10h
+    13                                  
+    14                                      ; Initialize video memory segment
+    15 00000005 B800A0                      mov ax, 0A000h
+    16 00000008 8EC0                        mov es, ax
+    17                                  
+    18                                      ; PUSH 2
+    19 0000000A D9E8                        fld1
+    20 0000000C D9E8                        fld1
+    21 0000000E DEC1                        fadd
+    22                                  
+    23                                  main_loop:
+    24                                      ; Reset position to start of video memory
+    25 00000010 31FF                        xor di, di
+    26                                  
+    27 00000012 C706[AB00]C800              mov word [y], 200
+    28                                  y_loop:
+    29 00000018 C706[A900]4001              mov word [x], 320
+    30                                  x_loop:
+    31                                      ; expected stack
+    32                                      ; ST(0) 2
+    33                                  
+    34                                      ; Scale
+    35 0000001E D9E8                        fld1
+    36                                  
+    37 00000020 DF06[AB00]                  fild word [y]
+    38 00000024 DF06[A700]                  fild word [_100]
+    39 00000028 DEF9                        fdiv
+    40 0000002A D9E8                        fld1
+    41 0000002C DEE9                        fsub
+    42                                  
+    43 0000002E DF06[A900]                  fild word [x]
+    44 00000032 DF06[A700]                  fild word [_100]
+    45 00000036 DEF9                        fdiv
+    46 00000038 D906[A300]                  fld dword [_1_6]
+    47 0000003C DEE9                        fsub
+    48                                  
+    49                                      ; expected stack
+    50                                      ; ST(0) x
+    51                                      ; ST(1) y
+    52                                      ; ST(2) scale
+    53                                      ; ST(3) 2
+    54                                  
+    55                                      ; Appollian loop
+    56 0000003E B005                        mov al,5
+    57                                  a_loop:
+    58                                      ; p -= 2.*round(0.5*p);
+    59                                  
+    60 00000040 B102                        mov cl,2
+    61                                  r_loop:
+    62                                      ; Swap x and y
+    63 00000042 D9C9                        fxch
+    64                                      ; Dupe
+    65 00000044 D9C0                        fld     st0
+    66                                      ; Divide by 2
+    67 00000046 D8F4                        fdiv    st4
+    68 00000048 D9FC                        frndint
+    69                                      ; Multiply by 2
+    70 0000004A D8CC                        fmul    st4
+    71 0000004C DEE9                        fsub
+    72 0000004E FEC9                        dec cl
+    73 00000050 75F0                        jnz r_loop
+    74                                  
+    75                                      ; dot(p,p)
+    76                                      ; Dupe x
+    77 00000052 D9C0                        fld     st0
+    78 00000054 D8C8                        fmul    st0
+    79                                  
+    80                                      ; Dupe y
+    81 00000056 D9C2                        fld     st2
+    82 00000058 D8C8                        fmul    st0
+    83                                  
+    84 0000005A DEC1                        fadd
+    85                                  
+    86                                      ; k = 1/dot(p,p)
+    87 0000005C D9E8                        fld1
+    88 0000005E DEF1                        fdivr
+    89                                  
+    90                                      ; p *= k
+    91 00000060 DCC9                        fmul    st1,st0
+    92 00000062 DCCA                        fmul    st2,st0
+    93                                      ; scale *= k
+    94 00000064 DCCB                        fmul    st3,st0
+    95                                  
+    96                                      ; Pop k
+    97 00000066 DDD8                        fstp    st0
+    98                                  
+    99 00000068 FEC8                        dec al
+   100 0000006A 75D4                        jnz a_loop
+   101                                  
+   102                                      ; Compute distance
+   103 0000006C D9E1                        fabs
+   104 0000006E D8F2                        fdiv    st2
+   105                                  
+   106                                  
+   107 00000070 D906[9F00]                  fld dword [threshold]
+   108                                  
+   109 00000074 DFF1                        fcomip
+   110 00000076 7602                        jbe set_color
+   111 00000078 B032                        mov al, 0x32
+   112                                  set_color:
+   113                                      ; Write pixel and advance DI
+   114 0000007A AA                          stosb
+   115                                  
+   116                                      ; Restore stack to expected state
+   117                                      ; ST(0) 2
+   118 0000007B DDD8                        fstp    st0
+   119 0000007D DDD8                        fstp    st0
+   120 0000007F DDD8                        fstp    st0
+   121                                  
+   122 00000081 FF0E[A900]                  dec word [x]
+   123 00000085 7597                        jnz x_loop
+   124                                  
+   125 00000087 FF0E[AB00]                  dec word [y]
+   126 0000008B 758B                        jnz y_loop
+   127                                  
+   128                                      ; Check for keypress to exit
+   129 0000008D B401                        mov ah, 1
+   130 0000008F CD16                        int 16h
+   131 00000091 0F847BFF                    jz main_loop
+   132                                  
+   133                                      ; Clear keyboard buffer
+   134 00000095 B400                        mov ah, 0
+   135 00000097 CD16                        int 16h
+   136                                  
+   137                                      ; Clear keyboard buffer
+   138 00000099 B80300                      mov ax, 0003h
+   139 0000009C CD10                        int 10h
+   140 0000009E C3                          ret
+   141                                  
+   142                                  ; Data section
+   143 0000009F 0AD7233C                threshold   dd  0.01
+   144 000000A3 CDCCCC3F                _1_6        dd  1.6
+   145                                  
+   146 000000A7 6400                    _100        dw  100
+   147 000000A9 0000                    x           dw  0
+   148 000000AB 0000                    y           dw  0

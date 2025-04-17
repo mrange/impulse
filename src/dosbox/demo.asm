@@ -53,11 +53,11 @@ x_loop:
     ; ST(3) 2
 
     ; Appollian loop
-    mov ax,5
+    mov al,5
 a_loop:
     ; p -= 2.*round(0.5*p);
 
-    mov cx,2
+    mov cl,2
 r_loop:
     ; Swap x and y
     fxch
@@ -69,7 +69,7 @@ r_loop:
     ; Multiply by 2
     fmul    st4
     fsub
-    dec cx
+    dec cl
     jnz r_loop
 
     ; dot(p,p)
@@ -83,8 +83,8 @@ r_loop:
 
     fadd
 
-    ; k = s/dot(p,p)
-    fld dword [s]
+    ; k = 1/dot(p,p)
+    fld1
     fdivr
 
     ; p *= k
@@ -96,17 +96,17 @@ r_loop:
     ; Pop k
     fstp    st0
 
-    dec ax
+    dec al
     jnz a_loop
 
     ; Compute distance
     fabs
     fdiv    st2
 
-    fld dword [threshold]
-    fcomip
 
-    mov al, 0x55
+    fld dword [threshold]
+
+    fcomip
     jbe set_color
     mov al, 0x32
 set_color:
@@ -141,7 +141,6 @@ set_color:
 
 ; Data section
 threshold   dd  0.01
-s           dd  1.1
 _1_6        dd  1.6
 
 _100        dw  100
