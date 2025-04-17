@@ -57,7 +57,7 @@ x_loop:
 a_loop:
     ; p -= 2.*round(0.5*p);
 
-    mov cl,2
+    mov ah,2
 r_loop:
     ; Swap x and y
     fxch
@@ -69,7 +69,7 @@ r_loop:
     ; Multiply by 2
     fmul    st4
     fsub
-    dec cx
+    dec ah
     jnz r_loop
 
     ; dot(p,p)
@@ -96,7 +96,7 @@ r_loop:
     ; Pop k
     fstp    st0
 
-    dec ax
+    dec al
     jnz a_loop
 
     ; Compute distance
