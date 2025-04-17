@@ -15,6 +15,9 @@ start:
     mov ax, 0A000h
     mov es, ax
 
+    ; PUSH 100
+    fild word [_100]
+
     ; PUSH 2
     fld1
     fld1
@@ -30,22 +33,22 @@ y_loop:
 x_loop:
     ; expected stack
     ; ST(0) 2
+    ; ST(1) 100
 
     ; Scale
     fld1
 
     ; Z
     fld1
+    fdiv st3
 
     fild word [y]
-    fild word [_100]
-    fdiv
+    fdiv st4
     fld1
     fsub
 
     fild word [x]
-    fild word [_100]
-    fdiv
+    fdiv st5
     fld dword [_1_6]
     fsub
 
@@ -55,6 +58,7 @@ x_loop:
     ; ST(2) z
     ; ST(3) scale
     ; ST(4) 2
+    ; ST(5) 100
 
     ; Appollian loop
     mov al,5
@@ -86,11 +90,12 @@ r_loop:
     fld     st2
     fmul    st0
 
+    fadd
+
     ; Dupe z
     fld     st3
     fmul    st0
 
-    fadd
     fadd
 
     ; k = 1/dot(p,p)
@@ -137,6 +142,8 @@ set_color:
     dec word [y]
     jnz y_loop
 
+    inc word [time]
+
     ; Check for keypress to exit
     mov ah, 1
     int 16h
@@ -158,3 +165,4 @@ _1_6        dd  1.6
 _100        dw  100
 x           dw  0
 y           dw  0
+time        dw  0
