@@ -34,6 +34,9 @@ x_loop:
     ; Scale
     fld1
 
+    ; Z
+    fld1
+
     fild word [y]
     fild word [_100]
     fdiv
@@ -49,25 +52,27 @@ x_loop:
     ; expected stack
     ; ST(0) x
     ; ST(1) y
-    ; ST(2) scale
-    ; ST(3) 2
+    ; ST(2) z
+    ; ST(3) scale
+    ; ST(4) 2
 
     ; Appollian loop
     mov al,5
 a_loop:
     ; p -= 2.*round(0.5*p);
 
-    mov ah,2
+    mov ah,3
 r_loop:
-    ; Swap x and y
-    fxch
+    ; Rotate ST(0..2)
+    fxch st2
+    fxch st1
     ; Dupe
     fld     st0
     ; Divide by 2
-    fdiv    st4
+    fdiv    st5
     frndint
     ; Multiply by 2
-    fmul    st4
+    fmul    st5
     fsub
     dec ah
     jnz r_loop
@@ -81,6 +86,11 @@ r_loop:
     fld     st2
     fmul    st0
 
+    ; Dupe z
+    fld     st3
+    fmul    st0
+
+    fadd
     fadd
 
     ; k = 1/dot(p,p)
@@ -90,8 +100,9 @@ r_loop:
     ; p *= k
     fmul    st1,st0
     fmul    st2,st0
-    ; scale *= k
     fmul    st3,st0
+    ; scale *= k
+    fmul    st4,st0
 
     ; Pop k
     fstp    st0
@@ -101,7 +112,7 @@ r_loop:
 
     ; Compute distance
     fabs
-    fdiv    st2
+    fdiv    st3
 
 
     fld dword [threshold]
@@ -115,6 +126,7 @@ set_color:
 
     ; Restore stack to expected state
     ; ST(0) 2
+    fstp    st0
     fstp    st0
     fstp    st0
     fstp    st0
