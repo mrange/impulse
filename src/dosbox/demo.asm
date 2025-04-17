@@ -1,4 +1,3 @@
-; DOS demo with FPU sine wave pattern
 ; Assemble with: nasm -f bin -o demo.com demo.asm
 
     ; 16-bit code
@@ -16,20 +15,25 @@ start:
     mov es, ax
 
 main_loop:
+    ; Load sin cos
+    fild word  [time]
+    fmul dword [_0_01]
+    fsincos
+    fstp dword [cos]
+    fstp dword [sin]
+
     ; Reset position to start of video memory
-    xor di, di
+    mov di, 60
 
     mov word [y], 200
 y_loop:
-    mov word [x], 320
+    mov word [x], 200
 x_loop:
     ; PUSH 0.01
     fld dword [_0_01]
 
-    ; Load sin cos
-    fild word [time]
-    fmul st1
-    fsincos
+    fld dword [sin]
+    fld dword [cos]
 
     ; Z (0.01)
     fld  st2
@@ -41,7 +45,8 @@ x_loop:
 
     fild word [x]
     fmul st5
-    fsub dword [_1_6]
+    fld1
+    fsub
 
     ; expected stack
     ; ST(0) x
@@ -77,13 +82,6 @@ t_loop:
     fstp    st2
     ; Overwrite y with y'
     fstp    st2
-
-    ; expected stack
-    ; ST(0) x'
-    ; ST(1) y'
-    ; ST(2) z
-    ; ST(3) cos
-    ; ST(4) sin
 
     dec ax
     jnz t_loop
@@ -174,6 +172,8 @@ r_loop:
     dec word [x]
     jnz x_loop
 
+    add di,120
+
     dec word [y]
     jnz y_loop
 
@@ -194,10 +194,11 @@ r_loop:
     ret
 
 ; Data section
-_1_6        dd  1.6
 _0_01       dd  0.01
 _0_5        dd  0.5
 _bits       dd  0.0
+sin         dd  0.0
+cos         dd  1.0
 
 x           dw  0
 y           dw  0
