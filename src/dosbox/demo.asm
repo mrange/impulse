@@ -15,13 +15,11 @@ start:
     mov ax, 0A000h
     mov es, ax
 
-    ; PUSH 100
-    fild word [_100]
-
-    ; PUSH 2
+    ; PUSH 0.5
     fld1
+    fchs
     fld1
-    fadd
+    fscale
 
 main_loop:
     ; Reset position to start of video memory
@@ -32,33 +30,36 @@ y_loop:
     mov word [x], 320
 x_loop:
     ; expected stack
-    ; ST(0) 2
-    ; ST(1) 100
+    ; ST(0) - 0.5
 
-    ; Scale
-    fld1
+    ; PUSH 0.01
+    fld dword [_001]
 
     ; Z
-    fld1
-    fdiv st3
+    fld  st0
 
     fild word [y]
-    fdiv st4
+    fmul st2
     fld1
     fsub
 
     fild word [x]
-    fdiv st5
+    fmul st3
     fld dword [_1_6]
     fsub
+
+    ; Scale
+    fld1
+    fxch st4
+    fstp st0
 
     ; expected stack
     ; ST(0) x
     ; ST(1) y
     ; ST(2) z
     ; ST(3) scale
-    ; ST(4) 2
-    ; ST(5) 100
+    ; ST(4) 0.5
+
 
     ; Appollian loop
     mov al,5
@@ -73,10 +74,10 @@ r_loop:
     ; Dupe
     fld     st0
     ; Divide by 2
-    fdiv    st5
+    fmul    st5
     frndint
     ; Multiply by 2
-    fmul    st5
+    fadd    st0
     fsub
     dec ah
     jnz r_loop
@@ -121,11 +122,12 @@ r_loop:
 
     fst dword [_bits]
     mov al, [_bits+3]
+    sub al,16
 
     stosb
 
     ; Restore stack to expected state
-    ; ST(0) 2
+    ; ST(0) 0.5
     fstp    st0
     fstp    st0
     fstp    st0
@@ -155,9 +157,10 @@ r_loop:
 
 ; Data section
 _1_6        dd  1.6
+_001        dd  0.01
 _bits       dd  0.0
 
-_100        dw  100
 x           dw  0
 y           dw  0
 time        dw  0
+
