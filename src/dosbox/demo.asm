@@ -16,8 +16,6 @@ start:
     mov ax, 0A000h
     mov es, ax
 
-    jmp main_loop
-
 main_loop:
     ; Load sin cos
     fild word  [time]
