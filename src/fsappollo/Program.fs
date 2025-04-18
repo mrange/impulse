@@ -21,15 +21,15 @@ let main args =
         let mutable py = float (-height+2*y)/float height
         let mutable pz = 0.01
         for i = 0 to 4 do
-          px <- px - 2.*round (0.5*px)
-          py <- py - 2.*round (0.5*py)
-          pz <- pz - 2.*round (0.5*pz)
+          px      <- px - 2.*round (0.5*px)
+          py      <- py - 2.*round (0.5*py)
+          pz      <- pz - 2.*round (0.5*pz)
           let r2  = px*px+py*py+pz*pz
           let k   = 1./r2
-          px    <- px*k
-          py    <- py*k
-          pz    <- pz*k
-          scale <- scale*k
+          px      <- px*k
+          py      <- py*k
+          pz      <- pz*k
+          scale   <- scale*k
 
         let d = (abs px)/scale
         let c = 
@@ -74,20 +74,20 @@ let main args =
     let _height = to_fp height
     for y = height downto 1 do
       for x = width downto 1 do
-        let mutable scale = to_fp 1
+        let mutable scale = _1
         let mutable px = to_fp (-width+2*x) </> _height
         let mutable py = to_fp (-height+2*y) </> _height
-        let mutable pz = to_fp 1 </> to_fp 100
+        let mutable pz = _0_01
         for i = 0 to 4 do
-          px <- px<->(_2<*>fpround (_0_5 <*> px))
-          py <- py<->(_2<*>fpround (_0_5 <*> py))
-          pz <- pz<->(_2<*>fpround (_0_5 <*> pz))
+          px      <- px<->(_2<*>fpround (_0_5 <*> px))
+          py      <- py<->(_2<*>fpround (_0_5 <*> py))
+          pz      <- pz<->(_2<*>fpround (_0_5 <*> pz))
           let r2  = (px<*>px)<+>(py<*>py)<+>(pz<*>pz)
           let k   = _1</>r2
-          px    <- px<*>k
-          py    <- py<*>k
-          pz    <- pz<*>k
-          scale <- scale<*>k
+          px      <- px<*>k
+          py      <- py<*>k
+          pz      <- pz<*>k
+          scale   <- scale<*>k
 
         let d = (fpabs px)</>scale
         let c = 
