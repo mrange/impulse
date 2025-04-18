@@ -31,7 +31,6 @@ y_loop:
 x_loop:
     ; PUSH 0.01
     fld dword [_0_01]
-
     fld dword [sin]
     fld dword [cos]
 
@@ -98,7 +97,7 @@ t_loop:
 
 
     ; Appollian loop
-    mov ax,5
+    mov ax,4
 a_loop:
     ; p -= 2.*round(0.5*p);
 
@@ -198,7 +197,7 @@ _0_01       dd  0.01
 _0_5        dd  0.5
 _bits       dd  0.0
 sin         dd  0.0
-cos         dd  1.0
+cos         dd  0.0
 
 x           dw  0
 y           dw  0
