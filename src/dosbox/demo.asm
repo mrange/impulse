@@ -6,6 +6,8 @@
     ORG 100h
 
 start:
+    finit
+
     ; Set video mode (320x200, 256 colors)
     mov ax, 0013h
     int 10h
@@ -14,10 +16,12 @@ start:
     mov ax, 0A000h
     mov es, ax
 
+    jmp main_loop
+
 main_loop:
     ; Load sin cos
     fild word  [time]
-    fmul dword [_0_01]
+    fmul dword [_0_005]
     fsincos
     fstp dword [cos]
     fstp dword [sin]
@@ -30,21 +34,21 @@ y_loop:
     mov word [x], 200
 x_loop:
     ; PUSH 0.01
-    fld dword [_0_01]
+    fld dword [_0_005]
     fld dword [sin]
     fld dword [cos]
 
     ; Z (0.01)
-    fld  st2
+    fld dword [_0_5]
 
     fild word [y]
     fmul st4
-    fld1
+    fld st1
     fsub
 
     fild word [x]
     fmul st5
-    fld1
+    fld st2
     fsub
 
     ; expected stack
@@ -59,23 +63,19 @@ t_loop:
     fxch st2
     fxch st1
 
-    ; Calculate y' = y*cos - x*sin
-    ;---------------------------------
-    fld     st1             ; ST(0)=y,  ST(1)=x,  ST(2)=y,  ST(3)=z,  ST(4)=cos, ST(5)=sin
-    fmul    st4             ; ST(0)=y*cos, ST(1)=x,  ST(2)=y,  ST(3)=z,  ST(4)=cos, ST(5)=sin
-    fld     st1             ; ST(0)=x,  ST(1)=y*cos, ST(2)=x,  ST(3)=y,  ST(4)=z,  ST(5)=cos, ST(6)=sin
-    fmul    st6             ; ST(0)=x*sin, ST(1)=y*cos, ST(2)=x,  ST(3)=y,  ST(4)=z,  ST(5)=cos, ST(6)=sin
-    fsub                    ; ST(0)=y*cos-x*sin=y', ST(1)=x,  ST(2)=y,  ST(3)=z,  ST(4)=cos, ST(5)=sin
-                            ; Stack now: y', x, y, z, cos, sin
+    ; y' = y*cos - x*sin
+    fld     st1
+    fmul    st4
+    fld     st1
+    fmul    st6
+    fsub
 
-    ; Calculate x' = x*cos + y*sin
-    ;---------------------------------
-    fld     st1             ; ST(0)=x,  ST(1)=y', ST(2)=x,  ST(3)=y,  ST(4)=z,  ST(5)=cos, ST(6)=sin
-    fmul    st5             ; ST(0)=x*cos, ST(1)=y', ST(2)=x,  ST(3)=y,  ST(4)=z,  ST(5)=cos, ST(6)=sin
-    fld     st3             ; ST(0)=y,  ST(1)=x*cos, ST(2)=y', ST(3)=x,  ST(4)=y,  ST(5)=z,  ST(6)=cos, ST(7)=sin
-    fmul    st7             ; ST(0)=y*sin, ST(1)=x*cos, ST(2)=y', ST(3)=x,  ST(4)=y,  ST(5)=z,  ST(6)=cos, ST(7)=sin
-    fadd                    ; ST(0)=x*cos+y*sin=x', ST(1)=y', ST(2)=x,  ST(3)=y,  ST(4)=z,  ST(5)=cos, ST(6)=sin
-                            ; Stack now: x', y', x, y, z, cos, sin
+    ; x' = x*cos + y*sin
+    fld     st1
+    fmul    st5
+    fld     st3
+    fmul    st7
+    fadd
 
     ; Overwrite x with x'
     fstp    st2
@@ -136,6 +136,7 @@ r_loop:
 
     ; k = 1/dot(p,p)
     fld1
+    fadd    st0
     fdivr
 
     ; p *= k
@@ -155,18 +156,13 @@ r_loop:
     fabs
     fdiv    st3
 
+    ; Hacky colors
     fst dword [_bits]
     mov al, [_bits+3]
     sub al,16
 
+    ; Write pixel
     stosb
-
-    ; Restore stack to expected state
-    ;   Not needed as nothing is kept stack
-    ; fstp    st0
-    ; fstp    st0
-    ; fstp    st0
-    ; fstp    st0
 
     dec word [x]
     jnz x_loop
@@ -183,17 +179,10 @@ r_loop:
     int 16h
     jz main_loop
 
-    ; Clear keyboard buffer
-    mov ah, 0
-    int 16h
-
-    ; Clear keyboard buffer
-    mov ax, 0003h
-    int 10h
     ret
 
 ; Data section
-_0_01       dd  0.01
+_0_005      dd  0.005
 _0_5        dd  0.5
 _bits       dd  0.0
 sin         dd  0.0
