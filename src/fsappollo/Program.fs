@@ -3,6 +3,8 @@ open System.Drawing
 open System.Drawing.Drawing2D
 open System.Windows.Forms
 
+[<Measure>]
+type FP;
 
 [<STAThread>]
 [<EntryPoint>]
@@ -37,6 +39,64 @@ let main args =
             Color.Black
 
         bitmap.SetPixel (x-1, y-1, c)
+
+
+  let to_fp (i : int) : int<FP> = (i <<< 16)*1<FP>
+
+  let (<+>) (x : int<FP>) (y : int<FP>) : int<FP> = x+y
+  let (<->) (x : int<FP>) (y : int<FP>) : int<FP> = x-y
+  let (</>) (x : int<FP>) (y : int<FP>) : int<FP> =
+    if y = 0<FP> then System.Int32.MaxValue*1<FP>
+    else
+      let result = ((int64 x) <<< 16) / (int64 y)
+      int result*1<FP>
+
+  let (<*>) (x : int<FP>) (y : int<FP>) : int<FP> =
+    let result = (int64 x*int64 y) >>> 16
+    int result*1<FP>
+
+  let _1    = to_fp 1
+  let _2    = to_fp 2
+  let _0_5  = _1 </> _2
+  let _0_01 = _1 </> to_fp 100
+
+  let fpround (x : int<FP>) : int<FP> = 
+    let result = int (x <+> _0_5) &&& 0xFFFF0000
+    result*1<FP>
+
+  let fpabs   (x : int<FP>) : int<FP> = 
+    if int x = 0x80000000 then to_fp 0x7FFFFFFF
+    else
+      abs x
+  let fplt    (x : int<FP>) (y : int<FP>) : bool = x < y
+
+  let fractal_int () =
+    let _height = to_fp height
+    for y = height downto 1 do
+      for x = width downto 1 do
+        let mutable scale = to_fp 1
+        let mutable px = to_fp (-width+2*x) </> _height
+        let mutable py = to_fp (-height+2*y) </> _height
+        let mutable pz = to_fp 1 </> to_fp 100
+        for i = 0 to 4 do
+          px <- px<->(_2<*>fpround (_0_5 <*> px))
+          py <- py<->(_2<*>fpround (_0_5 <*> py))
+          pz <- pz<->(_2<*>fpround (_0_5 <*> pz))
+          let r2  = (px<*>px)<+>(py<*>py)<+>(pz<*>pz)
+          let k   = _1</>r2
+          px    <- px<*>k
+          py    <- py<*>k
+          pz    <- pz<*>k
+          scale <- scale<*>k
+
+        let d = (fpabs px)</>scale
+        let c = 
+          if fplt d  _0_01 then
+            Color.Wheat
+          else
+            Color.Black
+
+        bitmap.SetPixel (x-1, y-1, c)
     
 
   use form = new Form (
@@ -45,7 +105,7 @@ let main args =
     )
 
   form.Paint.Add <| fun args ->
-    fractal ()
+    fractal_int ()
     args.Graphics.InterpolationMode <- InterpolationMode.NearestNeighbor
     args.Graphics.PixelOffsetMode   <- PixelOffsetMode.Half
     args.Graphics.DrawImage(bitmap, Rectangle(0, 0, width*scale, height*scale))

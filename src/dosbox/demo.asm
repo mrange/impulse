@@ -6,8 +6,6 @@
     ORG 100h
 
 start:
-    finit
-
     ; Set video mode (320x200, 256 colors)
     mov ax, 0013h
     int 10h
