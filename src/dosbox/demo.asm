@@ -27,18 +27,18 @@ main_loop:
     fstp dword [sin]
 
     ; Reset position to start of video memory
-    mov di, 60
+    xor di, di
 
     mov word [y], 200
 y_loop:
-    mov word [x], 200
+    mov word [x], 320
 x_loop:
-    ; PUSH 0.01
+    ; PUSH 0.005
     fld dword [_0_005]
     fld dword [sin]
     fld dword [cos]
 
-    ; Z (0.01)
+    ; Z (0.5)
     fld dword [_0_5]
 
     fild word [y]
@@ -48,7 +48,7 @@ x_loop:
 
     fild word [x]
     fmul st5
-    fld st2
+    fld dword [_0_8]
     fsub
 
     ; expected stack
@@ -167,8 +167,6 @@ r_loop:
     dec word [x]
     jnz x_loop
 
-    add di,120
-
     dec word [y]
     jnz y_loop
 
@@ -182,8 +180,10 @@ r_loop:
     ret
 
 ; Data section
+section .data
 _0_005      dd  0.005
 _0_5        dd  0.5
+_0_8        dd  0.8
 _bits       dd  0.0
 sin         dd  0.0
 cos         dd  0.0
