@@ -1,4 +1,4 @@
-; Assemble with: nasm -f bin -o demo_mmx.com demo_mmx.asm -l demo_mmx.lst
+; Assemble with: nasm -f bin -o demo_fp.com demo_fp.asm -l demo_fp.lst
 
     ; 16-bit code
     BITS 16

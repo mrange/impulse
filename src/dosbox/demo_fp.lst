@@ -1,0 +1,152 @@
+     1                                  ; Assemble with: nasm -f bin -o demo_fp.com demo_fp.asm -l demo_fp.lst
+     2                                  
+     3                                      ; 16-bit code
+     4                                      BITS 16
+     5                                       ; COM programs start at offset 100h
+     6                                      ORG 100h
+     7                                  
+     8                                  
+     9                                  start:
+    10                                      ; Set video mode (320x200, 256 colors)
+    11 00000000 B81300                      mov ax, 0013h
+    12 00000003 CD10                        int 10h
+    13                                  
+    14                                      ; Initialize video memory segment
+    15 00000005 B800A0                      mov ax, 0A000h
+    16 00000008 8EC0                        mov es, ax
+    17                                  
+    18                                  main_loop:
+    19 0000000A FF06[0600]                  inc word [time]
+    20                                  
+    21                                      ; Reset position to start of video memory
+    22 0000000E 31FF                        xor di, di
+    23                                  
+    24 00000010 C706[0400]C800              mov word [y], 200
+    25                                  y_loop:
+    26 00000016 C706[0200]4001              mov word [x], 320
+    27                                  x_loop:
+    28                                      ; eax, edx compute
+    29                                      ; ebx - X
+    30                                      ; ecx - Y
+    31                                      ; esi - Z
+    32                                      ; edi - Scale
+    33 0000001C 668B36[1800]                mov   esi, [_0_01]
+    34                                  
+    35 00000021 A1[0200]                    mov   ax , [x]
+    36 00000024 66C1E010                    shl   eax, 16
+    37 00000028 66F7EE                      imul  esi
+    38 0000002B 660FACD010                  shrd  eax, edx, 16
+    39 00000030 6689C3                      mov   ebx, eax
+    40                                  
+    41 00000033 A1[0400]                    mov   ax , [y]
+    42 00000036 66C1E010                    shl   eax, 16
+    43 0000003A 66F7EE                      imul  esi
+    44 0000003D 660FACD010                  shrd  eax, edx, 16
+    45 00000042 6689C1                      mov   ecx, eax
+    46                                  
+    47                                      ; edi - Scale
+    48 00000045 668B3E[0C00]                mov   edi, [_1]
+    49                                  
+    50 0000004A C706[0000]0400              mov   word [a], 4
+    51                                  a_loop:
+    52 00000050 6689D8                      mov   eax, ebx
+    53 00000053 66D1E8                      shr   eax, 1
+    54 00000056 660306[1400]                add   eax, [_0_5]
+    55 0000005B 66250000FFFF                and   eax, 0FFFF0000h
+    56 00000061 6601C0                      add   eax, eax
+    57 00000064 6629C3                      sub   ebx, eax
+    58                                  
+    59 00000067 6689C8                      mov   eax, ecx
+    60 0000006A 66D1E8                      shr   eax, 1
+    61 0000006D 660306[1400]                add   eax, [_0_5]
+    62 00000072 66250000FFFF                and   eax, 0FFFF0000h
+    63 00000078 6601C0                      add   eax, eax
+    64 0000007B 6629C1                      sub   ecx, eax
+    65                                  
+    66 0000007E 6689F0                      mov   eax, esi
+    67 00000081 66D1E8                      shr   eax, 1
+    68 00000084 660306[1400]                add   eax, [_0_5]
+    69 00000089 66250000FFFF                and   eax, 0FFFF0000h
+    70 0000008F 6601C0                      add   eax, eax
+    71 00000092 6629C6                      sub   esi, eax
+    72                                  
+    73 00000095 6689D8                      mov   eax, ebx
+    74 00000098 66F7E8                      imul  eax
+    75 0000009B 660FACD010                  shrd  eax, edx, 16
+    76 000000A0 6689C5                      mov   ebp, eax
+    77                                  
+    78 000000A3 6689C8                      mov   eax, ecx
+    79 000000A6 66F7E8                      imul  eax
+    80 000000A9 660FACD010                  shrd  eax, edx, 16
+    81 000000AE 6601C5                      add   ebp, eax
+    82                                  
+    83 000000B1 6689F0                      mov   eax, esi
+    84 000000B4 66F7E8                      imul  eax
+    85 000000B7 660FACD010                  shrd  eax, edx, 16
+    86 000000BC 6601C5                      add   ebp, eax
+    87                                  
+    88 000000BF 6631C0                      xor   eax, eax
+    89 000000C2 668B16[0C00]                mov   edx, [_1]
+    90 000000C7 660FA4C210                  shld edx, eax, 16
+    91 000000CC 66F7FD                      idiv  ebp
+    92 000000CF 6689C5                      mov   ebp, eax
+    93                                  
+    94 000000D2 6689D8                      mov   eax, ebx
+    95 000000D5 66F7EB                      imul  ebx
+    96 000000D8 660FACD010                  shrd  eax, edx, 16
+    97 000000DD 6689C3                      mov   ebx, eax
+    98                                  
+    99 000000E0 6689C8                      mov   eax, ecx
+   100 000000E3 66F7EB                      imul  ebx
+   101 000000E6 660FACD010                  shrd  eax, edx, 16
+   102 000000EB 6689C1                      mov   ecx, eax
+   103                                  
+   104 000000EE 6689F0                      mov   eax, esi
+   105 000000F1 66F7EB                      imul  ebx
+   106 000000F4 660FACD010                  shrd  eax, edx, 16
+   107 000000F9 6689C6                      mov   esi, eax
+   108                                  
+   109 000000FC 6689F8                      mov   eax, edi
+   110 000000FF 66F7EB                      imul  ebx
+   111 00000102 660FACD010                  shrd  eax, edx, 16
+   112 00000107 6689C7                      mov   edi, eax
+   113                                  
+   114 0000010A FF0E[0000]                  dec word [a]
+   115 0000010E 0F853EFF                    jnz a_loop
+   116                                  
+   117 00000112 6631C0                      xor   eax, eax
+   118 00000115 6689DA                      mov   edx,ebx
+   119 00000118 7D03                        jge   .abs
+   120 0000011A 66F7DA                      neg   edx
+   121                                  .abs:
+   122 0000011D 660FA4C210                  shld  edx, eax, 16
+   123 00000122 66F7FF                      idiv  edi
+   124                                  
+   125                                      ; Write pixel
+   126 00000125 AA                          stosb
+   127                                  
+   128 00000126 FF0E[0200]                  dec word [x]
+   129 0000012A 0F85EEFE                    jnz x_loop
+   130                                  
+   131 0000012E FF0E[0400]                  dec word [y]
+   132 00000132 0F85E0FE                    jnz y_loop
+   133                                  
+   134                                      ; Check for keypress to exit
+   135 00000136 B401                        mov ah, 1
+   136 00000138 CD16                        int 16h
+   137 0000013A 0F84CCFE                    jz main_loop
+   138                                  
+   139 0000013E C3                          ret
+   140                                  
+   141                                  ; Data section
+   142                                  section .data
+   143 00000000 0000                    a           dw  0
+   144 00000002 0000                    x           dw  0
+   145 00000004 0000                    y           dw  0
+   146 00000006 0000                    time        dw  0
+   147                                  
+   148 00000008 00000000                tmp         dd  0x00000000
+   149 0000000C 00000100                _1          dd  0x00010000
+   150 00000010 00000200                _2          dd  0x00020000
+   151 00000014 00800000                _0_5        dd  0x00008000
+   152 00000018 8F020000                _0_01       dd  0x0000028F
