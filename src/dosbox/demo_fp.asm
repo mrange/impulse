@@ -57,12 +57,60 @@ x_loop:
     sub   eax, [_1]
     mov   ecx, eax
 
+    mov   esi, [_0_5]
+
     mov   edi, [time]
     and   edi, 0x3FF
     lea   edi, [sine_table+edi*4]
 
-    ; 'x = x*cos+y*sin
-    ; 'y = y*cos-x*sin
+    ; 'z = z*cos+y*sin
+    ; 'y = y*cos-z*sin
+    mov   eax, esi
+    imul  dword [edi+1024]
+    shrd  eax, edx, 16
+    mov   ebp, eax
+
+    mov   eax, ecx
+    imul  dword [edi]
+    shrd  eax, edx, 16
+    add   ebp, eax
+
+    mov   eax, ecx
+    imul  dword [edi+1024]
+    shrd  eax, edx, 16
+    mov   ecx, eax
+
+    mov   eax, esi
+    imul  dword [edi]
+    shrd  eax, edx, 16
+    sub   ecx, eax
+
+    mov   esi, ebp
+
+    ; 'x = x*cos+z*sin
+    ; 'z = z*cos-x*sin
+    mov   eax, ebx
+    imul  dword [edi+1024]
+    shrd  eax, edx, 16
+    mov   ebp, eax
+
+    mov   eax, esi
+    imul  dword [edi]
+    shrd  eax, edx, 16
+    add   ebp, eax
+
+    mov   eax, esi
+    imul  dword [edi+1024]
+    shrd  eax, edx, 16
+    mov   esi, eax
+
+    mov   eax, ebx
+    imul  dword [edi]
+    shrd  eax, edx, 16
+    sub   esi, eax
+
+    mov   ebx, ebp
+
     mov   eax, ebx
     imul  dword [edi+1024]
     shrd  eax, edx, 16
@@ -127,11 +175,13 @@ a_loop:
     imul  eax
     shrd  eax, edx, 16
     add   ebp, eax
-    jz    .skip
+
+    ; To avoid overflows
+    add   ebp, 8
 
     ; k = 1/r2
     xor   eax, eax
-    mov   edx, 1
+    mov   edx, 2
     idiv  ebp
     mov   ebp, eax
 
@@ -156,10 +206,12 @@ a_loop:
     imul  ebp
     shrd  eax, edx, 16
     mov   edi, eax
-
 .skip:
     dec byte [a]
     jnz a_loop
+
+    ; To avoid overflows
+    add edi, 8
 
     xor   edx, edx
     mov   eax,ebx
@@ -171,14 +223,12 @@ a_loop:
     shl   eax, 16
     idiv  edi
 
-    mov   ebx, eax
+    bsr   ebx, eax
+    mov   cl , 31
+    sub   cl , bl
+    shl   eax, cl
+    shr   eax, 15
 
-    xor   eax, eax
-
-    cmp   ebx, [_0_01]
-    jge .black
-    mov   al, 0x55
-.black:
     mov di, [screen]
     ; Write pixel
     stosb

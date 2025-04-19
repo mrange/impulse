@@ -57,6 +57,7 @@ let main args =
 
   let _1    = to_fp 1
   let _2    = to_fp 2
+  let _1_6  = to_fp 16 </> to_fp 10
   let _0_5  = _1 </> _2
   let _0_01 = _1 </> to_fp 100
 
@@ -71,12 +72,11 @@ let main args =
   let fplt    (x : int<FP>) (y : int<FP>) : bool = x < y
 
   let fractal_int () =
-    let _height = to_fp height
     for y = height downto 1 do
       for x = width downto 1 do
         let mutable scale = _1
-        let mutable px = to_fp (-width+2*x) </> _height
-        let mutable py = to_fp (-height+2*y) </> _height
+        let mutable px = (to_fp x <*> _0_01) <-> _1_6
+        let mutable py = (to_fp y <*> _0_01) <-> _1
         let mutable pz = _0_01
         for i = 0 to 4 do
           px      <- px<->(_2<*>fpround (_0_5 <*> px))
