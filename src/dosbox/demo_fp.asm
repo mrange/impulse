@@ -7,6 +7,18 @@
 
 
 start:
+    lea edi, [sine_table+1279*4]
+
+init_loop:
+    fild word   [time]
+    fmul dword  [tau_1024]
+    fsin
+    fmul dword  [to16_16]
+    fistp dword [edi]
+    sub edi, 4
+    dec word    [time]
+    jnz init_loop
+
     ; Set video mode (320x200, 256 colors)
     mov ax, 0013h
     int 10h
@@ -18,9 +30,7 @@ start:
 main_loop:
     inc word [time]
 
-    ; Reset position to start of video memory
-    xor di, di
-
+    mov word [screen], 0
     mov word [y], 200
 y_loop:
     mov word [x], 320
@@ -30,25 +40,57 @@ x_loop:
     ; ecx - Y
     ; esi - Z
     ; edi - Scale
+
     mov   esi, [_0_01]
 
     mov   ax , [x]
     shl   eax, 16
     imul  esi
     shrd  eax, edx, 16
+    sub   eax, [_1_6]
     mov   ebx, eax
 
     mov   ax , [y]
     shl   eax, 16
     imul  esi
     shrd  eax, edx, 16
+    sub   eax, [_1]
     mov   ecx, eax
 
-    ; edi - Scale
+    mov   edi, [time]
+    and   edi, 0x3FF
+    lea   edi, [sine_table+edi*4]
+
+    ; 'x = x*cos+y*sin
+    ; 'y = y*cos-x*sin
+    mov   eax, ebx
+    imul  dword [edi+1024]
+    shrd  eax, edx, 16
+    mov   ebp, eax
+
+    mov   eax, ecx
+    imul  dword [edi]
+    shrd  eax, edx, 16
+    add   ebp, eax
+
+    mov   eax, ecx
+    imul  dword [edi+1024]
+    shrd  eax, edx, 16
+    mov   ecx, eax
+
+    mov   eax, ebx
+    imul  dword [edi]
+    shrd  eax, edx, 16
+    sub   ecx, eax
+
+    mov   ebx, ebp
+
+    ; Scale
     mov   edi, [_1]
 
-    mov   word [a], 4
+    mov   byte [a], 4
 a_loop:
+    ; p -= 2*round(0.5*p)
     mov   eax, ebx
     shr   eax, 1
     add   eax, [_0_5]
@@ -70,6 +112,7 @@ a_loop:
     add   eax, eax
     sub   esi, eax
 
+    ; r2 = dot(p,p)
     mov   eax, ebx
     imul  eax
     shrd  eax, edx, 16
@@ -84,46 +127,62 @@ a_loop:
     imul  eax
     shrd  eax, edx, 16
     add   ebp, eax
+    jz    .skip
 
+    ; k = 1/r2
     xor   eax, eax
-    mov   edx, [_1]
-    shld edx, eax, 16
+    mov   edx, 1
     idiv  ebp
     mov   ebp, eax
 
+    ; p *= k
     mov   eax, ebx
-    imul  ebx
+    imul  ebp
     shrd  eax, edx, 16
     mov   ebx, eax
 
     mov   eax, ecx
-    imul  ebx
+    imul  ebp
     shrd  eax, edx, 16
     mov   ecx, eax
 
     mov   eax, esi
-    imul  ebx
+    imul  ebp
     shrd  eax, edx, 16
     mov   esi, eax
 
+    ; scale *= k
     mov   eax, edi
-    imul  ebx
+    imul  ebp
     shrd  eax, edx, 16
     mov   edi, eax
 
-    dec word [a]
+.skip:
+    dec byte [a]
     jnz a_loop
 
-    xor   eax, eax
-    mov   edx,ebx
+    xor   edx, edx
+    mov   eax,ebx
+    test  eax,eax
     jge   .abs
-    neg   edx
+    neg   eax
 .abs:
     shld  edx, eax, 16
+    shl   eax, 16
     idiv  edi
 
+    mov   ebx, eax
+
+    xor   eax, eax
+
+    cmp   ebx, [_0_01]
+    jge .black
+    mov   al, 0x55
+.black:
+    mov di, [screen]
     ; Write pixel
     stosb
+    mov [screen],di
 
     dec word [x]
     jnz x_loop
@@ -140,13 +199,17 @@ a_loop:
 
 ; Data section
 section .data
-a           dw  0
-x           dw  0
-y           dw  0
-time        dw  0
-
-tmp         dd  0x00000000
 _1          dd  0x00010000
-_2          dd  0x00020000
+_1_6        dd  0x00019999
 _0_5        dd  0x00008000
 _0_01       dd  0x0000028F
+tau_1024    dd  0.00613592315154256491887235035797
+to16_16     dd  65536.0
+
+a           db  0
+x           dw  0
+y           dw  0
+time        dw  1279
+screen      dw  0
+
+sine_table  dw  0
