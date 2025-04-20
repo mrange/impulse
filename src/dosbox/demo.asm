@@ -16,13 +16,13 @@ start:
 
 main_loop:
     ; Load sin cos
+%if 0
     fild word  [time]
     fmul dword [_0_005]
     fsincos
     fstp dword [cos]
     fstp dword [sin]
-
-    call fpcheck
+%endif
 
     ; Reset position to start of video memory
     xor di, di
@@ -33,19 +33,17 @@ y_loop:
 x_loop:
     ; PUSH 0.005
     fld dword [_0_005]
-    fld dword [sin]
-    fld dword [cos]
 
     ; Z (0.5)
     fld dword [_0_5]
 
     fild word [y]
-    fmul st4
+    fmul st2
     fld st1
     fsub
 
     fild word [x]
-    fmul st5
+    fmul st3
     fld dword [_0_8]
     fsub
 
@@ -53,9 +51,11 @@ x_loop:
     ; ST(0) x
     ; ST(1) y
     ; ST(2) z
-    ; ST(3) cos
-    ; ST(4) sin
+    ; ST(3) 0.005
 
+%if 0
+    fld dword [sin]
+    fld dword [cos]
     mov ax, 3
 t_loop:
     fxch st2
@@ -82,6 +82,7 @@ t_loop:
 
     dec ax
     jnz t_loop
+%endif
 
     ; Scale
     fld1
@@ -92,7 +93,6 @@ t_loop:
     ; ST(1) y
     ; ST(2) z
     ; ST(3) scale
-
 
     ; Appollian loop
     mov ax,4
@@ -162,6 +162,12 @@ r_loop:
     ; Write pixel
     stosb
 
+    ; Clean up stack
+    fstp st0
+    fstp st0
+    fstp st0
+    fstp st0
+
     dec word [x]
     jnz x_loop
 
@@ -175,16 +181,6 @@ r_loop:
     int 16h
     jz main_loop
 
-    ret
-
-fpcheck:
-    push ax
-    fstsw ax
-    test  ax, 0x40
-    jz   .exit
-    int 0x2F
-.exit:
-    pop ax
     ret
 
 ; Data section
