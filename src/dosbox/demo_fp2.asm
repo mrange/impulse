@@ -15,8 +15,9 @@ start:
     mov ax, 0A000h
     mov es, ax
 
-main_loop:
+    mov word [time], 0
     fild dword  [_1]
+main_loop:
     fild word   [time]
     fmul dword  [tau_1024]
     fsincos
