@@ -224,43 +224,40 @@
    223 00000245 66C1E010                    shl   eax, 16
    224 00000249 66F7FF                      idiv  edi
    225                                  
-   226 0000024C 660FBDD8                    bsr   ebx, eax
-   227 00000250 B11F                        mov   cl , 31
-   228 00000252 28D9                        sub   cl , bl
-   229 00000254 66D3E0                      shl   eax, cl
-   230 00000257 66C1E80F                    shr   eax, 15
-   231                                  
-   232 0000025B 8B3E[1F00]                  mov di, [screen]
-   233                                      ; Write pixel
-   234 0000025F AA                          stosb
-   235 00000260 893E[1F00]                  mov [screen],di
+   226 0000024C 660FBDC0                    bsr   eax, eax
+   227 00000250 6683C020                    add   eax, 0x20
+   228                                  
+   229 00000254 8B3E[1F00]                  mov di, [screen]
+   230                                      ; Write pixel
+   231 00000258 AA                          stosb
+   232 00000259 893E[1F00]                  mov [screen],di
+   233                                  
+   234 0000025D FF0E[1900]                  dec word [x]
+   235 00000261 0F85DBFD                    jnz x_loop
    236                                  
-   237 00000264 FF0E[1900]                  dec word [x]
-   238 00000268 0F85D4FD                    jnz x_loop
+   237 00000265 FF0E[1B00]                  dec word [y]
+   238 00000269 0F85CDFD                    jnz y_loop
    239                                  
-   240 0000026C FF0E[1B00]                  dec word [y]
-   241 00000270 0F85C6FD                    jnz y_loop
-   242                                  
-   243                                      ; Check for keypress to exit
-   244 00000274 B401                        mov ah, 1
-   245 00000276 CD16                        int 16h
-   246 00000278 0F84AEFD                    jz main_loop
-   247                                  
-   248 0000027C C3                          ret
-   249                                  
-   250                                  ; Data section
-   251                                  section .data
-   252 00000000 00000100                _1          dd  0x00010000
-   253 00000004 99990100                _1_6        dd  0x00019999
-   254 00000008 00800000                _0_5        dd  0x00008000
-   255 0000000C 8F020000                _0_01       dd  0x0000028F
-   256 00000010 DB0FC93B                tau_1024    dd  0.00613592315154256491887235035797
-   257 00000014 00008047                to16_16     dd  65536.0
-   258                                  
-   259 00000018 00                      a           db  0
-   260 00000019 0000                    x           dw  0
-   261 0000001B 0000                    y           dw  0
-   262 0000001D FF04                    time        dw  1279
-   263 0000001F 0000                    screen      dw  0
-   264                                  
-   265 00000021 0000                    sine_table  dw  0
+   240                                      ; Check for keypress to exit
+   241 0000026D B401                        mov ah, 1
+   242 0000026F CD16                        int 16h
+   243 00000271 0F84B5FD                    jz main_loop
+   244                                  
+   245 00000275 C3                          ret
+   246                                  
+   247                                  ; Data section
+   248                                  section .data
+   249 00000000 00000100                _1          dd  0x00010000
+   250 00000004 99990100                _1_6        dd  0x00019999
+   251 00000008 00800000                _0_5        dd  0x00008000
+   252 0000000C 8F020000                _0_01       dd  0x0000028F
+   253 00000010 DB0FC93B                tau_1024    dd  0.00613592315154256491887235035797
+   254 00000014 00008047                to16_16     dd  65536.0
+   255                                  
+   256 00000018 00                      a           db  0
+   257 00000019 0000                    x           dw  0
+   258 0000001B 0000                    y           dw  0
+   259 0000001D FF04                    time        dw  1279
+   260 0000001F 0000                    screen      dw  0
+   261                                  
+   262 00000021 0000                    sine_table  dw  0

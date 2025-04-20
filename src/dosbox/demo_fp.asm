@@ -223,11 +223,8 @@ a_loop:
     shl   eax, 16
     idiv  edi
 
-    bsr   ebx, eax
-    mov   cl , 31
-    sub   cl , bl
-    shl   eax, cl
-    shr   eax, 15
+    bsr   eax, eax
+    add   eax, 0x20
 
     mov di, [screen]
     ; Write pixel
