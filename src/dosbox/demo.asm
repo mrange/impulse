@@ -1,4 +1,4 @@
-; Assemble with: nasm -f bin -o demo.com demo.asm
+; Assemble with: nasm -f bin -o demo.com demo.asm -l demo.lst
 
     ; 16-bit code
     BITS 16
@@ -16,13 +16,12 @@ start:
 
 main_loop:
     ; Load sin cos
-%if 0
     fild word  [time]
     fmul dword [_0_005]
     fsincos
     fstp dword [cos]
     fstp dword [sin]
-%endif
+    fstp st0
 
     ; Reset position to start of video memory
     xor di, di
@@ -53,9 +52,6 @@ x_loop:
     ; ST(2) z
     ; ST(3) 0.005
 
-%if 0
-    fld dword [sin]
-    fld dword [cos]
     mov ax, 3
 t_loop:
     fxch st2
@@ -63,16 +59,16 @@ t_loop:
 
     ; y' = y*cos - x*sin
     fld     st1
-    fmul    st4
+    fmul dword [cos]
     fld     st1
-    fmul    st6
+    fmul dword [sin]
     fsub
 
     ; x' = x*cos + y*sin
     fld     st1
-    fmul    st5
+    fmul dword [cos]
     fld     st3
-    fmul    st7
+    fmul dword [sin]
     fadd
 
     ; Overwrite x with x'
@@ -82,7 +78,6 @@ t_loop:
 
     dec ax
     jnz t_loop
-%endif
 
     ; Scale
     fld1
@@ -180,6 +175,10 @@ r_loop:
     mov ah, 1
     int 16h
     jz main_loop
+
+    ; Restore text mode
+    mov ax, 0x0003
+    int 0x10
 
     ret
 
