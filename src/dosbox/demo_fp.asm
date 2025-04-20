@@ -5,15 +5,14 @@
      ; COM programs start at offset 100h
     ORG 100h
 
-
 start:
     lea edi, [sine_table+1279*4]
-
+    fild dword  [_1]
 init_loop:
     fild word   [time]
     fmul dword  [tau_1024]
     fsin
-    fmul dword  [to16_16]
+    fmul st1
     fistp dword [edi]
     sub edi, 4
     dec word    [time]
@@ -54,10 +53,9 @@ x_loop:
     shl   eax, 16
     imul  esi
     shrd  eax, edx, 16
-    sub   eax, [_0_5]
-    mov   ecx, eax
-
     mov   esi, [_0_5]
+    sub   eax, esi
+    mov   ecx, eax
 
     mov   edi, [time]
     and   edi, 0x3FF
@@ -101,25 +99,26 @@ r_loop:
 
     mov   word [a], 4
 a_loop:
+
     ; p -= 2*round(0.5*p)
     mov   eax, ebx
     shr   eax, 1
     add   eax, [_0_5]
-    and   eax, 0FFFF0000h
+    xor   ax, ax
     add   eax, eax
     sub   ebx, eax
 
     mov   eax, ecx
     shr   eax, 1
     add   eax, [_0_5]
-    and   eax, 0FFFF0000h
+    xor   ax, ax
     add   eax, eax
     sub   ecx, eax
 
     mov   eax, esi
     shr   eax, 1
     add   eax, [_0_5]
-    and   eax, 0FFFF0000h
+    xor   ax, ax
     add   eax, eax
     sub   esi, eax
 
@@ -188,9 +187,8 @@ a_loop:
 
     bsr   ebx, eax
     add   ebx, 0x20
-
     cmp   eax, [_0_005]
-    jg    .outside
+    jge   .outside
     xor   ebx, ebx
 .outside:
 
@@ -221,7 +219,6 @@ _0_8        dd  0x0000CCCC
 _0_5        dd  0x00008000
 _0_005      dd  0x00000147
 tau_1024    dd  0.00613592315154256491887235035797
-to16_16     dd  65536.0
 
 a           dw  0
 x           dw  0
