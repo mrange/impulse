@@ -23,6 +23,7 @@ init_loop:
     int 10h
 
     ; Initialize video memory segment
+    ;   Might be initialized to 0 to save
     mov ax, 0A000h
     mov es, ax
 
@@ -34,11 +35,6 @@ main_loop:
 y_loop:
     mov word [x], 320
 x_loop:
-    ; eax, edx compute
-    ; ebx - X
-    ; ecx - Y
-    ; esi - Z
-    ; edi - Scale
 
     mov   esi, [_0_005]
 
@@ -61,12 +57,22 @@ x_loop:
     and   edi, 0x3FF
     lea   edi, [sine_table+edi*4]
 
+    ; eax - scratch
+    ; edx - scratch
+    ; ebx - X
+    ; ecx - Y
+    ; esi - Z
+    ; edi - Scale
+    ; ebp - scratch
+    ; esp - Don't touch this
+
     mov word [a], 3
 r_loop:
-    mov   ebp, ebx
+    mov   eax, ebx
     mov   ebx, ecx
     mov   ecx, esi
-    mov   esi, ebp
+    mov   esi, eax
+
     ; 'x = x*cos+y*sin
     ; 'y = y*cos-x*sin
     mov   eax, ebx
@@ -99,8 +105,24 @@ r_loop:
 
     mov   word [a], 4
 a_loop:
+    ; eax - scratch
+    ; edx - scratch
+    ; ebx - X
+    ; ecx - Y
+    ; esi - Z
+    ; edi - Scale
+    ; ebp - Dot
+    ; esp - Don't touch this
 
-    ; p -= 2*round(0.5*p)
+    xor ebp, ebp
+    mov word [b], 3
+i_loop:
+    mov   eax, ebx
+    mov   ebx, ecx
+    mov   ecx, esi
+    mov   esi, eax
+
+    ; p -= 2*floor(0.5*p+0.5)
     mov   eax, ebx
     shr   eax, 1
     add   eax, [_0_5]
@@ -108,35 +130,14 @@ a_loop:
     add   eax, eax
     sub   ebx, eax
 
-    mov   eax, ecx
-    shr   eax, 1
-    add   eax, [_0_5]
-    xor   ax, ax
-    add   eax, eax
-    sub   ecx, eax
-
-    mov   eax, esi
-    shr   eax, 1
-    add   eax, [_0_5]
-    xor   ax, ax
-    add   eax, eax
-    sub   esi, eax
-
     ; r2 = dot(p,p)
     mov   eax, ebx
     imul  eax
     shrd  eax, edx, 16
-    mov   ebp, eax
-
-    mov   eax, ecx
-    imul  eax
-    shrd  eax, edx, 16
     add   ebp, eax
 
-    mov   eax, esi
-    imul  eax
-    shrd  eax, edx, 16
-    add   ebp, eax
+    dec word [b]
+    jnz i_loop
 
     ; To avoid overflows
     add   ebp, 8
@@ -210,20 +211,24 @@ a_loop:
     int 16h
     jz main_loop
 
-    ret
+    int 0x20
 
 ; Data section
 section .data
+; Can be reused
+tau_1024    dd  0.00613592315154256491887235035797
+
+
 _1          dd  0x00010000
 _0_8        dd  0x0000CCCC
 _0_5        dd  0x00008000
 _0_005      dd  0x00000147
-tau_1024    dd  0.00613592315154256491887235035797
 
+time        dw  1279
 a           dw  0
+b           dw  0
 x           dw  0
 y           dw  0
-time        dw  1279
 screen      dw  0
 
 sine_table  dw  0

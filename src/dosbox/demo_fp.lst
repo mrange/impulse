@@ -6,16 +6,16 @@
      6                                      ORG 100h
      7                                  
      8                                  start:
-     9 00000000 668D3E[1A14]                lea edi, [sine_table+1279*4]
-    10 00000005 DB06[0000]                  fild dword  [_1]
+     9 00000000 668D3E[1C14]                lea edi, [sine_table+1279*4]
+    10 00000005 DB06[0400]                  fild dword  [_1]
     11                                  init_loop:
-    12 00000009 DF06[1A00]                  fild word   [time]
-    13 0000000D D80E[1000]                  fmul dword  [tau_1024]
+    12 00000009 DF06[1400]                  fild word   [time]
+    13 0000000D D80E[0000]                  fmul dword  [tau_1024]
     14 00000011 D9FE                        fsin
     15 00000013 D8C9                        fmul st1
     16 00000015 67DB1F                      fistp dword [edi]
     17 00000018 6683EF04                    sub edi, 4
-    18 0000001C FF0E[1A00]                  dec word    [time]
+    18 0000001C FF0E[1400]                  dec word    [time]
     19 00000020 75E7                        jnz init_loop
     20                                  
     21                                      ; Set video mode (320x200, 256 colors)
@@ -23,208 +23,213 @@
     23 00000025 CD10                        int 10h
     24                                  
     25                                      ; Initialize video memory segment
-    26 00000027 B800A0                      mov ax, 0A000h
-    27 0000002A 8EC0                        mov es, ax
-    28                                  
-    29                                  main_loop:
-    30 0000002C FF06[1A00]                  inc word [time]
-    31                                  
-    32 00000030 C706[1C00]0000              mov word [screen], 0
-    33 00000036 C706[1800]C800              mov word [y], 200
-    34                                  y_loop:
-    35 0000003C C706[1600]4001              mov word [x], 320
-    36                                  x_loop:
-    37                                      ; eax, edx compute
-    38                                      ; ebx - X
-    39                                      ; ecx - Y
-    40                                      ; esi - Z
-    41                                      ; edi - Scale
-    42                                  
-    43 00000042 668B36[0C00]                mov   esi, [_0_005]
-    44                                  
-    45 00000047 A1[1600]                    mov   ax , [x]
-    46 0000004A 66C1E010                    shl   eax, 16
-    47 0000004E 66F7EE                      imul  esi
-    48 00000051 660FACD010                  shrd  eax, edx, 16
-    49 00000056 662B06[0400]                sub   eax, [_0_8]
-    50 0000005B 6689C3                      mov   ebx, eax
-    51                                  
-    52 0000005E A1[1800]                    mov   ax , [y]
-    53 00000061 66C1E010                    shl   eax, 16
-    54 00000065 66F7EE                      imul  esi
-    55 00000068 660FACD010                  shrd  eax, edx, 16
-    56 0000006D 668B36[0800]                mov   esi, [_0_5]
-    57 00000072 6629F0                      sub   eax, esi
-    58 00000075 6689C1                      mov   ecx, eax
+    26                                      ;   Might be initialized to 0 to save
+    27 00000027 B800A0                      mov ax, 0A000h
+    28 0000002A 8EC0                        mov es, ax
+    29                                  
+    30                                  main_loop:
+    31 0000002C FF06[1400]                  inc word [time]
+    32                                  
+    33 00000030 C706[1E00]0000              mov word [screen], 0
+    34 00000036 C706[1C00]C800              mov word [y], 200
+    35                                  y_loop:
+    36 0000003C C706[1A00]4001              mov word [x], 320
+    37                                  x_loop:
+    38                                  
+    39 00000042 668B36[1000]                mov   esi, [_0_005]
+    40                                  
+    41 00000047 A1[1A00]                    mov   ax , [x]
+    42 0000004A 66C1E010                    shl   eax, 16
+    43 0000004E 66F7EE                      imul  esi
+    44 00000051 660FACD010                  shrd  eax, edx, 16
+    45 00000056 662B06[0800]                sub   eax, [_0_8]
+    46 0000005B 6689C3                      mov   ebx, eax
+    47                                  
+    48 0000005E A1[1C00]                    mov   ax , [y]
+    49 00000061 66C1E010                    shl   eax, 16
+    50 00000065 66F7EE                      imul  esi
+    51 00000068 660FACD010                  shrd  eax, edx, 16
+    52 0000006D 668B36[0C00]                mov   esi, [_0_5]
+    53 00000072 6629F0                      sub   eax, esi
+    54 00000075 6689C1                      mov   ecx, eax
+    55                                  
+    56 00000078 668B3E[1400]                mov   edi, [time]
+    57 0000007D 6681E7FF030000              and   edi, 0x3FF
+    58 00000084 66678D3CBD-                 lea   edi, [sine_table+edi*4]
+    58 00000089 [20000000]         
     59                                  
-    60 00000078 668B3E[1A00]                mov   edi, [time]
-    61 0000007D 6681E7FF030000              and   edi, 0x3FF
-    62 00000084 66678D3CBD-                 lea   edi, [sine_table+edi*4]
-    62 00000089 [1E000000]         
-    63                                  
-    64 0000008D C706[1400]0300              mov word [a], 3
-    65                                  r_loop:
-    66 00000093 6689DD                      mov   ebp, ebx
-    67 00000096 6689CB                      mov   ebx, ecx
-    68 00000099 6689F1                      mov   ecx, esi
-    69 0000009C 6689EE                      mov   esi, ebp
-    70                                      ; 'x = x*cos+y*sin
-    71                                      ; 'y = y*cos-x*sin
-    72 0000009F 6689D8                      mov   eax, ebx
-    73 000000A2 6667F7AF00040000            imul  dword [edi+1024]
-    74 000000AA 660FACD010                  shrd  eax, edx, 16
-    75 000000AF 6689C5                      mov   ebp, eax
-    76                                  
-    77 000000B2 6689C8                      mov   eax, ecx
-    78 000000B5 6667F72F                    imul  dword [edi]
-    79 000000B9 660FACD010                  shrd  eax, edx, 16
-    80 000000BE 6601C5                      add   ebp, eax
-    81                                  
-    82 000000C1 6689C8                      mov   eax, ecx
-    83 000000C4 6667F7AF00040000            imul  dword [edi+1024]
-    84 000000CC 660FACD010                  shrd  eax, edx, 16
-    85 000000D1 6689C1                      mov   ecx, eax
-    86                                  
-    87 000000D4 6689D8                      mov   eax, ebx
-    88 000000D7 6667F72F                    imul  dword [edi]
-    89 000000DB 660FACD010                  shrd  eax, edx, 16
-    90 000000E0 6629C1                      sub   ecx, eax
-    91                                  
-    92 000000E3 6689EB                      mov   ebx, ebp
-    93                                  
-    94 000000E6 FF0E[1400]                  dec word [a]
-    95 000000EA 75A7                        jnz r_loop
-    96                                  
-    97                                      ; Scale
-    98 000000EC 668B3E[0000]                mov   edi, [_1]
+    60                                      ; eax - scratch
+    61                                      ; edx - scratch
+    62                                      ; ebx - X
+    63                                      ; ecx - Y
+    64                                      ; esi - Z
+    65                                      ; edi - Scale
+    66                                      ; ebp - scratch
+    67                                      ; esp - Don't touch this
+    68                                  
+    69 0000008D C706[1600]0300              mov word [a], 3
+    70                                  r_loop:
+    71 00000093 6689D8                      mov   eax, ebx
+    72 00000096 6689CB                      mov   ebx, ecx
+    73 00000099 6689F1                      mov   ecx, esi
+    74 0000009C 6689C6                      mov   esi, eax
+    75                                  
+    76                                      ; 'x = x*cos+y*sin
+    77                                      ; 'y = y*cos-x*sin
+    78 0000009F 6689D8                      mov   eax, ebx
+    79 000000A2 6667F7AF00040000            imul  dword [edi+1024]
+    80 000000AA 660FACD010                  shrd  eax, edx, 16
+    81 000000AF 6689C5                      mov   ebp, eax
+    82                                  
+    83 000000B2 6689C8                      mov   eax, ecx
+    84 000000B5 6667F72F                    imul  dword [edi]
+    85 000000B9 660FACD010                  shrd  eax, edx, 16
+    86 000000BE 6601C5                      add   ebp, eax
+    87                                  
+    88 000000C1 6689C8                      mov   eax, ecx
+    89 000000C4 6667F7AF00040000            imul  dword [edi+1024]
+    90 000000CC 660FACD010                  shrd  eax, edx, 16
+    91 000000D1 6689C1                      mov   ecx, eax
+    92                                  
+    93 000000D4 6689D8                      mov   eax, ebx
+    94 000000D7 6667F72F                    imul  dword [edi]
+    95 000000DB 660FACD010                  shrd  eax, edx, 16
+    96 000000E0 6629C1                      sub   ecx, eax
+    97                                  
+    98 000000E3 6689EB                      mov   ebx, ebp
     99                                  
-   100 000000F1 C706[1400]0400              mov   word [a], 4
-   101                                  a_loop:
+   100 000000E6 FF0E[1600]                  dec word [a]
+   101 000000EA 75A7                        jnz r_loop
    102                                  
-   103                                      ; p -= 2*round(0.5*p)
-   104 000000F7 6689D8                      mov   eax, ebx
-   105 000000FA 66D1E8                      shr   eax, 1
-   106 000000FD 660306[0800]                add   eax, [_0_5]
-   107 00000102 31C0                        xor   ax, ax
-   108 00000104 6601C0                      add   eax, eax
-   109 00000107 6629C3                      sub   ebx, eax
-   110                                  
-   111 0000010A 6689C8                      mov   eax, ecx
-   112 0000010D 66D1E8                      shr   eax, 1
-   113 00000110 660306[0800]                add   eax, [_0_5]
-   114 00000115 31C0                        xor   ax, ax
-   115 00000117 6601C0                      add   eax, eax
-   116 0000011A 6629C1                      sub   ecx, eax
-   117                                  
-   118 0000011D 6689F0                      mov   eax, esi
-   119 00000120 66D1E8                      shr   eax, 1
-   120 00000123 660306[0800]                add   eax, [_0_5]
-   121 00000128 31C0                        xor   ax, ax
-   122 0000012A 6601C0                      add   eax, eax
-   123 0000012D 6629C6                      sub   esi, eax
+   103                                      ; Scale
+   104 000000EC 668B3E[0400]                mov   edi, [_1]
+   105                                  
+   106 000000F1 C706[1600]0400              mov   word [a], 4
+   107                                  a_loop:
+   108                                      ; eax - scratch
+   109                                      ; edx - scratch
+   110                                      ; ebx - X
+   111                                      ; ecx - Y
+   112                                      ; esi - Z
+   113                                      ; edi - Scale
+   114                                      ; ebp - Dot
+   115                                      ; esp - Don't touch this
+   116                                  
+   117 000000F7 6631ED                      xor ebp, ebp
+   118 000000FA C706[1800]0300              mov word [b], 3
+   119                                  i_loop:
+   120 00000100 6689D8                      mov   eax, ebx
+   121 00000103 6689CB                      mov   ebx, ecx
+   122 00000106 6689F1                      mov   ecx, esi
+   123 00000109 6689C6                      mov   esi, eax
    124                                  
-   125                                      ; r2 = dot(p,p)
-   126 00000130 6689D8                      mov   eax, ebx
-   127 00000133 66F7E8                      imul  eax
-   128 00000136 660FACD010                  shrd  eax, edx, 16
-   129 0000013B 6689C5                      mov   ebp, eax
-   130                                  
-   131 0000013E 6689C8                      mov   eax, ecx
-   132 00000141 66F7E8                      imul  eax
-   133 00000144 660FACD010                  shrd  eax, edx, 16
-   134 00000149 6601C5                      add   ebp, eax
-   135                                  
-   136 0000014C 6689F0                      mov   eax, esi
-   137 0000014F 66F7E8                      imul  eax
-   138 00000152 660FACD010                  shrd  eax, edx, 16
-   139 00000157 6601C5                      add   ebp, eax
-   140                                  
-   141                                      ; To avoid overflows
-   142 0000015A 6683C508                    add   ebp, 8
-   143                                  
-   144                                      ; k = 1/r2
-   145 0000015E 6631C0                      xor   eax, eax
-   146 00000161 66BA02000000                mov   edx, 2
-   147 00000167 66F7FD                      idiv  ebp
-   148 0000016A 6689C5                      mov   ebp, eax
-   149                                  
-   150                                      ; p *= k
-   151 0000016D 6689D8                      mov   eax, ebx
-   152 00000170 66F7ED                      imul  ebp
-   153 00000173 660FACD010                  shrd  eax, edx, 16
-   154 00000178 6689C3                      mov   ebx, eax
-   155                                  
-   156 0000017B 6689C8                      mov   eax, ecx
-   157 0000017E 66F7ED                      imul  ebp
-   158 00000181 660FACD010                  shrd  eax, edx, 16
-   159 00000186 6689C1                      mov   ecx, eax
-   160                                  
-   161 00000189 6689F0                      mov   eax, esi
-   162 0000018C 66F7ED                      imul  ebp
-   163 0000018F 660FACD010                  shrd  eax, edx, 16
-   164 00000194 6689C6                      mov   esi, eax
-   165                                  
-   166                                      ; scale *= k
-   167 00000197 6689F8                      mov   eax, edi
-   168 0000019A 66F7ED                      imul  ebp
-   169 0000019D 660FACD010                  shrd  eax, edx, 16
-   170 000001A2 6689C7                      mov   edi, eax
-   171                                  .skip:
-   172 000001A5 FF0E[1400]                  dec word [a]
-   173 000001A9 0F854AFF                    jnz a_loop
-   174                                  
-   175                                      ; To avoid overflows
-   176 000001AD 6683C708                    add edi, 8
-   177                                  
-   178 000001B1 6631D2                      xor   edx, edx
-   179 000001B4 6689D8                      mov   eax,ebx
-   180 000001B7 6685C0                      test  eax,eax
-   181 000001BA 7D03                        jge   .abs
-   182 000001BC 66F7D8                      neg   eax
-   183                                  .abs:
-   184 000001BF 660FA4C210                  shld  edx, eax, 16
-   185 000001C4 66C1E010                    shl   eax, 16
-   186 000001C8 66F7FF                      idiv  edi
-   187                                  
-   188 000001CB 660FBDD8                    bsr   ebx, eax
-   189 000001CF 6683C320                    add   ebx, 0x20
-   190 000001D3 663B06[0C00]                cmp   eax, [_0_005]
-   191 000001D8 7D03                        jge   .outside
-   192 000001DA 6631DB                      xor   ebx, ebx
-   193                                  .outside:
-   194                                  
-   195 000001DD 6689D8                      mov   eax, ebx
-   196                                  
-   197 000001E0 8B3E[1C00]                  mov di, [screen]
-   198                                      ; Write pixel
-   199 000001E4 AA                          stosb
-   200 000001E5 893E[1C00]                  mov [screen],di
-   201                                  
-   202 000001E9 FF0E[1600]                  dec word [x]
-   203 000001ED 0F8551FE                    jnz x_loop
-   204                                  
-   205 000001F1 FF0E[1800]                  dec word [y]
-   206 000001F5 0F8543FE                    jnz y_loop
-   207                                  
-   208                                      ; Check for keypress to exit
-   209 000001F9 B401                        mov ah, 1
-   210 000001FB CD16                        int 16h
-   211 000001FD 0F842BFE                    jz main_loop
-   212                                  
-   213 00000201 C3                          ret
-   214                                  
-   215                                  ; Data section
-   216                                  section .data
-   217 00000000 00000100                _1          dd  0x00010000
-   218 00000004 CCCC0000                _0_8        dd  0x0000CCCC
-   219 00000008 00800000                _0_5        dd  0x00008000
-   220 0000000C 47010000                _0_005      dd  0x00000147
-   221 00000010 DB0FC93B                tau_1024    dd  0.00613592315154256491887235035797
-   222                                  
-   223 00000014 0000                    a           dw  0
-   224 00000016 0000                    x           dw  0
-   225 00000018 0000                    y           dw  0
-   226 0000001A FF04                    time        dw  1279
-   227 0000001C 0000                    screen      dw  0
-   228                                  
-   229 0000001E 0000                    sine_table  dw  0
+   125                                      ; p -= 2*floor(0.5*p+0.5)
+   126 0000010C 6689D8                      mov   eax, ebx
+   127 0000010F 66D1E8                      shr   eax, 1
+   128 00000112 660306[0C00]                add   eax, [_0_5]
+   129 00000117 31C0                        xor   ax, ax
+   130 00000119 6601C0                      add   eax, eax
+   131 0000011C 6629C3                      sub   ebx, eax
+   132                                  
+   133                                      ; r2 = dot(p,p)
+   134 0000011F 6689D8                      mov   eax, ebx
+   135 00000122 66F7E8                      imul  eax
+   136 00000125 660FACD010                  shrd  eax, edx, 16
+   137 0000012A 6601C5                      add   ebp, eax
+   138                                  
+   139 0000012D FF0E[1800]                  dec word [b]
+   140 00000131 75CD                        jnz i_loop
+   141                                  
+   142                                      ; To avoid overflows
+   143 00000133 6683C508                    add   ebp, 8
+   144                                  
+   145                                      ; k = 1/r2
+   146 00000137 6631C0                      xor   eax, eax
+   147 0000013A 66BA02000000                mov   edx, 2
+   148 00000140 66F7FD                      idiv  ebp
+   149 00000143 6689C5                      mov   ebp, eax
+   150                                  
+   151                                      ; p *= k
+   152 00000146 6689D8                      mov   eax, ebx
+   153 00000149 66F7ED                      imul  ebp
+   154 0000014C 660FACD010                  shrd  eax, edx, 16
+   155 00000151 6689C3                      mov   ebx, eax
+   156                                  
+   157 00000154 6689C8                      mov   eax, ecx
+   158 00000157 66F7ED                      imul  ebp
+   159 0000015A 660FACD010                  shrd  eax, edx, 16
+   160 0000015F 6689C1                      mov   ecx, eax
+   161                                  
+   162 00000162 6689F0                      mov   eax, esi
+   163 00000165 66F7ED                      imul  ebp
+   164 00000168 660FACD010                  shrd  eax, edx, 16
+   165 0000016D 6689C6                      mov   esi, eax
+   166                                  
+   167                                      ; scale *= k
+   168 00000170 6689F8                      mov   eax, edi
+   169 00000173 66F7ED                      imul  ebp
+   170 00000176 660FACD010                  shrd  eax, edx, 16
+   171 0000017B 6689C7                      mov   edi, eax
+   172                                  .skip:
+   173 0000017E FF0E[1600]                  dec word [a]
+   174 00000182 0F8571FF                    jnz a_loop
+   175                                  
+   176                                      ; To avoid overflows
+   177 00000186 6683C708                    add edi, 8
+   178                                  
+   179 0000018A 6631D2                      xor   edx, edx
+   180 0000018D 6689D8                      mov   eax,ebx
+   181 00000190 6685C0                      test  eax,eax
+   182 00000193 7D03                        jge   .abs
+   183 00000195 66F7D8                      neg   eax
+   184                                  .abs:
+   185 00000198 660FA4C210                  shld  edx, eax, 16
+   186 0000019D 66C1E010                    shl   eax, 16
+   187 000001A1 66F7FF                      idiv  edi
+   188                                  
+   189 000001A4 660FBDD8                    bsr   ebx, eax
+   190 000001A8 6683C320                    add   ebx, 0x20
+   191 000001AC 663B06[1000]                cmp   eax, [_0_005]
+   192 000001B1 7D03                        jge   .outside
+   193 000001B3 6631DB                      xor   ebx, ebx
+   194                                  .outside:
+   195                                  
+   196 000001B6 6689D8                      mov   eax, ebx
+   197                                  
+   198 000001B9 8B3E[1E00]                  mov di, [screen]
+   199                                      ; Write pixel
+   200 000001BD AA                          stosb
+   201 000001BE 893E[1E00]                  mov [screen],di
+   202                                  
+   203 000001C2 FF0E[1A00]                  dec word [x]
+   204 000001C6 0F8578FE                    jnz x_loop
+   205                                  
+   206 000001CA FF0E[1C00]                  dec word [y]
+   207 000001CE 0F856AFE                    jnz y_loop
+   208                                  
+   209                                      ; Check for keypress to exit
+   210 000001D2 B401                        mov ah, 1
+   211 000001D4 CD16                        int 16h
+   212 000001D6 0F8452FE                    jz main_loop
+   213                                  
+   214 000001DA CD20                        int 0x20
+   215                                  
+   216                                  ; Data section
+   217                                  section .data
+   218                                  ; Can be reused
+   219 00000000 DB0FC93B                tau_1024    dd  0.00613592315154256491887235035797
+   220                                  
+   221                                  
+   222 00000004 00000100                _1          dd  0x00010000
+   223 00000008 CCCC0000                _0_8        dd  0x0000CCCC
+   224 0000000C 00800000                _0_5        dd  0x00008000
+   225 00000010 47010000                _0_005      dd  0x00000147
+   226                                  
+   227 00000014 FF04                    time        dw  1279
+   228 00000016 0000                    a           dw  0
+   229 00000018 0000                    b           dw  0
+   230 0000001A 0000                    x           dw  0
+   231 0000001C 0000                    y           dw  0
+   232 0000001E 0000                    screen      dw  0
+   233                                  
+   234 00000020 0000                    sine_table  dw  0
