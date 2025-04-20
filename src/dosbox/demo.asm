@@ -21,7 +21,6 @@ main_loop:
     fsincos
     fstp dword [cos]
     fstp dword [sin]
-    fstp st0
 
     ; Reset position to start of video memory
     xor di, di
@@ -157,7 +156,7 @@ r_loop:
     ; Write pixel
     stosb
 
-    ; Clean up stack
+    ; Clean up stack (if not the DosBox dynamic mode fails)
     fstp st0
     fstp st0
     fstp st0
