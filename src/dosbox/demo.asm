@@ -42,8 +42,7 @@ x_loop:
 
     fild word [x]
     fmul st3
-    fld dword [_0_8]
-    fsub
+    fsub dword [_0_8]
 
     ; expected stack
     ; ST(0) x
