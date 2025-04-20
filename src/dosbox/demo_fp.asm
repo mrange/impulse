@@ -42,14 +42,16 @@ x_loop:
     shl   eax, 16
     imul  esi
     shrd  eax, edx, 16
-    sub   eax, [_0_8]
+    ; 0.8
+    sub   eax, 0x0000CCCC
     mov   ebx, eax
 
     mov   ax , [y]
     shl   eax, 16
     imul  esi
     shrd  eax, edx, 16
-    mov   esi, [_0_5]
+    ; 0.5
+    mov   esi, 0x00008000
     sub   eax, esi
     mov   ecx, eax
 
@@ -122,10 +124,10 @@ i_loop:
     mov   ecx, esi
     mov   esi, eax
 
-    ; p -= 2*floor(0.5*p+0.5)
+    ; p -= 2*floor((p+1)/2)
     mov   eax, ebx
+    add   eax, [_1]
     shr   eax, 1
-    add   eax, [_0_5]
     xor   ax, ax
     add   eax, eax
     sub   ebx, eax
@@ -211,24 +213,25 @@ i_loop:
     int 16h
     jz main_loop
 
-    int 0x20
+    ; Restore text mode
+    mov ax, 0x0003
+    int 0x10
+
+    ret
 
 ; Data section
-section .data
-; Can be reused
+;   Can be reused
 tau_1024    dd  0.00613592315154256491887235035797
 
-
 _1          dd  0x00010000
-_0_8        dd  0x0000CCCC
-_0_5        dd  0x00008000
+time        dw  1279
+
 _0_005      dd  0x00000147
 
-time        dw  1279
-a           dw  0
-b           dw  0
-x           dw  0
-y           dw  0
-screen      dw  0
-
-sine_table  dw  0
+section .bss
+a           resb 2
+b           resb 2
+x           resb 2
+y           resb 2
+screen      resb 2
+sine_table  resb 1280*4
