@@ -41,20 +41,20 @@ x_loop:
     ; esi - Z
     ; edi - Scale
 
-    mov   esi, [_0_01]
+    mov   esi, [_0_005]
 
     mov   ax , [x]
     shl   eax, 16
     imul  esi
     shrd  eax, edx, 16
-    sub   eax, [_1_6]
+    sub   eax, [_0_8]
     mov   ebx, eax
 
     mov   ax , [y]
     shl   eax, 16
     imul  esi
     shrd  eax, edx, 16
-    sub   eax, [_1]
+    sub   eax, [_0_5]
     mov   ecx, eax
 
     mov   esi, [_0_5]
@@ -63,54 +63,14 @@ x_loop:
     and   edi, 0x3FF
     lea   edi, [sine_table+edi*4]
 
-    ; 'z = z*cos+y*sin
-    ; 'y = y*cos-z*sin
-    mov   eax, esi
-    imul  dword [edi+1024]
-    shrd  eax, edx, 16
-    mov   ebp, eax
-
-    mov   eax, ecx
-    imul  dword [edi]
-    shrd  eax, edx, 16
-    add   ebp, eax
-
-    mov   eax, ecx
-    imul  dword [edi+1024]
-    shrd  eax, edx, 16
-    mov   ecx, eax
-
-    mov   eax, esi
-    imul  dword [edi]
-    shrd  eax, edx, 16
-    sub   ecx, eax
-
+    mov word [a], 3
+r_loop:
+    mov   ebp, ebx
+    mov   ebx, ecx
+    mov   ecx, esi
     mov   esi, ebp
-
-    ; 'x = x*cos+z*sin
-    ; 'z = z*cos-x*sin
-    mov   eax, ebx
-    imul  dword [edi+1024]
-    shrd  eax, edx, 16
-    mov   ebp, eax
-
-    mov   eax, esi
-    imul  dword [edi]
-    shrd  eax, edx, 16
-    add   ebp, eax
-
-    mov   eax, esi
-    imul  dword [edi+1024]
-    shrd  eax, edx, 16
-    mov   esi, eax
-
-    mov   eax, ebx
-    imul  dword [edi]
-    shrd  eax, edx, 16
-    sub   esi, eax
-
-    mov   ebx, ebp
-
+    ; 'x = x*cos+y*sin
+    ; 'y = y*cos-x*sin
     mov   eax, ebx
     imul  dword [edi+1024]
     shrd  eax, edx, 16
@@ -132,11 +92,14 @@ x_loop:
     sub   ecx, eax
 
     mov   ebx, ebp
+
+    dec word [a]
+    jnz r_loop
 
     ; Scale
     mov   edi, [_1]
 
-    mov   byte [a], 4
+    mov   word [a], 4
 a_loop:
     ; p -= 2*round(0.5*p)
     mov   eax, ebx
@@ -207,7 +170,7 @@ a_loop:
     shrd  eax, edx, 16
     mov   edi, eax
 .skip:
-    dec byte [a]
+    dec word [a]
     jnz a_loop
 
     ; To avoid overflows
@@ -223,8 +186,15 @@ a_loop:
     shl   eax, 16
     idiv  edi
 
-    bsr   eax, eax
-    add   eax, 0x20
+    bsr   ebx, eax
+    add   ebx, 0x20
+
+    cmp   eax, [_0_005]
+    jg    .outside
+    xor   ebx, ebx
+.outside:
+
+    mov   eax, ebx
 
     mov di, [screen]
     ; Write pixel
@@ -247,13 +217,13 @@ a_loop:
 ; Data section
 section .data
 _1          dd  0x00010000
-_1_6        dd  0x00019999
+_0_8        dd  0x0000CCCC
 _0_5        dd  0x00008000
-_0_01       dd  0x0000028F
+_0_005      dd  0x00000147
 tau_1024    dd  0.00613592315154256491887235035797
 to16_16     dd  65536.0
 
-a           db  0
+a           dw  0
 x           dw  0
 y           dw  0
 time        dw  1279
