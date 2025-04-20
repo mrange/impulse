@@ -22,6 +22,8 @@ main_loop:
     fstp dword [cos]
     fstp dword [sin]
 
+    call fpcheck
+
     ; Reset position to start of video memory
     xor di, di
 
@@ -175,16 +177,28 @@ r_loop:
 
     ret
 
+fpcheck:
+    push ax
+    fstsw ax
+    test  ax, 0x40
+    jz   .exit
+    int 0x2F
+.exit:
+    pop ax
+    ret
+
 ; Data section
-section .data
 _0_005      dd  0.005
 _0_5        dd  0.5
 _0_8        dd  0.8
-_bits       dd  0.0
-sin         dd  0.0
-cos         dd  0.0
 
-x           dw  0
-y           dw  0
 time        dw  0
+
+section .bss
+x           resb 2
+y           resb 2
+
+_bits       resb 4
+sin         resb 4
+cos         resb 4
 

@@ -1,4 +1,4 @@
-; Assemble with: nasm -f bin -o demo_fp.com demo_fp.asm -l demo_fp.lst
+; Assemble with: nasm -f bin -o demo_fp2.com demo_fp2.asm -l demo_fp2.lst
 
     ; 16-bit code
     BITS 16
@@ -15,7 +15,6 @@ start:
     mov ax, 0A000h
     mov es, ax
 
-    mov word [time], 0
     fild dword  [_1]
 main_loop:
     fild word   [time]
@@ -216,13 +215,13 @@ i_loop:
 tau_1024    dd  0.00613592315154256491887235035797
 _1          dd  0x00010000
 _0_005      dd  0x00000147
+time        dw  0
 
 section .bss
 a           resb 2
 b           resb 2
 x           resb 2
 y           resb 2
-time        resb 2
 screen      resb 2
 sin         resb 4
 cos         resb 4
