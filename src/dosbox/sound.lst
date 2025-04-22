@@ -1,0 +1,56 @@
+     1                                  ; Assemble with: nasm -f bin -o demo.com demo.asm -l demo.lst
+     2                                  
+     3                                      bits 16         ; 16-bit real mode
+     4                                      org 100h        ; COM file format starts at 100h
+     5                                  
+     6                                  section .text
+     7                                  start:
+     8                                      ; Set up the timer (channel 2)
+     9 00000000 B0B6                        mov al, 10110110b    ; Channel 2, mode 3 (square wave), binary
+    10 00000002 E643                        out 43h, al
+    11                                  
+    12                                      ; Turn on the speaker by setting bits 0 and 1 of port 61h
+    13 00000004 E461                        in al, 61h           ; Read current value
+    14 00000006 0C03                        or al, 3             ; Set bits 0 and 1
+    15 00000008 E661                        out 61h, al          ; Write back to enable speaker
+    16                                  
+    17                                      ; Calculate frequency value (middle C = 262 Hz)
+    18                                      ; PIT frequency is 1193180 Hz
+    19 0000000A BA0000                      mov dx, 0            ; Clear DX for division
+    20 0000000D 66B8DC341200                mov eax, 1193180
+    21 00000013 66B9B8010000                mov ecx, 440          ; Desired frequency
+    22 00000019 66F7F1                      div ecx               ; Result in AX = 1193180 / 262
+    23                                  
+    24                                      ; Send the frequency value to the timer
+    25 0000001C E642                        out 42h, al          ; Send low byte
+    26 0000001E 88E0                        mov al, ah
+    27 00000020 E642                        out 42h, al          ; Send high byte
+    28                                  
+    29                                      ; Wait for a key press
+    30 00000022 31C0                        xor ax, ax           ; Clear AX (AH = 0: wait for keypress)
+    31 00000024 CD16                        int 16h              ; BIOS keyboard interrupt
+    32                                  
+    33                                      ; Calculate frequency value (middle C = 262 Hz)
+    34                                      ; PIT frequency is 1193180 Hz
+    35 00000026 BA0000                      mov dx, 0            ; Clear DX for division
+    36 00000029 66B8DC341200                mov eax, 1193180
+    37 0000002F 66B906010000                mov ecx, 262          ; Desired frequency
+    38 00000035 66F7F1                      div ecx               ; Result in AX = 1193180 / 262
+    39                                  
+    40                                      ; Send the frequency value to the timer
+    41 00000038 E642                        out 42h, al          ; Send low byte
+    42 0000003A 88E0                        mov al, ah
+    43 0000003C E642                        out 42h, al          ; Send high byte
+    44                                  
+    45                                      ; Wait for a key press
+    46 0000003E 31C0                        xor ax, ax           ; Clear AX (AH = 0: wait for keypress)
+    47 00000040 CD16                        int 16h              ; BIOS keyboard interrupt
+    48                                  
+    49                                      ; Turn off the speaker
+    50 00000042 E461                        in al, 61h           ; Read current value
+    51 00000044 24FC                        and al, 11111100b    ; Clear bits 0 and 1
+    52 00000046 E661                        out 61h, al          ; Write back to disable speaker
+    53                                  
+    54                                      ; Exit program
+    55 00000048 B8004C                      mov ax, 4C00h        ; DOS function: exit program
+    56 0000004B CD21                        int 21h              ; Call DOS
