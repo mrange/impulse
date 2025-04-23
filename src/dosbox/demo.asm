@@ -47,7 +47,7 @@ x_loop:
     ; ST(2) z
     ; ST(3) 0.005
 
-    mov ax, 3
+    mov cx, 3
 t_loop:
     fxch st2
     fxch st1
@@ -71,8 +71,7 @@ t_loop:
     ; Overwrite y with y'
     fstp    st2
 
-    dec ax
-    jnz t_loop
+    loop t_loop
 
     ; Scale
     fld1
@@ -91,7 +90,7 @@ a_loop:
     fldz
     fstp st5
 
-    mov bx,3
+    mov cx,3
 r_loop:
     ; Rotate ST(0..2)
     fxch st2
@@ -109,8 +108,7 @@ r_loop:
     fmul    st0
     faddp   st5, st0
 
-    dec bx
-    jnz r_loop
+    loop r_loop
 
     ; k = 2/dot(p,p)
     fld1
