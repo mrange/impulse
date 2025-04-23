@@ -122,7 +122,7 @@ r_loop:
     dec bx
     jnz r_loop
 
-    ; k = 1/dot(p,p)
+    ; k = 2/dot(p,p)
     fld1
     fadd    st0
     fdiv    st5
