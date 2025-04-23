@@ -34,7 +34,7 @@ main_loop:
     xor di, di
 
     ; Audio reset
-    xor cx, cx
+    xor bx, bx
 
     mov word [y], 200
 y_loop:
@@ -57,7 +57,7 @@ x_loop:
     ; ST(1) y
     ; ST(2) z
 
-    mov ax, 3
+    mov cx, 3
 t_loop:
     fxch st2
     fxch st1
@@ -81,8 +81,7 @@ t_loop:
     ; Overwrite y with y'
     fstp    st2
 
-    dec ax
-    jnz t_loop
+    loop t_loop
 
     ; Scale
     fld1
@@ -101,7 +100,7 @@ a_loop:
     fldz
     fstp st5
 
-    mov bx,3
+    mov cx,3
 r_loop:
     ; Rotate ST(0..2)
     fxch st2
@@ -119,8 +118,7 @@ r_loop:
     fmul    st0
     faddp   st5, st0
 
-    dec bx
-    jnz r_loop
+    loop r_loop
 
     ; k = 2/dot(p,p)
     fld1
@@ -152,7 +150,7 @@ r_loop:
     stosb
 
     ; Increment audio
-    add cx, ax
+    add bx, ax
 
     ; Clean up stack (if not the DosBox dynamic mode fails)
     fstp st0
@@ -165,7 +163,7 @@ r_loop:
     dec word [y]
     jnz y_loop
 
-    mov ax, cx
+    mov ax, bx
     ; This is the wrong way to send audio but it sounds weird!
     out 42h, ax
 

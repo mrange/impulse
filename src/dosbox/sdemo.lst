@@ -25,7 +25,7 @@
     25                                  main_loop:
     26                                      ; Load sin cos
     27 0000000E DF06[0000]                  fild word  [time]
-    28 00000012 D80E[EB00]                  fmul dword [_0_005]
+    28 00000012 D80E[E900]                  fmul dword [_0_005]
     29 00000016 D9FB                        fsincos
     30 00000018 D91E[0E00]                  fstp dword [cos]
     31 0000001C D91E[0A00]                  fstp dword [sin]
@@ -34,30 +34,30 @@
     34 00000020 31FF                        xor di, di
     35                                  
     36                                      ; Audio reset
-    37 00000022 31C9                        xor cx, cx
+    37 00000022 31DB                        xor bx, bx
     38                                  
     39 00000024 C706[0400]C800              mov word [y], 200
     40                                  y_loop:
     41 0000002A C706[0200]4001              mov word [x], 320
     42                                  x_loop:
     43                                      ; Z (0.5)
-    44 00000030 D906[EF00]                  fld dword [_0_5]
+    44 00000030 D906[ED00]                  fld dword [_0_5]
     45                                  
     46 00000034 DF06[0400]                  fild word [y]
-    47 00000038 D80E[EB00]                  fmul dword [_0_005]
+    47 00000038 D80E[E900]                  fmul dword [_0_005]
     48 0000003C D9C1                        fld st1
     49 0000003E DEE9                        fsub
     50                                  
     51 00000040 DF06[0200]                  fild word [x]
-    52 00000044 D80E[EB00]                  fmul dword [_0_005]
-    53 00000048 D826[F300]                  fsub dword [_0_8]
+    52 00000044 D80E[E900]                  fmul dword [_0_005]
+    53 00000048 D826[F100]                  fsub dword [_0_8]
     54                                  
     55                                      ; expected stack
     56                                      ; ST(0) x
     57                                      ; ST(1) y
     58                                      ; ST(2) z
     59                                  
-    60 0000004C B80300                      mov ax, 3
+    60 0000004C B90300                      mov cx, 3
     61                                  t_loop:
     62 0000004F D9CA                        fxch st2
     63 00000051 D9C9                        fxch st1
@@ -81,118 +81,116 @@
     81                                      ; Overwrite y with y'
     82 00000071 DDDA                        fstp    st2
     83                                  
-    84 00000073 48                          dec ax
-    85 00000074 75D9                        jnz t_loop
-    86                                  
-    87                                      ; Scale
-    88 00000076 D9E8                        fld1
-    89 00000078 DDDC                        fstp st4
-    90                                  
-    91                                      ; expected stack
-    92                                      ; ST(0) x
-    93                                      ; ST(1) y
-    94                                      ; ST(2) z
-    95                                      ; ST(3) scale
-    96                                  
-    97                                      ; Appollian loop
-    98 0000007A B80400                      mov ax,4
-    99                                  a_loop:
-   100                                      ; p -= 2.*round(0.5*p);
-   101 0000007D D9EE                        fldz
-   102 0000007F DDDD                        fstp st5
-   103                                  
-   104 00000081 BB0300                      mov bx,3
-   105                                  r_loop:
-   106                                      ; Rotate ST(0..2)
-   107 00000084 D9CA                        fxch st2
-   108 00000086 D9C9                        fxch st1
-   109                                      ; Dupe
-   110 00000088 D9C0                        fld     st0
-   111                                      ; Divide by 2
-   112 0000008A D80E[EF00]                  fmul dword [_0_5]
-   113 0000008E D9FC                        frndint
-   114                                      ; Multiply by 2
-   115 00000090 D8C0                        fadd    st0
-   116 00000092 DEE9                        fsub
-   117                                  
-   118 00000094 D9C0                        fld     st0
-   119 00000096 D8C8                        fmul    st0
-   120 00000098 DEC5                        faddp   st5, st0
-   121                                  
-   122 0000009A 4B                          dec bx
-   123 0000009B 75E7                        jnz r_loop
-   124                                  
-   125                                      ; k = 1/dot(p,p)
-   126 0000009D D9E8                        fld1
-   127 0000009F D8C0                        fadd    st0
-   128 000000A1 D8F5                        fdiv    st5
-   129                                  
-   130                                      ; p *= k
-   131 000000A3 DCC9                        fmul    st1,st0
-   132 000000A5 DCCA                        fmul    st2,st0
-   133 000000A7 DCCB                        fmul    st3,st0
-   134                                      ; scale *= k
-   135 000000A9 DCCC                        fmul    st4,st0
-   136                                  
-   137                                      ; Pop k
-   138 000000AB DDD8                        fstp    st0
-   139                                  
-   140 000000AD 48                          dec ax
-   141 000000AE 75CD                        jnz a_loop
-   142                                  
-   143                                      ; Compute distance
-   144 000000B0 D9E1                        fabs
-   145 000000B2 D8F3                        fdiv    st3
-   146                                  
-   147                                      ; Hacky colors
-   148 000000B4 D916[0600]                  fst dword [_bits]
-   149 000000B8 A0[0900]                    mov al, [_bits+3]
-   150 000000BB 2C10                        sub al,16
-   151                                      ; Write pixel
-   152 000000BD AA                          stosb
-   153                                  
-   154                                      ; Increment audio
-   155 000000BE 01C1                        add cx, ax
-   156                                  
-   157                                      ; Clean up stack (if not the DosBox dynamic mode fails)
-   158 000000C0 DDD8                        fstp st0
-   159 000000C2 DDD8                        fstp st0
-   160 000000C4 DDD8                        fstp st0
-   161                                  
-   162 000000C6 FF0E[0200]                  dec word [x]
-   163 000000CA 0F8562FF                    jnz x_loop
-   164                                  
-   165 000000CE FF0E[0400]                  dec word [y]
-   166 000000D2 0F8554FF                    jnz y_loop
-   167                                  
-   168 000000D6 89C8                        mov ax, cx
-   169                                      ; This is the wrong way to send audio but it sounds weird!
-   170 000000D8 E742                        out 42h, ax
+    84 00000073 E2DA                        loop t_loop
+    85                                  
+    86                                      ; Scale
+    87 00000075 D9E8                        fld1
+    88 00000077 DDDC                        fstp st4
+    89                                  
+    90                                      ; expected stack
+    91                                      ; ST(0) x
+    92                                      ; ST(1) y
+    93                                      ; ST(2) z
+    94                                      ; ST(3) scale
+    95                                  
+    96                                      ; Appollian loop
+    97 00000079 B80400                      mov ax,4
+    98                                  a_loop:
+    99                                      ; p -= 2.*round(0.5*p);
+   100 0000007C D9EE                        fldz
+   101 0000007E DDDD                        fstp st5
+   102                                  
+   103 00000080 B90300                      mov cx,3
+   104                                  r_loop:
+   105                                      ; Rotate ST(0..2)
+   106 00000083 D9CA                        fxch st2
+   107 00000085 D9C9                        fxch st1
+   108                                      ; Dupe
+   109 00000087 D9C0                        fld     st0
+   110                                      ; Divide by 2
+   111 00000089 D80E[ED00]                  fmul dword [_0_5]
+   112 0000008D D9FC                        frndint
+   113                                      ; Multiply by 2
+   114 0000008F D8C0                        fadd    st0
+   115 00000091 DEE9                        fsub
+   116                                  
+   117 00000093 D9C0                        fld     st0
+   118 00000095 D8C8                        fmul    st0
+   119 00000097 DEC5                        faddp   st5, st0
+   120                                  
+   121 00000099 E2E8                        loop r_loop
+   122                                  
+   123                                      ; k = 2/dot(p,p)
+   124 0000009B D9E8                        fld1
+   125 0000009D D8C0                        fadd    st0
+   126 0000009F D8F5                        fdiv    st5
+   127                                  
+   128                                      ; p *= k
+   129 000000A1 DCC9                        fmul    st1,st0
+   130 000000A3 DCCA                        fmul    st2,st0
+   131 000000A5 DCCB                        fmul    st3,st0
+   132                                      ; scale *= k
+   133 000000A7 DCCC                        fmul    st4,st0
+   134                                  
+   135                                      ; Pop k
+   136 000000A9 DDD8                        fstp    st0
+   137                                  
+   138 000000AB 48                          dec ax
+   139 000000AC 75CE                        jnz a_loop
+   140                                  
+   141                                      ; Compute distance
+   142 000000AE D9E1                        fabs
+   143 000000B0 D8F3                        fdiv    st3
+   144                                  
+   145                                      ; Hacky colors
+   146 000000B2 D916[0600]                  fst dword [_bits]
+   147 000000B6 A0[0900]                    mov al, [_bits+3]
+   148 000000B9 2C10                        sub al,16
+   149                                      ; Write pixel
+   150 000000BB AA                          stosb
+   151                                  
+   152                                      ; Increment audio
+   153 000000BC 01C3                        add bx, ax
+   154                                  
+   155                                      ; Clean up stack (if not the DosBox dynamic mode fails)
+   156 000000BE DDD8                        fstp st0
+   157 000000C0 DDD8                        fstp st0
+   158 000000C2 DDD8                        fstp st0
+   159                                  
+   160 000000C4 FF0E[0200]                  dec word [x]
+   161 000000C8 0F8564FF                    jnz x_loop
+   162                                  
+   163 000000CC FF0E[0400]                  dec word [y]
+   164 000000D0 0F8556FF                    jnz y_loop
+   165                                  
+   166 000000D4 89D8                        mov ax, bx
+   167                                      ; This is the wrong way to send audio but it sounds weird!
+   168 000000D6 E742                        out 42h, ax
+   169                                  
+   170 000000D8 FF06[0000]                  inc word [time]
    171                                  
-   172 000000DA FF06[0000]                  inc word [time]
-   173                                  
-   174                                      ; Check for keypress to exit
-   175 000000DE B401                        mov ah, 1
-   176 000000E0 CD16                        int 16h
-   177 000000E2 0F8428FF                    jz main_loop
-   178                                  
-   179                                      ; Turn off the speaker
-   180 000000E6 B030                        mov al, 30h
-   181 000000E8 E661                        out 61h, al
+   172                                      ; Check for keypress to exit
+   173 000000DC B401                        mov ah, 1
+   174 000000DE CD16                        int 16h
+   175 000000E0 0F842AFF                    jz main_loop
+   176                                  
+   177                                      ; Turn off the speaker
+   178 000000E4 B030                        mov al, 30h
+   179 000000E6 E661                        out 61h, al
+   180                                  
+   181 000000E8 C3                          ret
    182                                  
-   183 000000EA C3                          ret
-   184                                  
-   185                                  ; Data section
-   186 000000EB 0AD7A33B                _0_005      dd  0.005
-   187 000000EF 0000003F                _0_5        dd  0.5
-   188 000000F3 CDCC4C3F                _0_8        dd  0.8
-   189                                  
-   190                                  section .bss
-   191 00000000 ????                    time        resb 2
-   192 00000002 ????                    x           resb 2
-   193 00000004 ????                    y           resb 2
-   194                                  
-   195 00000006 ????????                _bits       resb 4
-   196 0000000A ????????                sin         resb 4
-   197 0000000E ????????                cos         resb 4
-   198                                  
+   183                                  ; Data section
+   184 000000E9 0AD7A33B                _0_005      dd  0.005
+   185 000000ED 0000003F                _0_5        dd  0.5
+   186 000000F1 CDCC4C3F                _0_8        dd  0.8
+   187                                  
+   188                                  section .bss
+   189 00000000 ????                    time        resb 2
+   190 00000002 ????                    x           resb 2
+   191 00000004 ????                    y           resb 2
+   192                                  
+   193 00000006 ????????                _bits       resb 4
+   194 0000000A ????????                sin         resb 4
+   195 0000000E ????????                cos         resb 4
+   196                                  
