@@ -102,6 +102,8 @@ t_loop:
     mov ax,4
 a_loop:
     ; p -= 2.*round(0.5*p);
+    fldz
+    fstp st5
 
     mov bx,3
 r_loop:
@@ -116,30 +118,18 @@ r_loop:
     ; Multiply by 2
     fadd    st0
     fsub
+
+    fld     st0
+    fmul    st0
+    faddp   st5, st0
+
     dec bx
     jnz r_loop
 
-    ; dot(p,p)
-    ; Dupe x
-    fld     st0
-    fmul    st0
-
-    ; Dupe y
-    fld     st2
-    fmul    st0
-
-    fadd
-
-    ; Dupe z
-    fld     st3
-    fmul    st0
-
-    fadd
-
-    ; k = 2/dot(p,p)
+    ; k = 1/dot(p,p)
     fld1
     fadd    st0
-    fdivr
+    fdiv    st5
 
     ; p *= k
     fmul    st1,st0
