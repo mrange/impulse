@@ -40,26 +40,22 @@ main_loop:
 y_loop:
     mov word [x], 320
 x_loop:
-    ; PUSH 0.005
-    fld dword [_0_005]
-
     ; Z (0.5)
     fld dword [_0_5]
 
     fild word [y]
-    fmul st2
+    fmul dword [_0_005]
     fld st1
     fsub
 
     fild word [x]
-    fmul st3
+    fmul dword [_0_005]
     fsub dword [_0_8]
 
     ; expected stack
     ; ST(0) x
     ; ST(1) y
     ; ST(2) z
-    ; ST(3) 0.005
 
     mov ax, 3
 t_loop:
@@ -159,7 +155,6 @@ r_loop:
     add cx, ax
 
     ; Clean up stack (if not the DosBox dynamic mode fails)
-    fstp st0
     fstp st0
     fstp st0
     fstp st0

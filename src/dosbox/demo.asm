@@ -29,19 +29,16 @@ main_loop:
 y_loop:
     mov word [x], 320
 x_loop:
-    ; PUSH 0.005
-    fld dword [_0_005]
-
     ; Z (0.5)
     fld dword [_0_5]
 
     fild word [y]
-    fmul st2
+    fmul dword [_0_005]
     fld st1
     fsub
 
     fild word [x]
-    fmul st3
+    fmul dword [_0_005]
     fsub dword [_0_8]
 
     ; expected stack
@@ -149,7 +146,7 @@ r_loop:
     fstp st0
     fstp st0
     fstp st0
-    fstp st0
+
 
     dec word [x]
     jnz x_loop
