@@ -33,9 +33,6 @@ main_loop:
     ; Reset position to start of video memory
     xor di, di
 
-    ; Audio reset
-    xor bx, bx
-
     mov word [y], 200
 y_loop:
     mov word [x], 320
@@ -149,9 +146,6 @@ r_loop:
     ; Write pixel
     stosb
 
-    ; Increment audio
-    add bx, ax
-
     ; Clean up stack (if not the DosBox dynamic mode fails)
     fstp st0
     fstp st0
@@ -163,9 +157,17 @@ r_loop:
     dec word [y]
     jnz y_loop
 
+    ; Increment audio
+    add bx, 73
+;    add bx, 83
+;    add bx, 13
+;    add bx, 229
+;    add bx, 1499
     mov ax, bx
-    ; This is the wrong way to send audio but it sounds weird!
-    out 42h, ax
+    out 42h, al
+    mov ah, al
+    out 42h, al
+
 
     inc word [time]
 
@@ -184,9 +186,9 @@ r_loop:
 _0_005      dd  0.005
 _0_5        dd  0.5
 _0_8        dd  0.8
+time        dw  0
 
 section .bss
-time        resb 2
 x           resb 2
 y           resb 2
 
