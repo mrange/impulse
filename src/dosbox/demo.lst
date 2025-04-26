@@ -45,138 +45,137 @@
     45                                      ; ST(0) x
     46                                      ; ST(1) y
     47                                      ; ST(2) z
-    48                                      ; ST(3) 0.005
-    49                                  
-    50 00000046 B90300                      mov cx, 3
-    51                                  t_loop:
-    52 00000049 D9CA                        fxch st2
-    53 0000004B D9C9                        fxch st1
-    54                                  
-    55                                      ; y' = y*cos - x*sin
-    56 0000004D D9C1                        fld     st1
-    57 0000004F D80E[0C00]                  fmul dword [cos]
-    58 00000053 D9C1                        fld     st1
-    59 00000055 D80E[0800]                  fmul dword [sin]
-    60 00000059 DEE9                        fsub
-    61                                  
-    62                                      ; x' = x*cos + y*sin
-    63 0000005B D9C1                        fld     st1
-    64 0000005D D80E[0C00]                  fmul dword [cos]
-    65 00000061 D9C3                        fld     st3
-    66 00000063 D80E[0800]                  fmul dword [sin]
-    67 00000067 DEC1                        fadd
-    68                                  
-    69                                      ; Overwrite x with x'
-    70 00000069 DDDA                        fstp    st2
-    71                                      ; Overwrite y with y'
-    72 0000006B DDDA                        fstp    st2
-    73                                  
-    74 0000006D E2DA                        loop t_loop
-    75                                  
-    76                                      ; Scale
-    77 0000006F D9E8                        fld1
-    78 00000071 DDDC                        fstp st4
-    79                                  
-    80                                      ; expected stack
-    81                                      ; ST(0) x
-    82                                      ; ST(1) y
-    83                                      ; ST(2) z
-    84                                      ; ST(3) scale
-    85                                  
-    86                                      ; Appollian loop
-    87 00000073 B80400                      mov ax,4
-    88                                  a_loop:
-    89                                      ; p -= 2.*round(0.5*p);
-    90 00000076 D9EE                        fldz
-    91 00000078 DDDD                        fstp st5
-    92                                  
-    93 0000007A B90300                      mov cx,3
-    94                                  r_loop:
-    95                                      ; Rotate ST(0..2)
-    96 0000007D D9CA                        fxch st2
-    97 0000007F D9C9                        fxch st1
-    98                                      ; Dupe
-    99 00000081 D9C0                        fld     st0
-   100                                      ; Divide by 2
-   101 00000083 D80E[E200]                  fmul dword [_0_5]
-   102 00000087 D9FC                        frndint
-   103                                      ; Multiply by 2
-   104 00000089 D8C0                        fadd    st0
-   105 0000008B DEE9                        fsub
-   106                                  
-   107 0000008D D9C0                        fld     st0
-   108 0000008F D8C8                        fmul    st0
-   109 00000091 DEC5                        faddp   st5, st0
-   110                                  
-   111 00000093 E2E8                        loop r_loop
-   112                                  
-   113                                      ; k = 2/dot(p,p)
-   114 00000095 D9E8                        fld1
-   115 00000097 D8C0                        fadd    st0
-   116 00000099 D8F5                        fdiv    st5
-   117                                  
-   118                                      ; p *= k
-   119 0000009B DCC9                        fmul    st1,st0
-   120 0000009D DCCA                        fmul    st2,st0
-   121 0000009F DCCB                        fmul    st3,st0
-   122                                      ; scale *= k
-   123 000000A1 DCCC                        fmul    st4,st0
-   124                                  
-   125                                      ; Pop k
-   126 000000A3 DDD8                        fstp    st0
-   127                                  
-   128 000000A5 48                          dec ax
-   129 000000A6 75CE                        jnz a_loop
-   130                                  
-   131                                      ; Compute distance
-   132 000000A8 D9E1                        fabs
-   133 000000AA D8F3                        fdiv    st3
-   134                                  
-   135                                      ; Hacky colors
-   136 000000AC D916[0400]                  fst dword [_bits]
-   137 000000B0 A0[0700]                    mov al, [_bits+3]
-   138 000000B3 2C10                        sub al,16
-   139                                  
-   140                                      ; Write pixel
-   141 000000B5 AA                          stosb
-   142                                  
-   143                                      ; Clean up stack (if not the DosBox dynamic mode fails)
-   144 000000B6 DDD8                        fstp st0
-   145 000000B8 DDD8                        fstp st0
-   146 000000BA DDD8                        fstp st0
+    48                                  
+    49 00000046 B90300                      mov cx, 3
+    50                                  t_loop:
+    51 00000049 D9CA                        fxch st2
+    52 0000004B D9C9                        fxch st1
+    53                                  
+    54                                      ; y' = y*cos - x*sin
+    55 0000004D D9C1                        fld     st1
+    56 0000004F D80E[0C00]                  fmul dword [cos]
+    57 00000053 D9C1                        fld     st1
+    58 00000055 D80E[0800]                  fmul dword [sin]
+    59 00000059 DEE9                        fsub
+    60                                  
+    61                                      ; x' = x*cos + y*sin
+    62 0000005B D9C1                        fld     st1
+    63 0000005D D80E[0C00]                  fmul dword [cos]
+    64 00000061 D9C3                        fld     st3
+    65 00000063 D80E[0800]                  fmul dword [sin]
+    66 00000067 DEC1                        fadd
+    67                                  
+    68                                      ; Overwrite x with x'
+    69 00000069 DDDA                        fstp    st2
+    70                                      ; Overwrite y with y'
+    71 0000006B DDDA                        fstp    st2
+    72                                  
+    73 0000006D E2DA                        loop t_loop
+    74                                  
+    75                                      ; Scale
+    76 0000006F D9E8                        fld1
+    77 00000071 DDDC                        fstp st4
+    78                                  
+    79                                      ; expected stack
+    80                                      ; ST(0) x
+    81                                      ; ST(1) y
+    82                                      ; ST(2) z
+    83                                      ; ST(3) scale
+    84                                  
+    85                                      ; Appollian loop
+    86 00000073 B80400                      mov ax,4
+    87                                  a_loop:
+    88                                      ; p -= 2.*round(0.5*p);
+    89 00000076 D9EE                        fldz
+    90 00000078 DDDD                        fstp st5
+    91                                  
+    92 0000007A B90300                      mov cx,3
+    93                                  r_loop:
+    94                                      ; Rotate ST(0..2)
+    95 0000007D D9CA                        fxch st2
+    96 0000007F D9C9                        fxch st1
+    97                                      ; Dupe
+    98 00000081 D9C0                        fld     st0
+    99                                      ; Divide by 2
+   100 00000083 D80E[E200]                  fmul dword [_0_5]
+   101 00000087 D9FC                        frndint
+   102                                      ; Multiply by 2
+   103 00000089 D8C0                        fadd    st0
+   104 0000008B DEE9                        fsub
+   105                                  
+   106 0000008D D9C0                        fld     st0
+   107 0000008F D8C8                        fmul    st0
+   108 00000091 DEC5                        faddp   st5, st0
+   109                                  
+   110 00000093 E2E8                        loop r_loop
+   111                                  
+   112                                      ; k = 2/dot(p,p)
+   113 00000095 D9E8                        fld1
+   114 00000097 D8C0                        fadd    st0
+   115 00000099 D8F5                        fdiv    st5
+   116                                  
+   117                                      ; p *= k
+   118 0000009B DCC9                        fmul    st1,st0
+   119 0000009D DCCA                        fmul    st2,st0
+   120 0000009F DCCB                        fmul    st3,st0
+   121                                      ; scale *= k
+   122 000000A1 DCCC                        fmul    st4,st0
+   123                                  
+   124                                      ; Pop k
+   125 000000A3 DDD8                        fstp    st0
+   126                                  
+   127 000000A5 48                          dec ax
+   128 000000A6 75CE                        jnz a_loop
+   129                                  
+   130                                      ; Compute distance
+   131 000000A8 D9E1                        fabs
+   132 000000AA D8F3                        fdiv    st3
+   133                                  
+   134                                      ; Hacky colors
+   135 000000AC D916[0400]                  fst dword [_bits]
+   136 000000B0 A0[0700]                    mov al, [_bits+3]
+   137 000000B3 2C10                        sub al,16
+   138                                  
+   139                                      ; Write pixel
+   140 000000B5 AA                          stosb
+   141                                  
+   142                                      ; Clean up stack (if not the DosBox dynamic mode fails)
+   143 000000B6 DDD8                        fstp st0
+   144 000000B8 DDD8                        fstp st0
+   145 000000BA DDD8                        fstp st0
+   146                                  
    147                                  
-   148                                  
-   149 000000BC FF0E[0000]                  dec word [x]
-   150 000000C0 0F8566FF                    jnz x_loop
-   151                                  
-   152 000000C4 FF0E[0200]                  dec word [y]
-   153 000000C8 0F8558FF                    jnz y_loop
-   154                                  
-   155 000000CC FF06[EA00]                  inc word [time]
-   156                                  
-   157                                      ; Check for keypress to exit
-   158 000000D0 B401                        mov ah, 1
-   159 000000D2 CD16                        int 16h
-   160 000000D4 0F8432FF                    jz main_loop
-   161                                  
-   162                                      ; Restore text mode
-   163 000000D8 B80300                      mov ax, 0x0003
-   164 000000DB CD10                        int 0x10
-   165                                  
-   166 000000DD C3                          ret
-   167                                  
-   168                                  ; Data section
-   169 000000DE 0AD7A33B                _0_005      dd  0.005
-   170 000000E2 0000003F                _0_5        dd  0.5
-   171 000000E6 CDCC4C3F                _0_8        dd  0.8
-   172                                  
-   173 000000EA 0000                    time        dw  0
-   174                                  
-   175                                  section .bss
-   176 00000000 ????                    x           resb 2
-   177 00000002 ????                    y           resb 2
-   178                                  
-   179 00000004 ????????                _bits       resb 4
-   180 00000008 ????????                sin         resb 4
-   181 0000000C ????????                cos         resb 4
-   182                                  
+   148 000000BC FF0E[0000]                  dec word [x]
+   149 000000C0 0F8566FF                    jnz x_loop
+   150                                  
+   151 000000C4 FF0E[0200]                  dec word [y]
+   152 000000C8 0F8558FF                    jnz y_loop
+   153                                  
+   154 000000CC FF06[EA00]                  inc word [time]
+   155                                  
+   156                                      ; Check for keypress to exit
+   157 000000D0 B401                        mov ah, 1
+   158 000000D2 CD16                        int 16h
+   159 000000D4 0F8432FF                    jz main_loop
+   160                                  
+   161                                      ; Restore text mode
+   162 000000D8 B80300                      mov ax, 0x0003
+   163 000000DB CD10                        int 0x10
+   164                                  
+   165 000000DD C3                          ret
+   166                                  
+   167                                  ; Data section
+   168 000000DE 0AD7A33B                _0_005      dd  0.005
+   169 000000E2 0000003F                _0_5        dd  0.5
+   170 000000E6 CDCC4C3F                _0_8        dd  0.8
+   171                                  
+   172 000000EA 0000                    time        dw  0
+   173                                  
+   174                                  section .bss
+   175 00000000 ????                    x           resb 2
+   176 00000002 ????                    y           resb 2
+   177                                  
+   178 00000004 ????????                _bits       resb 4
+   179 00000008 ????????                sin         resb 4
+   180 0000000C ????????                cos         resb 4
+   181                                  

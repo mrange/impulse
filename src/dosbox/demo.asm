@@ -45,7 +45,6 @@ x_loop:
     ; ST(0) x
     ; ST(1) y
     ; ST(2) z
-    ; ST(3) 0.005
 
     mov cx, 3
 t_loop:

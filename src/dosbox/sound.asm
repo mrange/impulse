@@ -1,4 +1,4 @@
-; Assemble with: nasm -f bin -o demo.com demo.asm -l demo.lst
+; Assemble with: nasm -f bin -o sound.com sound.asm -l sound.lst
 
     bits 16         ; 16-bit real mode
     org 100h        ; COM file format starts at 100h
@@ -14,11 +14,22 @@ start:
     or al, 3             ; Set bits 0 and 1
     out 61h, al          ; Write back to enable speaker
 
+    xor ebx, ebx
+
+main_loop:
+    mov eax, ebx
+    shr eax, 12
+    mov ecx, eax
+    mov eax, ebx
+    shr eax, 8
+    or  ecx, eax
+    and ecx, 42
+    add ecx, 110
+
     ; Calculate frequency value (middle C = 262 Hz)
     ; PIT frequency is 1193180 Hz
-    mov dx, 0            ; Clear DX for division
+    xor edx, edx
     mov eax, 1193180
-    mov ecx, 440          ; Desired frequency
     div ecx               ; Result in AX = 1193180 / 262
 
     ; Send the frequency value to the timer
@@ -26,25 +37,17 @@ start:
     mov al, ah
     out 42h, al          ; Send high byte
 
-    ; Wait for a key press
-    xor ax, ax           ; Clear AX (AH = 0: wait for keypress)
-    int 16h              ; BIOS keyboard interrupt
+    mov ecx, 18000
+.wait:
+    dec ecx
+    jnz .wait
 
-    ; Calculate frequency value (middle C = 262 Hz)
-    ; PIT frequency is 1193180 Hz
-    mov dx, 0            ; Clear DX for division
-    mov eax, 1193180
-    mov ecx, 262          ; Desired frequency
-    div ecx               ; Result in AX = 1193180 / 262
+    add ebx, 400
 
-    ; Send the frequency value to the timer
-    out 42h, al          ; Send low byte
-    mov al, ah
-    out 42h, al          ; Send high byte
-
-    ; Wait for a key press
-    xor ax, ax           ; Clear AX (AH = 0: wait for keypress)
-    int 16h              ; BIOS keyboard interrupt
+    ; Check for keypress to exit
+    mov ah, 1
+    int 16h
+    jz main_loop
 
     ; Turn off the speaker
     in al, 61h           ; Read current value
@@ -54,3 +57,8 @@ start:
     ; Exit program
     mov ax, 4C00h        ; DOS function: exit program
     int 21h              ; Call DOS
+
+
+a   dd  11
+b   dd  17
+c   dd  13
