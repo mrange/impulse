@@ -16,8 +16,8 @@
     16                                  
     17                                  main_loop:
     18                                      ; Load sin cos
-    19 0000000A DF06[EA00]                  fild word  [time]
-    20 0000000E D80E[DE00]                  fmul dword [_0_005]
+    19 0000000A DF06[E800]                  fild word  [time]
+    20 0000000E D80E[DC00]                  fmul dword [_0_005]
     21 00000012 D9FB                        fsincos
     22 00000014 D91E[0C00]                  fstp dword [cos]
     23 00000018 D91E[0800]                  fstp dword [sin]
@@ -30,16 +30,16 @@
     30 00000024 C706[0000]4001              mov word [x], 320
     31                                  x_loop:
     32                                      ; Z (0.5)
-    33 0000002A D906[E200]                  fld dword [_0_5]
+    33 0000002A D906[E000]                  fld dword [_0_5]
     34                                  
     35 0000002E DF06[0200]                  fild word [y]
-    36 00000032 D80E[DE00]                  fmul dword [_0_005]
+    36 00000032 D80E[DC00]                  fmul dword [_0_005]
     37 00000036 D9C1                        fld st1
     38 00000038 DEE9                        fsub
     39                                  
     40 0000003A DF06[0000]                  fild word [x]
-    41 0000003E D80E[DE00]                  fmul dword [_0_005]
-    42 00000042 D826[E600]                  fsub dword [_0_8]
+    41 0000003E D80E[DC00]                  fmul dword [_0_005]
+    42 00000042 D826[E400]                  fsub dword [_0_8]
     43                                  
     44                                      ; expected stack
     45                                      ; ST(0) x
@@ -97,7 +97,7 @@
     97                                      ; Dupe
     98 00000081 D9C0                        fld     st0
     99                                      ; Divide by 2
-   100 00000083 D80E[E200]                  fmul dword [_0_5]
+   100 00000083 D80E[E000]                  fmul dword [_0_5]
    101 00000087 D9FC                        frndint
    102                                      ; Multiply by 2
    103 00000089 D8C0                        fadd    st0
@@ -132,7 +132,7 @@
    132 000000AA D8F3                        fdiv    st3
    133                                  
    134                                      ; Hacky colors
-   135 000000AC D916[0400]                  fst dword [_bits]
+   135 000000AC D91E[0400]                  fstp dword [_bits]
    136 000000B0 A0[0700]                    mov al, [_bits+3]
    137 000000B3 2C10                        sub al,16
    138                                  
@@ -142,40 +142,39 @@
    142                                      ; Clean up stack (if not the DosBox dynamic mode fails)
    143 000000B6 DDD8                        fstp st0
    144 000000B8 DDD8                        fstp st0
-   145 000000BA DDD8                        fstp st0
+   145                                  
    146                                  
-   147                                  
-   148 000000BC FF0E[0000]                  dec word [x]
-   149 000000C0 0F8566FF                    jnz x_loop
-   150                                  
-   151 000000C4 FF0E[0200]                  dec word [y]
-   152 000000C8 0F8558FF                    jnz y_loop
-   153                                  
-   154 000000CC FF06[EA00]                  inc word [time]
-   155                                  
-   156                                      ; Check for keypress to exit
-   157 000000D0 B401                        mov ah, 1
-   158 000000D2 CD16                        int 16h
-   159 000000D4 0F8432FF                    jz main_loop
-   160                                  
-   161                                      ; Restore text mode
-   162 000000D8 B80300                      mov ax, 0x0003
-   163 000000DB CD10                        int 0x10
-   164                                  
-   165 000000DD C3                          ret
-   166                                  
-   167                                  ; Data section
-   168 000000DE 0AD7A33B                _0_005      dd  0.005
-   169 000000E2 0000003F                _0_5        dd  0.5
-   170 000000E6 CDCC4C3F                _0_8        dd  0.8
-   171                                  
-   172 000000EA 0000                    time        dw  0
-   173                                  
-   174                                  section .bss
-   175 00000000 ????                    x           resb 2
-   176 00000002 ????                    y           resb 2
-   177                                  
-   178 00000004 ????????                _bits       resb 4
-   179 00000008 ????????                sin         resb 4
-   180 0000000C ????????                cos         resb 4
-   181                                  
+   147 000000BA FF0E[0000]                  dec word [x]
+   148 000000BE 0F8568FF                    jnz x_loop
+   149                                  
+   150 000000C2 FF0E[0200]                  dec word [y]
+   151 000000C6 0F855AFF                    jnz y_loop
+   152                                  
+   153 000000CA FF06[E800]                  inc word [time]
+   154                                  
+   155                                      ; Check for keypress to exit
+   156 000000CE B401                        mov ah, 1
+   157 000000D0 CD16                        int 16h
+   158 000000D2 0F8434FF                    jz main_loop
+   159                                  
+   160                                      ; Restore text mode
+   161 000000D6 B80300                      mov ax, 0x0003
+   162 000000D9 CD10                        int 0x10
+   163                                  
+   164 000000DB C3                          ret
+   165                                  
+   166                                  ; Data section
+   167 000000DC 0AD7A33B                _0_005      dd  0.005
+   168 000000E0 0000003F                _0_5        dd  0.5
+   169 000000E4 CDCC4C3F                _0_8        dd  0.8
+   170                                  
+   171 000000E8 0000                    time        dw  0
+   172                                  
+   173                                  section .bss
+   174 00000000 ????                    x           resb 2
+   175 00000002 ????                    y           resb 2
+   176                                  
+   177 00000004 ????????                _bits       resb 4
+   178 00000008 ????????                sin         resb 4
+   179 0000000C ????????                cos         resb 4
+   180                                  

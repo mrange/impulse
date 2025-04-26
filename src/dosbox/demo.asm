@@ -132,7 +132,7 @@ r_loop:
     fdiv    st3
 
     ; Hacky colors
-    fst dword [_bits]
+    fstp dword [_bits]
     mov al, [_bits+3]
     sub al,16
 
@@ -140,7 +140,6 @@ r_loop:
     stosb
 
     ; Clean up stack (if not the DosBox dynamic mode fails)
-    fstp st0
     fstp st0
     fstp st0
 
