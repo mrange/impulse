@@ -40,6 +40,46 @@ let main args =
 
         bitmap.SetPixel (x-1, y-1, c)
 
+  let blob () =
+    let t          = 0.
+    let mutable s  = cos t, sin t
+    for y = height downto 1 do
+      for x = width downto 1 do
+        let mutable px = float (-width+2*x)/float height
+        let mutable py = float (-height+2*y)/float height
+
+        let mutable cpx  = px*4.
+        let mutable cpy  = py*4.
+        cpx <- cpx - round (cpx)
+        cpy <- cpy - round (cpy)
+        cpx <- cpx*0.25
+        cpy <- cpy*0.25
+        let mutable d = cpx*cpx+cpy*cpy
+
+        let mutable bpx = px
+        let mutable bpy = py
+
+        for i = 1 to 1 do
+          bpx <- bpx+fst s
+          bpy <- bpy+snd s
+
+          let bd = bpx*bpx+bpy*bpy
+
+          let bd2= bd-d
+          let h1 = 0.5+bd2*4.0
+          let h  = min 1.0 h1
+          let h2 = 1.0-h
+
+          d <- h2*bd2 + d - 0.125*h*h2
+          
+        let c = 
+          if d < 0.0 then
+            Color.Wheat
+          else
+            Color.Black
+
+        bitmap.SetPixel (x-1, y-1, c)
+
 
   let to_fp (i : int) : int<FP> = (i <<< 16)*1<FP>
 
@@ -105,7 +145,7 @@ let main args =
     )
 
   form.Paint.Add <| fun args ->
-    fractal_int ()
+    blob ()
     args.Graphics.InterpolationMode <- InterpolationMode.NearestNeighbor
     args.Graphics.PixelOffsetMode   <- PixelOffsetMode.Half
     args.Graphics.DrawImage(bitmap, Rectangle(0, 0, width*scale, height*scale))

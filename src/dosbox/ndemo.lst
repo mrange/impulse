@@ -1,0 +1,174 @@
+     1                                  ; Assemble with: nasm -f bin -o ndemo.com ndemo.asm -l ndemo.lst
+     2                                  
+     3                                      ; 16-bit code
+     4                                      BITS 16
+     5                                       ; COM programs start at offset 100h
+     6                                      ORG 100h
+     7                                  
+     8                                  start:
+     9                                      ; Set video mode (320x200, 256 colors)
+    10 00000000 B81300                      mov ax, 0013h
+    11 00000003 CD10                        int 10h
+    12                                  
+    13                                      ; Initialize video memory segment
+    14 00000005 B800A0                      mov ax, 0A000h
+    15 00000008 8EC0                        mov es, ax
+    16                                  
+    17                                  main_loop:
+    18                                      ; Load sin cos
+    19 0000000A DF06[F400]                  fild word  [time]
+    20 0000000E D80E[DC00]                  fmul dword [_0_01]
+    21 00000012 D9FB                        fsincos
+    22 00000014 D91E[0C00]                  fstp dword [cos]
+    23 00000018 D91E[0800]                  fstp dword [sin]
+    24                                  
+    25                                      ; Reset position to start of video memory
+    26 0000001C 31FF                        xor di, di
+    27                                  
+    28 0000001E C706[0200]C800              mov word [y], 200
+    29                                  y_loop:
+    30 00000024 C706[0000]4001              mov word [x], 320
+    31                                  x_loop:
+    32 0000002A DF06[0200]                  fild word [y]
+    33 0000002E D80E[DC00]                  fmul dword [_0_01]
+    34 00000032 D9E8                        fld1
+    35 00000034 DEE9                        fsub
+    36                                  
+    37 00000036 DF06[0000]                  fild word [x]
+    38 0000003A D80E[DC00]                  fmul dword [_0_01]
+    39 0000003E D826[E000]                  fsub dword [_1_6]
+    40                                  
+    41                                      ; Stack
+    42                                      ; ST(0) - x
+    43                                      ; ST(1) - y
+    44                                  
+    45 00000042 D9EE                        fldz
+    46                                      ; Dupe x/y
+    47 00000044 D9C2                        fld  st2
+    48 00000046 D9C2                        fld  st2
+    49                                  
+    50 00000048 B90200                      mov cx, 2
+    51                                  a_loop:
+    52 0000004B D9C9                        fxch st1
+    53 0000004D D80E[E400]                  fmul dword [_4]
+    54 00000051 D9C0                        fld st0
+    55 00000053 D9FC                        frndint
+    56 00000055 DEE9                        fsubp st1, st0
+    57 00000057 D80E[F000]                  fmul dword [_0_25]
+    58 0000005B D8C8                        fmul st0
+    59 0000005D DCC2                        fadd st2, st0
+    60 0000005F E2EA                        loop a_loop
+    61                                  
+    62 00000061 DDD8                        fstp st0
+    63 00000063 DDD8                        fstp st0
+    64                                  
+    65 00000065 DDDB                        fstp st3
+    66                                  
+    67 00000067 B90100                      mov cx, 1
+    68                                  b_loop:
+    69                                      ; Stack
+    70                                      ; ST(0) - x
+    71                                      ; ST(1) - y
+    72                                      ; ST(2) - d
+    73                                  
+    74 0000006A D806[0C00]                  fadd dword [cos]
+    75 0000006E D9C9                        fxch
+    76 00000070 D806[0800]                  fadd dword [sin]
+    77                                  
+    78                                      ; dot
+    79 00000074 D9EE                        fldz
+    80 00000076 D9C1                        fld st1
+    81 00000078 D8C8                        fmul st0
+    82 0000007A DEC1                        fadd
+    83 0000007C D9C2                        fld st2
+    84 0000007E D8C8                        fmul st0
+    85 00000080 DEC1                        fadd
+    86                                  
+    87                                      ; ST(0) - td
+    88                                      ; ST(1) - x
+    89                                      ; ST(2) - y
+    90                                      ; ST(3) - d
+    91                                  
+    92                                      ; k = 1/8
+    93                                      ; float pmin(float a, float b, float k) {
+    94                                      ;   float h = clamp( 0.5+0.5*(b-a)/k, 0.0, 1.0 );
+    95                                      ;   return mix( b, a, h ) - k*h*(1.0-h);
+    96                                      ; }
+    97                                  
+    98                                      ; td-d
+    99 00000082 D8E3                        fsub  st3
+   100 00000084 D9C0                        fld   st0
+   101 00000086 D80E[E400]                  fmul  dword [_4]
+   102 0000008A D806[E800]                  fadd  dword [_0_5]
+   103 0000008E D9E8                        fld1
+   104 00000090 DFF1                        fcomip
+   105 00000092 7704                        ja    .min1
+   106 00000094 DDD8                        fstp  st0
+   107 00000096 D9E8                        fld1
+   108                                  .min1:
+   109 00000098 D9E8                        fld1
+   110 0000009A D8E1                        fsub st0, st1
+   111                                      ; Stack
+   112                                      ; ST(0) - 1-h
+   113                                      ; ST(1) - h
+   114                                      ; ST(2) - td-d
+   115                                      ; ST(3) - x
+   116                                      ; ST(4) - y
+   117                                      ; ST(5) - d
+   118 0000009C D9C0                        fld   st0
+   119 0000009E D8CB                        fmul  st3
+   120 000000A0 DEC6                        faddp st6, st0
+   121 000000A2 D80E[EC00]                  fmul  dword [_0_125]
+   122 000000A6 DEC9                        fmul
+   123 000000A8 DEEC                        fsubp st4
+   124                                  
+   125 000000AA E2BE                        loop b_loop
+   126                                  
+   127 000000AC DDD8                        fstp  st0
+   128 000000AE DDD8                        fstp  st0
+   129                                      ; Hacky colors
+   130 000000B0 D91E[0400]                  fstp dword [_bits]
+   131 000000B4 A0[0700]                    mov al, [_bits+3]
+   132 000000B7 2C10                        sub al,16
+   133                                      ; Write pixel
+   134 000000B9 AA                          stosb
+   135                                  
+   136                                      ; Clean up stack (if not the DosBox dynamic mode fails)
+   137                                  
+   138 000000BA FF0E[0000]                  dec word [x]
+   139 000000BE 0F8568FF                    jnz x_loop
+   140                                  
+   141 000000C2 FF0E[0200]                  dec word [y]
+   142 000000C6 0F855AFF                    jnz y_loop
+   143                                  
+   144 000000CA FF06[F400]                  inc word [time]
+   145                                  
+   146                                      ; Check for keypress to exit
+   147 000000CE B401                        mov ah, 1
+   148 000000D0 CD16                        int 16h
+   149 000000D2 0F8434FF                    jz main_loop
+   150                                  
+   151                                      ; Restore text mode
+   152 000000D6 B80300                      mov ax, 0x0003
+   153 000000D9 CD10                        int 0x10
+   154                                  
+   155 000000DB C3                          ret
+   156                                  
+   157                                  ; Data section
+   158 000000DC 0AD7233C                _0_01       dd  0.01
+   159 000000E0 CDCCCC3F                _1_6        dd  1.6
+   160 000000E4 00008040                _4          dd  4.0
+   161 000000E8 0000003F                _0_5        dd  0.5
+   162 000000EC 0000003E                _0_125      dd  0.125
+   163 000000F0 0000803E                _0_25       dd  0.25
+   164                                  
+   165 000000F4 0000                    time        dw  0
+   166                                  
+   167                                  section .bss
+   168 00000000 ????                    x           resb 2
+   169 00000002 ????                    y           resb 2
+   170                                  
+   171 00000004 ????????                _bits       resb 4
+   172 00000008 ????????                sin         resb 4
+   173 0000000C ????????                cos         resb 4
+   174                                  

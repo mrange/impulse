@@ -1,0 +1,174 @@
+; Assemble with: nasm -f bin -o ndemo.com ndemo.asm -l ndemo.lst
+
+    ; 16-bit code
+    BITS 16
+     ; COM programs start at offset 100h
+    ORG 100h
+
+start:
+    ; Set video mode (320x200, 256 colors)
+    mov ax, 0013h
+    int 10h
+
+    ; Initialize video memory segment
+    mov ax, 0A000h
+    mov es, ax
+
+main_loop:
+    ; Load sin cos
+    fild word  [time]
+    fmul dword [_0_01]
+    fsincos
+    fstp dword [cos]
+    fstp dword [sin]
+
+    ; Reset position to start of video memory
+    xor di, di
+
+    mov word [y], 200
+y_loop:
+    mov word [x], 320
+x_loop:
+    fild word [y]
+    fmul dword [_0_01]
+    fld1
+    fsub
+
+    fild word [x]
+    fmul dword [_0_01]
+    fsub dword [_1_6]
+
+    ; Stack
+    ; ST(0) - x
+    ; ST(1) - y
+
+    fldz
+    ; Dupe x/y
+    fld  st2
+    fld  st2
+
+    mov cx, 2
+a_loop:
+    fxch st1
+    fmul dword [_4]
+    fld st0
+    frndint
+    fsubp st1, st0
+    fmul dword [_0_25]
+    fmul st0
+    fadd st2, st0
+    loop a_loop
+
+    fstp st0
+    fstp st0
+
+    fstp st3
+
+    mov cx, 1
+b_loop:
+    ; Stack
+    ; ST(0) - x
+    ; ST(1) - y
+    ; ST(2) - d
+
+    fadd dword [cos]
+    fxch
+    fadd dword [sin]
+
+    ; dot
+    fldz
+    fld st1
+    fmul st0
+    fadd
+    fld st2
+    fmul st0
+    fadd
+
+    ; ST(0) - td
+    ; ST(1) - x
+    ; ST(2) - y
+    ; ST(3) - d
+
+    ; k = 1/8
+    ; float pmin(float a, float b, float k) {
+    ;   float h = clamp( 0.5+0.5*(b-a)/k, 0.0, 1.0 );
+    ;   return mix( b, a, h ) - k*h*(1.0-h);
+    ; }
+
+    ; td-d
+    fsub  st3
+    fld   st0
+    fmul  dword [_4]
+    fadd  dword [_0_5]
+    fld1
+    fcomip
+    ja    .min1
+    fstp  st0
+    fld1
+.min1:
+    fld1
+    fsub st0, st1
+    ; Stack
+    ; ST(0) - 1-h
+    ; ST(1) - h
+    ; ST(2) - td-d
+    ; ST(3) - x
+    ; ST(4) - y
+    ; ST(5) - d
+    fld   st0
+    fmul  st3
+    faddp st6, st0
+    fmul  dword [_0_125]
+    fmul
+    fsubp st4
+
+    loop b_loop
+
+    fstp  st0
+    fstp  st0
+    ; Hacky colors
+    fstp dword [_bits]
+    mov al, [_bits+3]
+    sub al,16
+    ; Write pixel
+    stosb
+
+    ; Clean up stack (if not the DosBox dynamic mode fails)
+
+    dec word [x]
+    jnz x_loop
+
+    dec word [y]
+    jnz y_loop
+
+    inc word [time]
+
+    ; Check for keypress to exit
+    mov ah, 1
+    int 16h
+    jz main_loop
+
+    ; Restore text mode
+    mov ax, 0x0003
+    int 0x10
+
+    ret
+
+; Data section
+_0_01       dd  0.01
+_1_6        dd  1.6
+_4          dd  4.0
+_0_5        dd  0.5
+_0_125      dd  0.125
+_0_25       dd  0.25
+
+time        dw  0
+
+section .bss
+x           resb 2
+y           resb 2
+
+_bits       resb 4
+sin         resb 4
+cos         resb 4
+

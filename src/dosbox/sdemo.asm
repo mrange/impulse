@@ -11,8 +11,8 @@ start:
     int 10h
 
     ; Set up the timer (channel 2)
-    ; mov al, 10110110b    ; Channel 2, mode 3 (square wave), binary
-    ; out 43h, al
+    mov al, 10110110b    ; Channel 2, mode 3 (square wave), binary
+    out 43h, al
 
     ; Enable speaker
     mov al, 33h
@@ -158,7 +158,7 @@ r_loop:
     jnz y_loop
 
     ; Increment audio
-    add bx, 73
+    add bx, 899
 ;    add bx, 83
 ;    add bx, 13
 ;    add bx, 229
