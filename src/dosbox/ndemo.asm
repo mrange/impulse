@@ -29,8 +29,6 @@ main_loop:
 y_loop:
     mov word [x], 320
 x_loop:
-    fldz
-
     fild word [y]
     fmul dword [_0_01]
     fld1
@@ -103,12 +101,16 @@ b_loop:
     fld   st0
     fmul  dword [_4]
     fadd  dword [_0_5]
+
     fld1
-    fcomip
-    ja    .min1
-    fstp  st0
+    fcomp
+    fstsw ax
+    sahf
+    ja .min1
+    fstp st0
     fld1
 .min1:
+
     fld1
     fsub st0, st1
 
@@ -178,15 +180,6 @@ _0_125      dd  0.125
 _0_25       dd  0.25
 
 time        dw  0
-
-_10001      dd  10001.0
-_10002      dd  10002.0
-_10003      dd  10003.0
-_10004      dd  10004.0
-_10005      dd  10005.0
-_10006      dd  10006.0
-_10007      dd  10007.0
-_10008      dd  10008.0
 
 section .bss
 x           resb 2
