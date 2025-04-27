@@ -64,7 +64,7 @@ a_loop:
 
     fstp st3
 
-    mov cx, 1
+    mov cx, 2
 b_loop:
     ; Stack
     ; ST(0) - x
@@ -77,10 +77,8 @@ b_loop:
     fadd dword [sin]
 
     ; dot
-    fldz
-    fld st1
+    fld st0
     fmul st0
-    fadd
     fld st2
     fmul st0
     fadd
@@ -99,8 +97,8 @@ b_loop:
     ; td-d
     fsub  st3
     fld   st0
+    fadd  dword [_0_125]
     fmul  dword [_4]
-    fadd  dword [_0_5]
 
     fld1
     fcomp
@@ -175,9 +173,8 @@ b_loop:
 _0_01       dd  0.01
 _1_6        dd  1.6
 _4          dd  4.0
-_0_5        dd  0.5
-_0_125      dd  0.125
 _0_25       dd  0.25
+_0_125      dd  0.125
 
 time        dw  0
 
