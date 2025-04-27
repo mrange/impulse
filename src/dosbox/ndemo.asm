@@ -29,6 +29,8 @@ main_loop:
 y_loop:
     mov word [x], 320
 x_loop:
+    fldz
+
     fild word [y]
     fmul dword [_0_01]
     fld1
@@ -71,6 +73,7 @@ b_loop:
     ; ST(1) - y
     ; ST(2) - d
 
+    ; Add path
     fadd dword [cos]
     fxch
     fadd dword [sin]
@@ -108,6 +111,7 @@ b_loop:
 .min1:
     fld1
     fsub st0, st1
+
     ; Stack
     ; ST(0) - 1-h
     ; ST(1) - h
@@ -115,17 +119,28 @@ b_loop:
     ; ST(3) - x
     ; ST(4) - y
     ; ST(5) - d
+
+    ; Compute (1-h)*(td-d)
     fld   st0
     fmul  st3
+    ; Add it to d (now ST(6)
     faddp st6, st0
+    ; Compute (1-h)*h*0.125
     fmul  dword [_0_125]
     fmul
+    ; Subtract from d
     fsubp st4
+
+    ; Pop td-d
+    fstp  st0
 
     loop b_loop
 
     fstp  st0
     fstp  st0
+
+    fchs
+
     ; Hacky colors
     fstp dword [_bits]
     mov al, [_bits+3]
@@ -163,6 +178,15 @@ _0_125      dd  0.125
 _0_25       dd  0.25
 
 time        dw  0
+
+_10001      dd  10001.0
+_10002      dd  10002.0
+_10003      dd  10003.0
+_10004      dd  10004.0
+_10005      dd  10005.0
+_10006      dd  10006.0
+_10007      dd  10007.0
+_10008      dd  10008.0
 
 section .bss
 x           resb 2
