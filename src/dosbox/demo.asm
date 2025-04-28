@@ -15,9 +15,10 @@ start:
     pop es
 
 main_loop:
-    ; Load sin cos
+    ; Load DOS timer
     fild dword fs:[046Ch]
     fmul dword [_0_005]
+    ; Load sin cos
     fsincos
     fstp dword [cos]
     fstp dword [sin]
