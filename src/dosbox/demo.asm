@@ -34,8 +34,7 @@ x_loop:
 
     fild word [y]
     fmul dword [_0_005]
-    fld st1
-    fsub
+    fsub st0, st1
 
     fild word [x]
     fmul dword [_0_005]
