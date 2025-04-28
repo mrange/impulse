@@ -16,7 +16,7 @@ start:
 
 main_loop:
     ; Load sin cos
-    fild word  [time]
+    fild dword fs:[046Ch]
     fmul dword [_0_005]
     fsincos
     fstp dword [cos]
@@ -34,7 +34,7 @@ x_loop:
 
     fild word [y]
     fmul dword [_0_005]
-    fsub st0, st1
+    fsub st1
 
     fild word [x]
     fmul dword [_0_005]
@@ -88,7 +88,7 @@ a_loop:
     fldz
     fstp st5
 
-    mov cx,3
+    mov cx, 3
 r_loop:
     ; Rotate ST(0..2)
     fxch st2
@@ -148,8 +148,6 @@ r_loop:
     dec word [y]
     jnz y_loop
 
-    inc word [time]
-
     ; Check for keypress to exit
     mov ah, 1
     int 16h
@@ -165,8 +163,6 @@ r_loop:
 _0_005      dd  0.005
 _0_5        dd  0.5
 _0_8        dd  0.8
-
-time        dw  0
 
 section .bss
 x           resb 2
