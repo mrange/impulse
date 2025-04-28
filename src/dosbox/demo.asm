@@ -3,15 +3,15 @@
     ; 16-bit code
     BITS 16
      ; COM programs start at offset 100h
-    ORG 100h
+    ORG 0x100
 
 start:
     ; Set video mode (320x200, 256 colors)
-    mov ax, 0013h
+    mov ax, 0x13
     int 10h
 
     ; Initialize video memory segment
-    push 0A000h
+    push 0xA000
     pop es
 
 main_loop:
