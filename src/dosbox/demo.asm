@@ -88,6 +88,7 @@ a_loop:
     fldz
     fstp st5
 
+    ; TODO: mov cl, 3 seems to work and saves 1 byte
     mov cx, 3
 r_loop:
     ; Rotate ST(0..2)
@@ -148,12 +149,11 @@ r_loop:
     dec word [y]
     jnz y_loop
 
-    ; Check for keypress to exit
-    mov ah, 1
-    int 16h
-    jz main_loop
+    ; Check for ESC to exit
+    in  al, 0x60
+    dec ax
+    jnz main_loop
 
-    ; Restore text mode
     mov ax, 0x0003
     int 0x10
 
