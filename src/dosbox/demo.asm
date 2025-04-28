@@ -11,8 +11,8 @@ start:
     int 10h
 
     ; Initialize video memory segment
-    mov ax, 0A000h
-    mov es, ax
+    push 0A000h
+    pop es
 
 main_loop:
     ; Load sin cos
@@ -135,13 +135,12 @@ r_loop:
     mov al, [_bits+3]
     sub al,16
 
-    ; Write pixel
-    stosb
-
     ; Clean up stack (if not the DosBox dynamic mode fails)
     fstp st0
     fstp st0
 
+    ; Write pixel
+    stosb
 
     dec word [x]
     jnz x_loop
