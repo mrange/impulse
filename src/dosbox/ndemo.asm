@@ -15,8 +15,9 @@ start:
     mov es, ax
 
 main_loop:
+    ; Load DOS timer
+    fild dword fs:[046Ch]
     ; Load sin cos
-    fild word  [time]
     fmul dword [_0_01]
     fsincos
     fstp dword [cos]
@@ -50,7 +51,7 @@ x_loop:
     mov cx, 2
 a_loop:
     fxch st1
-    fmul dword [_4]
+    fimul word [_4]
     fld st0
     frndint
     fsubp st1, st0
@@ -98,11 +99,11 @@ b_loop:
     fsub  st3
     fld   st0
     fadd  dword [_0_125]
-    fmul  dword [_4]
+    fimul word  [_4]
 
     fld1
     fcomp
-    fstsw ax
+    fnstsw ax
     sahf
     ja .min1
     fstp st0
@@ -144,7 +145,6 @@ b_loop:
     ; Hacky colors
     fstp dword [_bits]
     mov al, [_bits+3]
-    sub al,16
     ; Write pixel
     stosb
 
@@ -155,8 +155,6 @@ b_loop:
 
     dec word [y]
     jnz y_loop
-
-    inc word [time]
 
     ; Check for keypress to exit
     mov ah, 1
@@ -172,11 +170,10 @@ b_loop:
 ; Data section
 _0_01       dd  0.01
 _1_6        dd  1.6
-_4          dd  4.0
 _0_25       dd  0.25
 _0_125      dd  0.125
 
-time        dw  0
+_4          dw  4
 
 section .bss
 x           resb 2
