@@ -33,13 +33,14 @@ main_loop:
     fstp dword [si+COS]
     fstp dword [si+SIN]
 
-    ; Reset position to start of video memory
-    xor di, di
+m_loop:
+    xor dx, dx
+    mov ax, di
+    mov cx, 320
+    div cx
+    mov [si+X], dx
+    mov [si+Y], ax
 
-    mov word [si+Y], 200
-y_loop:
-    mov word [si+X], 320
-x_loop:
     ; Z (0.5)
     fld dword [_0_5]
 
@@ -151,11 +152,8 @@ r_loop:
     ; Write pixel
     stosb
 
-    dec word [si+X]
-    jnz x_loop
-
-    dec word [si+Y]
-    jnz y_loop
+    test di, di
+    jnz m_loop
 
     ; Check for ESC to exit
     in  al, 0x60

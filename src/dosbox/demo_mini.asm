@@ -6,8 +6,8 @@
     ORG 0x100
 
 _BITS   equ 0
-SIN     equ 8
-COS     equ 12
+SIN     equ 4
+COS     equ 8
 
 start:
     shr si, 1

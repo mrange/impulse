@@ -6,8 +6,8 @@
      6                                      ORG 0x100
      7                                  
      8                                  _BITS   equ 0
-     9                                  SIN     equ 8
-    10                                  COS     equ 12
+     9                                  SIN     equ 4
+    10                                  COS     equ 8
     11                                  
     12                                  start:
     13 00000000 D1EE                        shr si, 1
@@ -26,8 +26,8 @@
     26 00000010 D80E[C200]                  fmul dword [_0_005]
     27                                      ; Load sin cos
     28 00000014 D9FB                        fsincos
-    29 00000016 D95C0C                      fstp dword [si+COS]
-    30 00000019 D95C08                      fstp dword [si+SIN]
+    29 00000016 D95C08                      fstp dword [si+COS]
+    30 00000019 D95C04                      fstp dword [si+SIN]
     31                                  
     32                                  m_loop:
     33 0000001C 66893C                      mov [si+_BITS], edi
@@ -62,16 +62,16 @@
     62                                  
     63                                      ; y' = y*cos - x*sin
     64 0000004A D9C1                        fld     st1
-    65 0000004C D84C0C                      fmul dword [si+COS]
+    65 0000004C D84C08                      fmul dword [si+COS]
     66 0000004F D9C1                        fld     st1
-    67 00000051 D84C08                      fmul dword [si+SIN]
+    67 00000051 D84C04                      fmul dword [si+SIN]
     68 00000054 DEE9                        fsub
     69                                  
     70                                      ; x' = x*cos + y*sin
     71 00000056 D9C1                        fld     st1
-    72 00000058 D84C0C                      fmul dword [si+COS]
+    72 00000058 D84C08                      fmul dword [si+COS]
     73 0000005B D9C3                        fld     st3
-    74 0000005D D84C08                      fmul dword [si+SIN]
+    74 0000005D D84C04                      fmul dword [si+SIN]
     75 00000060 DEC1                        fadd
     76                                  
     77                                      ; Overwrite x with x'
