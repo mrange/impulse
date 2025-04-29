@@ -1,0 +1,172 @@
+     1                                  ; Assemble with: nasm -f bin -o demo_mini.com demo_mini.asm -l demo_mini.lst
+     2                                  
+     3                                      ; 16-bit code
+     4                                      BITS 16
+     5                                       ; COM programs start at offset 100h
+     6                                      ORG 0x100
+     7                                  
+     8                                  _BITS   equ 0
+     9                                  SIN     equ 8
+    10                                  COS     equ 12
+    11                                  
+    12                                  start:
+    13 00000000 D1EE                        shr si, 1
+    14                                  
+    15                                      ; Set video mode (320x200, 256 colors)
+    16 00000002 B81300                      mov ax, 0x13
+    17 00000005 CD10                        int 10h
+    18                                  
+    19                                      ; Initialize video memory segment
+    20 00000007 6800A0                      push 0xA000
+    21 0000000A 07                          pop es
+    22                                  
+    23                                  main_loop:
+    24                                      ; Load DOS timer
+    25 0000000B 64DB066C04                  fild dword fs:[046Ch]
+    26 00000010 D80E[C200]                  fmul dword [_0_005]
+    27                                      ; Load sin cos
+    28 00000014 D9FB                        fsincos
+    29 00000016 D95C0C                      fstp dword [si+COS]
+    30 00000019 D95C08                      fstp dword [si+SIN]
+    31                                  
+    32                                  m_loop:
+    33 0000001C 66893C                      mov [si+_BITS], edi
+    34                                  
+    35 0000001F DF06[CE00]                  fild word [_320]
+    36 00000023 DB04                        fild dword [si+_BITS]
+    37 00000025 D9F8                        fprem
+    38 00000027 DB04                        fild dword [si+_BITS]
+    39 00000029 D8E1                        fsub st0, st1
+    40 0000002B D8F2                        fdiv st2
+    41                                  
+    42                                      ; Z (0.5)
+    43 0000002D D906[C600]                  fld dword [_0_5]
+    44 00000031 DDDB                        fstp st3
+    45                                  
+    46 00000033 D80E[C200]                  fmul dword [_0_005]
+    47 00000037 D8E2                        fsub st2
+    48                                  
+    49 00000039 D9C9                        fxch
+    50 0000003B D80E[C200]                  fmul dword [_0_005]
+    51 0000003F D826[CA00]                  fsub dword [_0_8]
+    52                                  
+    53                                      ; expected stack
+    54                                      ; ST(0) x
+    55                                      ; ST(1) y
+    56                                      ; ST(2) z
+    57                                  
+    58 00000043 B90300                      mov cx, 3
+    59                                  t_loop:
+    60 00000046 D9CA                        fxch st2
+    61 00000048 D9C9                        fxch st1
+    62                                  
+    63                                      ; y' = y*cos - x*sin
+    64 0000004A D9C1                        fld     st1
+    65 0000004C D84C0C                      fmul dword [si+COS]
+    66 0000004F D9C1                        fld     st1
+    67 00000051 D84C08                      fmul dword [si+SIN]
+    68 00000054 DEE9                        fsub
+    69                                  
+    70                                      ; x' = x*cos + y*sin
+    71 00000056 D9C1                        fld     st1
+    72 00000058 D84C0C                      fmul dword [si+COS]
+    73 0000005B D9C3                        fld     st3
+    74 0000005D D84C08                      fmul dword [si+SIN]
+    75 00000060 DEC1                        fadd
+    76                                  
+    77                                      ; Overwrite x with x'
+    78 00000062 DDDA                        fstp    st2
+    79                                      ; Overwrite y with y'
+    80 00000064 DDDA                        fstp    st2
+    81                                  
+    82 00000066 E2DE                        loop t_loop
+    83                                  
+    84                                      ; Scale
+    85 00000068 D9E8                        fld1
+    86 0000006A DDDC                        fstp st4
+    87                                  
+    88                                      ; expected stack
+    89                                      ; ST(0) x
+    90                                      ; ST(1) y
+    91                                      ; ST(2) z
+    92                                      ; ST(3) scale
+    93                                  
+    94                                      ; Appollian loop
+    95 0000006C B80400                      mov ax,4
+    96                                  a_loop:
+    97                                      ; p -= 2.*round(0.5*p);
+    98 0000006F D9EE                        fldz
+    99 00000071 DDDD                        fstp st5
+   100                                  
+   101                                      ; TODO: mov cl, 3 seems to work and saves 1 byte
+   102 00000073 B90300                      mov cx, 3
+   103                                  r_loop:
+   104                                      ; Rotate ST(0..2)
+   105 00000076 D9CA                        fxch st2
+   106 00000078 D9C9                        fxch st1
+   107                                      ; Dupe
+   108 0000007A D9C0                        fld     st0
+   109                                      ; Divide by 2
+   110 0000007C D80E[C600]                  fmul dword [_0_5]
+   111 00000080 D9FC                        frndint
+   112                                      ; Multiply by 2
+   113 00000082 D8C0                        fadd    st0
+   114 00000084 DEE9                        fsub
+   115                                  
+   116 00000086 D9C0                        fld     st0
+   117 00000088 D8C8                        fmul    st0
+   118 0000008A DEC5                        faddp   st5, st0
+   119                                  
+   120 0000008C E2E8                        loop r_loop
+   121                                  
+   122                                      ; k = 2/dot(p,p)
+   123 0000008E D9E8                        fld1
+   124 00000090 D8C0                        fadd    st0
+   125 00000092 D8F5                        fdiv    st5
+   126                                  
+   127                                      ; p *= k
+   128 00000094 DCC9                        fmul    st1,st0
+   129 00000096 DCCA                        fmul    st2,st0
+   130 00000098 DCCB                        fmul    st3,st0
+   131                                      ; scale *= k
+   132 0000009A DECC                        fmulp   st4,st0
+   133                                  
+   134 0000009C 48                          dec ax
+   135 0000009D 75D0                        jnz a_loop
+   136                                  
+   137                                      ; Compute distance
+   138 0000009F D9E1                        fabs
+   139 000000A1 D8F3                        fdiv    st3
+   140                                  
+   141                                      ; Hacky colors
+   142 000000A3 D91C                        fstp dword [si+_BITS]
+   143 000000A5 8A4403                      mov al, [si+_BITS+3]
+   144 000000A8 2C10                        sub al,16
+   145                                  
+   146                                      ; Clean up stack (if not the DosBox dynamic mode fails)
+   147 000000AA DDD8                        fstp st0
+   148 000000AC DDD8                        fstp st0
+   149                                  
+   150                                      ; Write pixel
+   151 000000AE AA                          stosb
+   152                                  
+   153 000000AF 85FF                        test di, di
+   154 000000B1 0F8567FF                    jnz m_loop
+   155                                  
+   156                                      ; Check for ESC to exit
+   157 000000B5 E460                        in  al, 0x60
+   158 000000B7 48                          dec ax
+   159 000000B8 0F854FFF                    jnz main_loop
+   160                                  
+   161 000000BC B80300                      mov ax, 0x0003
+   162 000000BF CD10                        int 0x10
+   163                                  
+   164 000000C1 C3                          ret
+   165                                  
+   166                                  ; Data section
+   167 000000C2 0AD7A33B                _0_005      dd  0.005
+   168 000000C6 0000003F                _0_5        dd  0.5
+   169 000000CA CDCC4C3F                _0_8        dd  0.8
+   170 000000CE 4001                    _320        dw  320
+   171                                  
+   172                                  section .bss

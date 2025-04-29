@@ -1,11 +1,17 @@
-; Assemble with: nasm -f bin -o demo.com demo.asm -l demo.lst
+; Assemble with: nasm -f bin -o demo_mini.com demo_mini.asm -l demo_mini.lst
 
     ; 16-bit code
     BITS 16
      ; COM programs start at offset 100h
     ORG 0x100
 
+_BITS   equ 0
+SIN     equ 8
+COS     equ 12
+
 start:
+    shr si, 1
+
     ; Set video mode (320x200, 256 colors)
     mov ax, 0x13
     int 10h
@@ -20,16 +26,16 @@ main_loop:
     fmul dword [_0_005]
     ; Load sin cos
     fsincos
-    fstp dword [cos]
-    fstp dword [sin]
+    fstp dword [si+COS]
+    fstp dword [si+SIN]
 
 m_loop:
-    mov [si], edi
+    mov [si+_BITS], edi
 
     fild word [_320]
-    fild dword [si]
+    fild dword [si+_BITS]
     fprem
-    fild dword [si]
+    fild dword [si+_BITS]
     fsub st0, st1
     fdiv st2
 
@@ -56,16 +62,16 @@ t_loop:
 
     ; y' = y*cos - x*sin
     fld     st1
-    fmul dword [cos]
+    fmul dword [si+COS]
     fld     st1
-    fmul dword [sin]
+    fmul dword [si+SIN]
     fsub
 
     ; x' = x*cos + y*sin
     fld     st1
-    fmul dword [cos]
+    fmul dword [si+COS]
     fld     st3
-    fmul dword [sin]
+    fmul dword [si+SIN]
     fadd
 
     ; Overwrite x with x'
@@ -123,10 +129,7 @@ r_loop:
     fmul    st2,st0
     fmul    st3,st0
     ; scale *= k
-    fmul    st4,st0
-
-    ; Pop k
-    fstp    st0
+    fmulp   st4,st0
 
     dec ax
     jnz a_loop
@@ -136,8 +139,8 @@ r_loop:
     fdiv    st3
 
     ; Hacky colors
-    fstp dword [si]
-    mov al, [si+3]
+    fstp dword [si+_BITS]
+    mov al, [si+_BITS+3]
     sub al,16
 
     ; Clean up stack (if not the DosBox dynamic mode fails)
@@ -167,6 +170,3 @@ _0_8        dd  0.8
 _320        dw  320
 
 section .bss
-sin         resb 4
-cos         resb 4
-

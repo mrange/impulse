@@ -5,7 +5,17 @@
      ; COM programs start at offset 100h
     ORG 0x100
 
+SIN     equ 0
+COS     equ 4
+X       equ 8
+Y       equ 10
+TIME    equ 12
+_BITS   equ 14
+
 start:
+    ; si seem initialized to 0x100. If we shift right it becomes 0x80
+    ;   Where the command line should be
+    shr si, 1
     ; Set video mode (320x200, 256 colors)
     mov ax, 0x13
     int 10h
@@ -16,28 +26,28 @@ start:
 
 main_loop:
     ; Load DOS timer
-    fild dword fs:[046Ch]
+    fild word fs:[046Ch]
     fmul dword [_0_005]
     ; Load sin cos
     fsincos
-    fstp dword [cos]
-    fstp dword [sin]
+    fstp dword [si+COS]
+    fstp dword [si+SIN]
 
     ; Reset position to start of video memory
     xor di, di
 
-    mov word [y], 200
+    mov word [si+Y], 200
 y_loop:
-    mov word [x], 320
+    mov word [si+X], 320
 x_loop:
     ; Z (0.5)
     fld dword [_0_5]
 
-    fild word [y]
+    fild word [si+Y]
     fmul dword [_0_005]
     fsub st1
 
-    fild word [x]
+    fild word [si+X]
     fmul dword [_0_005]
     fsub dword [_0_8]
 
@@ -53,16 +63,16 @@ t_loop:
 
     ; y' = y*cos - x*sin
     fld     st1
-    fmul dword [cos]
+    fmul dword [si+COS]
     fld     st1
-    fmul dword [sin]
+    fmul dword [si+SIN]
     fsub
 
     ; x' = x*cos + y*sin
     fld     st1
-    fmul dword [cos]
+    fmul dword [si+COS]
     fld     st3
-    fmul dword [sin]
+    fmul dword [si+SIN]
     fadd
 
     ; Overwrite x with x'
@@ -120,10 +130,7 @@ r_loop:
     fmul    st2,st0
     fmul    st3,st0
     ; scale *= k
-    fmul    st4,st0
-
-    ; Pop k
-    fstp    st0
+    fmulp   st4,st0
 
     dec ax
     jnz a_loop
@@ -133,8 +140,8 @@ r_loop:
     fdiv    st3
 
     ; Hacky colors
-    fstp dword [_bits]
-    mov al, [_bits+3]
+    fstp dword [si+_BITS]
+    mov al, [si+_BITS+3]
     sub al,16
 
     ; Clean up stack (if not the DosBox dynamic mode fails)
@@ -144,10 +151,10 @@ r_loop:
     ; Write pixel
     stosb
 
-    dec word [x]
+    dec word [si+X]
     jnz x_loop
 
-    dec word [y]
+    dec word [si+Y]
     jnz y_loop
 
     ; Check for ESC to exit
@@ -166,10 +173,3 @@ _0_5        dd  0.5
 _0_8        dd  0.8
 
 section .bss
-x           resb 2
-y           resb 2
-
-_bits       resb 4
-sin         resb 4
-cos         resb 4
-
