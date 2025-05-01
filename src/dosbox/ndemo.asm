@@ -5,14 +5,24 @@
      ; COM programs start at offset 100h
     ORG 100h
 
+SIN     equ 0
+COS     equ 4
+X       equ 8
+Y       equ 10
+TIME    equ 12
+_BITS   equ 14
+
 start:
+    ; si seem initialized to 0x100. If we shift right it becomes 0x80
+    ;   Where the command line should be
+    shr si, 1
     ; Set video mode (320x200, 256 colors)
-    mov ax, 0013h
+    mov al, 0x13
     int 10h
 
     ; Initialize video memory segment
-    mov ax, 0A000h
-    mov es, ax
+    push 0xA000
+    pop es
 
 main_loop:
     ; Load DOS timer
@@ -20,22 +30,23 @@ main_loop:
     ; Load sin cos
     fmul dword [_0_01]
     fsincos
-    fstp dword [cos]
-    fstp dword [sin]
+    fstp dword [si+COS]
+    fstp dword [si+SIN]
 
-    ; Reset position to start of video memory
-    xor di, di
+m_loop:
+    xor dx, dx
+    mov ax, di
+    mov cx, 320
+    div cx
+    mov [si+X], dx
+    mov [si+Y], ax
 
-    mov word [y], 200
-y_loop:
-    mov word [x], 320
-x_loop:
-    fild word [y]
+    fild word [si+Y]
     fmul dword [_0_01]
     fld1
     fsub
 
-    fild word [x]
+    fild word [si+X]
     fmul dword [_0_01]
     fsub dword [_1_6]
 
@@ -73,9 +84,9 @@ b_loop:
     ; ST(2) - d
 
     ; Add path
-    fadd dword [cos]
+    fadd dword [si+COS]
     fxch
-    fadd dword [sin]
+    fadd dword [si+SIN]
 
     ; dot
     fld st0
@@ -143,18 +154,16 @@ b_loop:
     fchs
 
     ; Hacky colors
-    fstp dword [_bits]
-    mov al, [_bits+3]
+    fstp dword [si+_BITS]
+    mov al, [si+_BITS+3]
+    sub al, 16
     ; Write pixel
     stosb
 
     ; Clean up stack (if not the DosBox dynamic mode fails)
 
-    dec word [x]
-    jnz x_loop
-
-    dec word [y]
-    jnz y_loop
+    test di, di
+    jnz m_loop
 
     ; Check for keypress to exit
     mov ah, 1
@@ -174,12 +183,4 @@ _0_25       dd  0.25
 _0_125      dd  0.125
 
 _4          dw  4
-
-section .bss
-x           resb 2
-y           resb 2
-
-_bits       resb 4
-sin         resb 4
-cos         resb 4
 

@@ -17,7 +17,7 @@ start:
     ;   Where the command line should be
     shr si, 1
     ; Set video mode (320x200, 256 colors)
-    mov ax, 0x13
+    mov al, 0x13
     int 10h
 
     ; Initialize video memory segment
@@ -143,7 +143,7 @@ r_loop:
     ; Hacky colors
     fstp dword [si+_BITS]
     mov al, [si+_BITS+3]
-    sub al,16
+    sub al, 16
 
     ; Clean up stack (if not the DosBox dynamic mode fails)
     fstp st0
@@ -159,9 +159,6 @@ r_loop:
     in  al, 0x60
     dec ax
     jnz main_loop
-
-    mov ax, 0x0003
-    int 0x10
 
     ret
 
