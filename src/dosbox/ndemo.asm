@@ -165,14 +165,10 @@ b_loop:
     test di, di
     jnz m_loop
 
-    ; Check for keypress to exit
-    mov ah, 1
-    int 16h
-    jz main_loop
-
-    ; Restore text mode
-    mov ax, 0x0003
-    int 0x10
+    ; Check for ESC to exit
+    in  al, 0x60
+    dec al
+    jnz main_loop
 
     ret
 

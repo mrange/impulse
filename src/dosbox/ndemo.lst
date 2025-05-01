@@ -28,7 +28,7 @@
     28                                      ; Load DOS timer
     29 0000000A 64DB066C04                  fild dword fs:[046Ch]
     30                                      ; Load sin cos
-    31 0000000F D80E[CA00]                  fmul dword [_0_01]
+    31 0000000F D80E[C500]                  fmul dword [_0_01]
     32 00000013 D9FB                        fsincos
     33 00000015 D95C04                      fstp dword [si+COS]
     34 00000018 D91C                        fstp dword [si+SIN]
@@ -42,13 +42,13 @@
     42 00000026 89440A                      mov [si+Y], ax
     43                                  
     44 00000029 DF440A                      fild word [si+Y]
-    45 0000002C D80E[CA00]                  fmul dword [_0_01]
+    45 0000002C D80E[C500]                  fmul dword [_0_01]
     46 00000030 D9E8                        fld1
     47 00000032 DEE9                        fsub
     48                                  
     49 00000034 DF4408                      fild word [si+X]
-    50 00000037 D80E[CA00]                  fmul dword [_0_01]
-    51 0000003B D826[CE00]                  fsub dword [_1_6]
+    50 00000037 D80E[C500]                  fmul dword [_0_01]
+    51 0000003B D826[C900]                  fsub dword [_1_6]
     52                                  
     53                                      ; Stack
     54                                      ; ST(0) - x
@@ -62,11 +62,11 @@
     62 00000045 B90200                      mov cx, 2
     63                                  a_loop:
     64 00000048 D9C9                        fxch st1
-    65 0000004A DE0E[DA00]                  fimul word [_4]
+    65 0000004A DE0E[D500]                  fimul word [_4]
     66 0000004E D9C0                        fld st0
     67 00000050 D9FC                        frndint
     68 00000052 DEE9                        fsubp st1, st0
-    69 00000054 D80E[D200]                  fmul dword [_0_25]
+    69 00000054 D80E[CD00]                  fmul dword [_0_25]
     70 00000058 D8C8                        fmul st0
     71 0000005A DCC2                        fadd st2, st0
     72 0000005C E2EA                        loop a_loop
@@ -109,8 +109,8 @@
    109                                      ; td-d
    110 00000078 D8E3                        fsub  st3
    111 0000007A D9C0                        fld   st0
-   112 0000007C D806[D600]                  fadd  dword [_0_125]
-   113 00000080 DE0E[DA00]                  fimul word  [_4]
+   112 0000007C D806[D100]                  fadd  dword [_0_125]
+   113 00000080 DE0E[D500]                  fimul word  [_4]
    114                                  
    115 00000084 D9E8                        fld1
    116 00000086 D8D9                        fcomp
@@ -138,7 +138,7 @@
    138                                      ; Add it to d (now ST(6)
    139 00000099 DEC6                        faddp st6, st0
    140                                      ; Compute (1-h)*h*0.125
-   141 0000009B D80E[D600]                  fmul  dword [_0_125]
+   141 0000009B D80E[D100]                  fmul  dword [_0_125]
    142 0000009F DEC9                        fmul
    143                                      ; Subtract from d
    144 000000A1 DEEC                        fsubp st4
@@ -165,22 +165,18 @@
    165 000000B6 85FF                        test di, di
    166 000000B8 0F855EFF                    jnz m_loop
    167                                  
-   168                                      ; Check for keypress to exit
-   169 000000BC B401                        mov ah, 1
-   170 000000BE CD16                        int 16h
-   171 000000C0 0F8446FF                    jz main_loop
+   168                                      ; Check for ESC to exit
+   169 000000BC E460                        in  al, 0x60
+   170 000000BE FEC8                        dec al
+   171 000000C0 0F8546FF                    jnz main_loop
    172                                  
-   173                                      ; Restore text mode
-   174 000000C4 B80300                      mov ax, 0x0003
-   175 000000C7 CD10                        int 0x10
-   176                                  
-   177 000000C9 C3                          ret
-   178                                  
-   179                                  ; Data section
-   180 000000CA 0AD7233C                _0_01       dd  0.01
-   181 000000CE CDCCCC3F                _1_6        dd  1.6
-   182 000000D2 0000803E                _0_25       dd  0.25
-   183 000000D6 0000003E                _0_125      dd  0.125
-   184                                  
-   185 000000DA 0400                    _4          dw  4
-   186                                  
+   173 000000C4 C3                          ret
+   174                                  
+   175                                  ; Data section
+   176 000000C5 0AD7233C                _0_01       dd  0.01
+   177 000000C9 CDCCCC3F                _1_6        dd  1.6
+   178 000000CD 0000803E                _0_25       dd  0.25
+   179 000000D1 0000003E                _0_125      dd  0.125
+   180                                  
+   181 000000D5 0400                    _4          dw  4
+   182                                  
