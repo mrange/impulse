@@ -3,14 +3,13 @@
     ; 16-bit code
     BITS 16
      ; COM programs start at offset 100h
-    ORG 100h
+    ORG 0x100
 
-SIN     equ 0
-COS     equ 4
-X       equ 8
-Y       equ 10
-TIME    equ 12
-_BITS   equ 14
+_BITS   equ 0
+X       equ 4
+Y       equ 6
+TIME    equ 8
+SINS    equ 10
 
 start:
     ; si seem initialized to 0x100. If we shift right it becomes 0x80
@@ -25,13 +24,23 @@ start:
     pop es
 
 main_loop:
+    lea bx, [si+SINS]
     ; Load DOS timer
     fild dword fs:[046Ch]
     ; Load sin cos
     fmul dword [_0_01]
-    fsincos
-    fstp dword [si+COS]
-    fstp dword [si+SIN]
+
+    mov cx, 8
+s_loop:
+    fld1
+    fadd
+    fld     st0
+    fsin
+    fstp dword ds:[bx]
+    add     bx, 4
+    loop s_loop
+
+    fstp    st0
 
 m_loop:
     xor dx, dx
@@ -76,7 +85,9 @@ a_loop:
 
     fstp st3
 
-    mov cx, 2
+    lea bx, [si+SINS]
+
+    mov cx, 4
 b_loop:
     ; Stack
     ; ST(0) - x
@@ -84,9 +95,11 @@ b_loop:
     ; ST(2) - d
 
     ; Add path
-    fadd dword [si+COS]
+    fadd dword [bx]
+    add bx, 4
     fxch
-    fadd dword [si+SIN]
+    add bx, 4
+    fadd dword [bx]
 
     ; dot
     fld st0
