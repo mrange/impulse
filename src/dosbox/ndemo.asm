@@ -5,10 +5,10 @@
      ; COM programs start at offset 100h
     ORG 0x100
 
-_BITS   equ 0
-X       equ 4
-Y       equ 6
-TIME    equ 8
+X       equ 0
+Y       equ 2
+TIME    equ 4
+_BITS   equ 6
 SINS    equ 10
 
 start:
