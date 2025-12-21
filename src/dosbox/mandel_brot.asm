@@ -11,15 +11,24 @@ start:
   ; Initialize the x87 floating-point unit
   finit
 
-  ; Load the VGA video memory segment
-  mov ax, 0A000h   ; Segment address of the VGA framebuffer
+  ; Set up ES to point to VGA video memory
+  mov ax, 0A000h   ; VGA framebuffer starts at segment 0xA000
   mov es, ax       ; ES now points to video memory
 
   ; Clear the direction flag so string instructions increment addresses
   cld
 
-  ; Clear DI so writing starts at the beginning of video memory
+  ; Start writing at the beginning of video memory
   xor di, di
+
+  ; Algorithm overview:
+  ; for each pixel (x,y):
+  ;   C = convert pixel to complex coordinate
+  ;   Z = C
+  ;   for iteration = 0 to MAX_ITERATIONS:
+  ;     Z = Z*Z + C
+  ;     if |Z| > 2: break
+  ;   color = iteration count
 
   ; Outer loop: iterate over rows (Y direction)
   mov word [y],200
@@ -28,160 +37,194 @@ y_loop:
   mov word [x],320
 x_loop:
 
-  ; The Mandelbrot set repeatedly applies the equation Z = Z*Z + C
-  ; Z is a complex number, and C is the initial starting point
+  ; The Mandelbrot set uses the iterative formula: Z = Z*Z + C
+  ; where both Z and C are complex numbers, and C is the pixel coordinate
 
-  ; Naturally, we use the FPU (Floating Point Unit) for these calculations.
-  ; The CPU uses registers such as AX, BX, and CX to store values, but the FPU is
-  ; stack-based, with 8 positions named ST(0), ST(1), and so on.
-  ; Most FPU instructions operate on the top of the stack, ST(0).
-  ; When a new value is pushed, all existing values move down one level, which
-  ; can be difficult to track mentally.
-  ; One way to simplify FPU code is to store intermediate results in memory,
-  ; but that usually increases both code size and execution time.
+  ; We use the FPU (Floating Point Unit) for these calculations.
+  ; Unlike CPU registers (AX, BX, CX), the FPU is stack-based with 8 slots
+  ; named ST(0), ST(1), etc. Most FPU instructions operate on ST(0), the top
+  ; of the stack. When you push a new value, everything shifts down one slot,
+  ; which can be tricky to track.
+  ; To simplify FPU code, you can store intermediate results in memory,
+  ; but this increases both code size and execution time.
 
-  ; Compute the initial complex coordinate (C) from x and y
+  ; Especially the floating point store operation have two modes.
+  ; Popping mode (fstp) or non-popping mode (fst).
+  ; fstp stores and then pop the value of the stack
+  ; fst stores the value while leaving the value on the stack
+  ; fstp st0 means popping the top element without storing it
+
+  ; Convert pixel coordinates (x, y) to the complex number C
 
   ; Start with the Y coordinate
   fild word  [y]
-  ; Center the Y coordinate around zero
+  ; Center Y around zero (subtract half the screen height)
   fsub dword [half_h]
-  ; Apply zoom factor
+  ; Scale by zoom factor
   fmul dword [zoom]
-  ; Offset to the chosen Mandelbrot center (Y)
+  ; Offset to center the view on the desired region
   fadd dword [center_y]
-  ; Store the result in c_y
+  ; Store the imaginary component of C
   fst  dword [c_y]
 
-  ; ST(0) now contains the initial Y value
+  ; ST(0) now contains the imaginary part of C
 
   ; Now compute the X coordinate
   fild word  [x]
-  ; Center the X coordinate around zero
+  ; Center X around zero (subtract half the screen width)
   fsub dword [half_w]
-  ; Apply zoom factor
+  ; Scale by zoom factor
   fmul dword [zoom]
-  ; Offset to the chosen Mandelbrot center (X)
+  ; Offset to center the view on the desired region
   fadd dword [center_x]
-  ; Store the result in c_x
+  ; Store the real component of C
   fst  dword [c_x]
 
-  ; ST(0) now contains the initial X value
-  ; Since the FPU is stack-based, the Y value is now in ST(1)
+  ; ST(0) now contains the real part of C
+  ; The imaginary part is now in ST(1) due to the stack structure
 
   ; Current FPU stack layout:
-  ; ST(0) = x
-  ; ST(1) = y
+  ; ST(0) = x (real part)
+  ; ST(1) = y (imaginary part)
 
-  ; Number of iterations before giving up
+  ; Maximum iterations before considering a point "in the set"
   mov cx, 100
 mandel_loop:
-  ; Duplicate Y into ST(0), pushing existing values down
+  ; Duplicate y into ST(0), pushing existing values down the stack
   fld st1
-  ; Multiply with X to compute x*y
-  ; Because of the duplicate, X is now in ST(1)
+  ; Multiply by x to compute x*y
+  ; (x is now in ST(1) due to the duplicate)
   fmul st1
 
-  ; Duplicate Y again into ST(0)
-  fld st2
-  ; Multiply with Y to compute y*y
-  fmul st3
+  ; Stack now contains:
+  ; ST(0) = x*y
+  ; ST(1) = x
+  ; ST(2) = y
 
-  ; Load X into ST(0)
+  ; Duplicate y again into ST(0)
   fld st2
-  ; Multiply with X to compute x*x
+  ; Square y to compute y*y
   fmul st3
 
   ; Stack now contains:
-  ; ST(0) - x*x
-  ; ST(1) - y*y
-  ; ST(2) - x*y
-  ; ST(3) - x
-  ; ST(4) - y
+  ; ST(0) = y*y
+  ; ST(1) = x*y
+  ; ST(2) = x
+  ; ST(3) = y
 
-  ; Check if the magnitude of Z is greater than 2 using Pythagoras
-  ; sqrt(x*x + y*y) < 2 ?
-  ; To avoid a square root, compare against 4 instead
-  ; x*x + y*y < 4 (since 2*2 = 4)
+  ; Load x into ST(0)
+  fld st2
+  ; Square x to compute x*x
+  fmul st3
+
+  ; Stack now contains:
+  ; ST(0) = x*x
+  ; ST(1) = y*y
+  ; ST(2) = x*y
+  ; ST(3) = x
+  ; ST(4) = y
+
+  ; Check if Z has escaped (magnitude > 2)
+  ; Normally: sqrt(x*x + y*y) < 2
+  ; To avoid the square root, we compare x*x + y*y < 4 instead
   ; Duplicate x*x
   fld st0
-  ; Add y*y
+  ; Add y*y to get the magnitude squared
   fadd st2
 
-  ; Have we escaped?
+  ; Check if we've escaped (magnitude squared >= 4)
+  ; Push 4.0 onto the FPU stack
   fld dword [_4]
+  ; Compare ST(0) with ST(1), then pop both values
+  ; This compares 4.0 with (x*x + y*y)
   fcompp
+  ; Copy FPU status flags to AX register
+  ; (The FPU has its own flags separate from the CPU flags)
   fstsw ax
+  ; Copy AH into the CPU's flag register
+  ; This makes the FPU comparison result available to CPU jump instructions
   sahf
+  ; Jump if below: if (x*x + y*y) < 4.0, the point has escaped
   jb mandel_early_exit
 
-  ; Not escaped, continue iterating
-  ; Complex multiplication: Z*Z
-  ; If Z = (x, y), then:
+  ; Point hasn't escaped yet, continue iterating
+  ; Apply the Mandelbrot formula: Z = Z*Z + C
+  ; For complex numbers, if Z = (x, y):
   ; Z*Z = (x*x - y*y, 2*x*y)
-  ; Then add C
+  ; Then we add C
 
-  ; Compute x*x - y*y
+  ; Compute the new real part: x*x - y*y + C.x
   ; Load x*x
   fld st0
   ; Subtract y*y
   fsub st2
-  ; Add C.x
+  ; Add the real component of C
   fadd dword [c_x]
-  ; Replace X on the stack with the new value
+  ; Store as the new x value
   fstp st4
 
-  ; We no longer need x*x and y*y
+  ; Clean up values we no longer need
   ; Pop x*x
   fstp st0
   ; Pop y*y
   fstp st0
-  ; Compute 2*x*y by doubling x*y
+
+  ; Stack now contains:
+  ; ST(0) = x*y
+  ; ST(1) = x
+  ; ST(2) = y
+
+  ; Compute the new imaginary part: 2*x*y + C.y
+  ; Double x*y
   fadd st0
-  ; Add C.y
+  ; Add the imaginary component of C
   fadd dword [c_y]
-  ; Replace Y on the stack with the new value
+  ; Store as the new y value
   fstp st2
 
-  ; Decrement iteration counter
+  ; Stack now contains:
+  ; ST(0) = x
+  ; ST(1) = y
+
+  ; Decrement iteration counter and continue if not done
   dec cx
   jnz mandel_loop
 mandel_exit:
-  ; To avoid FPU stack overflow, remove X and Y
-  ; This restores the stack to its original state
-  ; Pop Y
+  ; Clean up the FPU stack to prevent overflow
+  ; We need to restore the stack to its original state
+  ; Pop y
   fstp st0
-  ; Pop X
+  ; Pop x
   fstp st0
 
-  ; Use the remaining iteration count as a color value
-  ; This produces a simple but visible Mandelbrot image
+  ; Use the iteration count as the color (higher count = darker)
+  ; This creates the characteristic Mandelbrot coloring
   mov ax,cx
   stosb
 
-  ; Decrement X until the entire row is drawn
+  ; Move to the next pixel in the current row
   dec word [x]
-  ; Loop while X is not zero
+  ; Continue until the entire row is complete
   jnz x_loop
 
-  ; Decrement Y until all rows are drawn
+  ; Move to the next row
   dec word [y]
-  ; Loop while Y is not zero
+  ; Continue until all rows are complete
   jnz y_loop
 
-  ; Wait for a key press (blocks until a key is pressed)
+  ; Wait for a keypress before exiting
   mov ah, 00h
   int 16h
 
-  ; Restore standard text mode (80x25)
+  ; Return to text mode (80x25 characters)
   mov ax, 0003h
   int 10h
 
-  ; Return control to DOS
+  ; Exit program and return to DOS
   ret
 mandel_early_exit:
-  ; On early exit, clean up the FPU stack
-  ; Remove x*x, y*y, and x*y
+  ; Point escaped early - clean up the FPU stack before continuing
+  ; Remove intermediate values we calculated
   ; Pop x*x
   fstp st0
   ; Pop y*y
@@ -192,20 +235,20 @@ mandel_early_exit:
 
 ; DATA section
 
-; Constant used for comparison with 4.0
+; Constant value 4.0 for escape radius comparison
 _4        dd  4.0
-; Mandelbrot center coordinates
+; Center point of the Mandelbrot view
 center_x  dd  -0.5
 center_y  dd  0.0
-; Zoom factor
+; Zoom level (smaller = more zoomed in)
 zoom      dd  0.01
 
-; Half of the screen resolution
+; Half of the screen dimensions (for centering calculations)
 half_w    dd  160.0
 half_h    dd  100.0
 
-; BSS section - variables are uninitialized at program start
-; and may contain arbitrary values
+; BSS section - uninitialized variables
+; These will contain arbitrary values at program start
 section .bss
 x   resb 2
 y   resb 2
