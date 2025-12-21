@@ -1,0 +1,66 @@
+     1                                  ; Assemble with: nasm -f bin -o blog.com blog.asm -l blog.lst
+     2                                  
+     3                                    BITS 16
+     4                                    ORG 0x100
+     5                                  
+     6                                  start:
+     7                                    ; Set video mode (320x200, 256 colors)
+     8 00000000 B81300                    mov ax, 0013h
+     9 00000003 CD10                      int 10h
+    10                                  
+    11                                    ; Setup for stosb (which will be used to write data to video memory)
+    12                                    ; We need to setup es, di and df
+    13                                  
+    14                                    ; Initialize video memory segment
+    15 00000005 B800A0                    mov ax, 0A000h   ; Video memory segment
+    16 00000008 8EC0                      mov es, ax       ; ES points to video memory, this will be useful later
+    17                                  
+    18                                    ; Clears the df flag
+    19 0000000A FC                        cld
+    20                                  
+    21                                    ; Clear di which will be used as a pointer into the video memory
+    22 0000000B 31FF                      xor di, di
+    23                                  
+    24                                    ; Loop 200 times in y-direction
+    25 0000000D C706[0200]C800            mov word [y],200
+    26                                  y_loop:
+    27                                    ; Loop 320 times in x-direction
+    28 00000013 C706[0000]4001            mov word [x],320
+    29                                  x_loop:
+    30                                  
+    31                                    ; Compute current pixel color by adding x and y
+    32                                    ; Note: Since we counting towards top left pixel will have
+    33                                    ; coordinate 320x200 and bottom right pixel have coordinate
+    34                                    ; 1x1
+    35 00000019 A1[0000]                  mov ax,[x]
+    36 0000001C 0306[0200]                add ax,[y]
+    37                                  
+    38                                    ; stosb does alot of things in a single byte
+    39                                    ; stosb writes the content in al (that is the lower byte of ax) to
+    40                                    ; the address es+di, then stosb increments di (if df is 0, otherwise it decrements di)
+    41 00000020 AA                        stosb
+    42                                  
+    43                                    ; Decrements x value until it's zero
+    44 00000021 FF0E[0000]                dec word [x]
+    45 00000025 75F2                      jnz x_loop
+    46                                  
+    47                                    ; Decrements y value until it's zero
+    48 00000027 FF0E[0200]                dec word [y]
+    49 0000002B 75E6                      jnz y_loop
+    50                                  
+    51                                    ; Waits for a keypress
+    52 0000002D B400                      mov ah, 00h
+    53 0000002F CD16                      int 16h
+    54                                  
+    55                                    ; Return to text mode
+    56 00000031 B80300                    mov ax, 0003h
+    57 00000034 CD10                      int 10h
+    58                                  
+    59                                    ; Return to DOS
+    60 00000036 C3                        ret
+    61                                  
+    62                                  ; BSS section - This data is uninitalized when the program starts
+    63                                  ;   and might contain garbage data
+    64                                  section .bss
+    65 00000000 ????                    x resb 2
+    66 00000002 ????                    y resb 2

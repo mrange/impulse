@@ -1,0 +1,76 @@
+     1                                  ; Assemble with: nasm -f bin -o intro.com intro.asm -l intro.lst
+     2                                  
+     3                                    BITS 16
+     4                                    ORG 0x100
+     5                                  
+     6                                  start:
+     7                                    ; Switch to VGA video mode 13h (320x200, 256 colors)
+     8 00000000 B81300                    mov ax, 0013h
+     9                                    ; Invoke the BIOS Video Services via interrupt 10h.
+    10                                    ; An interrupt is a software entry point into firmware code.
+    11                                    ; Conceptually this works like calling a system-provided routine,
+    12                                    ; with parameters passed in CPU registers.
+    13 00000003 CD10                      int 10h
+    14                                  
+    15                                    ; Prepare for using STOSB to write pixels to video memory.
+    16                                    ; This requires setting:
+    17                                    ; - ES: segment register pointing to video memory
+    18                                    ; - DI: offset into that memory
+    19                                    ; - DF: direction flag (must be cleared so DI increments)
+    20                                  
+    21                                    ; Load the VGA video memory segment
+    22 00000005 B800A0                    mov ax, 0A000h   ; Segment address of the VGA framebuffer
+    23 00000008 8EC0                      mov es, ax       ; ES now points to video memory
+    24                                  
+    25                                    ; Clear the direction flag so string instructions move forward
+    26 0000000A FC                        cld
+    27                                  
+    28                                    ; Clear DI so writing starts at the beginning of video memory
+    29 0000000B 31FF                      xor di, di
+    30                                  
+    31                                    ; Outer loop: iterate over rows (Y direction)
+    32 0000000D C706[0200]C800            mov word [y],200
+    33                                  y_loop:
+    34                                    ; Inner loop: iterate over columns (X direction)
+    35 00000013 C706[0000]4001            mov word [x],320
+    36                                  x_loop:
+    37                                  
+    38                                    ; Compute the pixel color as x + y
+    39                                    ; Since we count downwards, the top-left pixel starts at
+    40                                    ; coordinates (320,200) and the bottom-right ends at (1,1)
+    41 00000019 A1[0000]                  mov ax,[x]
+    42 0000001C 0306[0200]                add ax,[y]
+    43                                  
+    44                                    ; STOSB is a string instruction with implicit operands:
+    45                                    ; - Writes AL (the low byte of AX) to memory at ES:DI
+    46                                    ; - Advances DI by one byte because DF is cleared
+    47 00000020 AA                        stosb
+    48                                  
+    49                                    ; Decrement X until the entire row has been written
+    50 00000021 FF0E[0000]                dec word [x]
+    51                                    ; Jump back if the result is not zero
+    52 00000025 75F2                      jnz x_loop
+    53                                  
+    54                                    ; Decrement Y until all rows have been written
+    55 00000027 FF0E[0200]                dec word [y]
+    56                                    ; Jump back if the result is not zero
+    57 0000002B 75E6                      jnz y_loop
+    58                                  
+    59                                    ; Wait for a key press (this call blocks until a key is available)
+    60 0000002D B400                      mov ah, 00h
+    61                                    ; Invoke the BIOS Keyboard Services to read a key
+    62 0000002F CD16                      int 16h
+    63                                  
+    64                                    ; Restore standard text mode (80x25)
+    65 00000031 B80300                    mov ax, 0003h
+    66                                    ; Invoke the BIOS Video Services to switch back to text mode
+    67 00000034 CD10                      int 10h
+    68                                  
+    69                                    ; Return control to DOS
+    70 00000036 C3                        ret
+    71                                  
+    72                                  ; BSS section - variables are uninitialized at program start
+    73                                  ; and may contain arbitrary values
+    74                                  section .bss
+    75 00000000 ????                    x resb 2
+    76 00000002 ????                    y resb 2

@@ -1,0 +1,98 @@
+     1                                  ; Assemble with: nasm -f bin -o sb.com sb.asm -l sb.lst
+     2                                  
+     3                                      BITS 16
+     4                                      ORG 0x100
+     5                                  
+     6                                  ; Sound Blaster Port Definitions (Standard Base Address 220h)
+     7                                  DSP_RESET   equ 0x226   ; Write: 1 to reset, wait >3us, write 0
+     8                                  DSP_READ    equ 0x22A   ; Read: Data from DSP
+     9                                  DSP_WRITE   equ 0x22C   ; Write: Command or Data to DSP
+    10                                  DSP_STATUS  equ 0x22E   ; Read: Bit 7 = DSP busy (1=Busy/Buffer Full, 0=Ready for command/data)
+    11                                  DSP_READ_STATUS equ 0x22A ; Read: Bit 7 = Data available to read (1=Available, 0=Not Available) - Note: Same port as DSP_READ
+    12                                  
+    13                                  start:
+    14                                      ; --- Reset DSP ---
+    15 00000000 BA2602                      mov dx, DSP_RESET
+    16 00000003 B001                        mov al, 1
+    17 00000005 EE                          out dx, al
+    18                                  
+    19                                      ; Short delay (~5 microseconds minimum, let's do more)
+    20                                      ; Using loop is CPU speed dependent. Let's use a simple count.
+    21 00000006 B9FFFF                      mov cx, 0xFFFF ; Increase delay significantly
+    22                                  .reset_delay_loop:
+    23 00000009 E2FE                        loop .reset_delay_loop
+    24                                  
+    25                                      ; End reset pulse
+    26 0000000B 30C0                        xor al, al
+    27 0000000D EE                          out dx, al
+    28                                  
+    29                                      ; --- Wait for DSP Ready Confirmation (0xAA) ---
+    30                                      ; Wait until data is available in the read buffer
+    31                                  .wait_dsp_read_ready_loop:
+    32 0000000E BA2A02                      mov dx, DSP_READ_STATUS
+    33 00000011 EC                          in al, dx
+    34 00000012 A880                        test al, 0x80   ; Check bit 7 (Data Available)
+    35 00000014 74F8                        jz .wait_dsp_read_ready_loop ; Loop if bit 7 is 0 (no data)
+    36                                  
+    37                                      ; Read the data byte from the DSP
+    38 00000016 BA2A02                      mov dx, DSP_READ
+    39 00000019 EC                          in al, dx
+    40                                  
+    41                                      ; Check if it's the 0xAA confirmation byte
+    42 0000001A 3CAA                        cmp al, 0xAA
+    43 0000001C 752F                        jne reset_failed ; Or loop back to wait/retry, but failure is simpler for demo
+    44                                  
+    45                                      ; --- Send Direct DAC Command (0x10) ---
+    46 0000001E E82D00                      call wait_dsp_write_ready ; Wait until DSP is ready to receive command
+    47 00000021 BA2C02                      mov dx, DSP_WRITE
+    48 00000024 B010                        mov al, 0x10      ; Direct DAC output command
+    49 00000026 EE                          out dx, al
+    50                                  
+    51                                      ; --- Sound Generation Loop ---
+    52                                  .sound_loop:
+    53                                      ; Output Low Value (0x00)
+    54 00000027 E82400                      call wait_dsp_write_ready ; Wait until DSP is ready to receive data
+    55 0000002A BA2C02                      mov dx, DSP_WRITE
+    56 0000002D B000                        mov al, 0x00
+    57 0000002F EE                          out dx, al
+    58                                  
+    59                                      ; Delay for frequency control (adjust CX for pitch)
+    60 00000030 B9F401                      mov cx, 500       ; Much longer delay! Lower value = higher pitch
+    61                                  .delay1:
+    62 00000033 E2FE                        loop .delay1
+    63                                  
+    64                                      ; Output High Value (0xFF)
+    65 00000035 E81600                      call wait_dsp_write_ready ; Wait until DSP is ready to receive data
+    66 00000038 BA2C02                      mov dx, DSP_WRITE
+    67 0000003B B0FF                        mov al, 0xFF
+    68 0000003D EE                          out dx, al
+    69                                  
+    70                                      ; Delay for frequency control (should be same as above for 50% duty cycle)
+    71 0000003E B9F401                      mov cx, 500       ; Much longer delay!
+    72                                  .delay2:
+    73 00000041 E2FE                        loop .delay2
+    74                                  
+    75                                      ; Check for keypress to exit (non-destructive)
+    76 00000043 B401                        mov ah, 0x01
+    77 00000045 CD16                        int 0x16          ; BIOS check keyboard buffer
+    78 00000047 74DE                        jz .sound_loop    ; If ZF=1 (Zero Flag set), no key waiting, loop back
+    79                                  
+    80                                      ; Key was pressed, consume it from buffer (optional but good practice)
+    81 00000049 B400                        mov ah, 0x00
+    82 0000004B CD16                        int 0x16
+    83                                  
+    84                                      ; --- Exit Program ---
+    85                                      ; Optional: Could send command 0xD3 (DSP Speaker Off) or reset again
+    86                                  reset_failed: ; Also jump here if reset fails
+    87 0000004D C3                          ret               ; Return to DOS
+    88                                  
+    89                                  ; --- Subroutine: Wait for DSP Write Ready ---
+    90                                  ; Waits until DSP is ready to accept a command or data byte.
+    91                                  ; Destroys: AX, DX
+    92                                  wait_dsp_write_ready:
+    93 0000004E BA2E02                      mov dx, DSP_STATUS ; Port to check write readiness
+    94                                  .wait_loop:
+    95 00000051 EC                          in al, dx        ; Read status byte
+    96 00000052 A880                        test al, 0x80    ; Check bit 7 (Input Buffer Full / Busy flag)
+    97 00000054 75FB                        jnz .wait_loop   ; Loop if bit 7 is 1 (DSP is busy / buffer full)
+    98 00000056 C3                          ret              ; Return if bit 7 is 0 (DSP is ready)
