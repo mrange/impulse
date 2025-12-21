@@ -1,0 +1,71 @@
+     1                                  ; Assemble with: nasm -f bin -o mandel_brot.com mandel_brot.asm -l mandel_brot.lst
+     2                                  
+     3                                    BITS 16
+     4                                    ORG 0x100
+     5                                  
+     6                                  start:
+     7                                    ; Switch to VGA video mode 13h (320x200, 256 colors)
+     8 00000000 B81300                    mov ax, 0013h
+     9 00000003 CD10                      int 10h
+    10                                  
+    11                                    ; Load the VGA video memory segment
+    12 00000005 B800A0                    mov ax, 0A000h   ; Segment address of the VGA framebuffer
+    13 00000008 8EC0                      mov es, ax       ; ES now points to video memory
+    14                                  
+    15                                    ; Clear the direction flag so string instructions move forward
+    16 0000000A FC                        cld
+    17                                  
+    18                                    ; Clear DI so writing starts at the beginning of video memory
+    19 0000000B 31FF                      xor di, di
+    20                                  
+    21                                    ; Outer loop: iterate over rows (Y direction)
+    22 0000000D C706[0200]C800            mov word [y],200
+    23                                  y_loop:
+    24                                    ; Inner loop: iterate over columns (X direction)
+    25 00000013 C706[0000]4001            mov word [x],320
+    26                                  x_loop:
+    27                                  
+    28                                    ; Compute the pixel color as x + y
+    29                                    ; Since we count downwards, the top-left pixel starts at
+    30                                    ; coordinates (320,200) and the bottom-right ends at (1,1)
+    31 00000019 A1[0000]                  mov ax,[x]
+    32 0000001C 0306[0200]                add ax,[y]
+    33                                  
+    34                                    ; STOSB is a string instruction with implicit operands:
+    35                                    ; - Writes AL (the low byte of AX) to memory at ES:DI
+    36                                    ; - Advances DI by one byte because DF is cleared
+    37 00000020 AA                        stosb
+    38                                  
+    39                                    ; Decrement X until the entire row has been written
+    40 00000021 FF0E[0000]                dec word [x]
+    41                                    ; Jump back if the result is not zero
+    42 00000025 75F2                      jnz x_loop
+    43                                  
+    44                                    ; Decrement Y until all rows have been written
+    45 00000027 FF0E[0200]                dec word [y]
+    46                                    ; Jump back if the result is not zero
+    47 0000002B 75E6                      jnz y_loop
+    48                                  
+    49                                    ; Wait for a key press (this call blocks until a key is available)
+    50 0000002D B400                      mov ah, 00h
+    51                                    ; Invoke the BIOS Keyboard Services to read a key
+    52 0000002F CD16                      int 16h
+    53                                  
+    54                                    ; Restore standard text mode (80x25)
+    55 00000031 B80300                    mov ax, 0003h
+    56                                    ; Invoke the BIOS Video Services to switch back to text mode
+    57 00000034 CD10                      int 10h
+    58                                  
+    59                                    ; Return control to DOS
+    60 00000036 C3                        ret
+    61                                  
+    62                                  ; DATA section
+    63                                  
+    64 00000037 0000C03F                center_x  dd  1.5
+    65 0000003B 00000000                center_y  dd  0.0
+    66 0000003F CDCCCC3D                zoom      dd  0.1
+    67                                  ; BSS section - variables are uninitialized at program start
+    68                                  ; and may contain arbitrary values
+    69                                  section .bss
+    70 00000000 ????                    x resb 2
+    71 00000002 ????                    y resb 2
