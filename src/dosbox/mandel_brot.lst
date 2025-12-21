@@ -4,68 +4,201 @@
      4                                    ORG 0x100
      5                                  
      6                                  start:
-     7                                    ; Switch to VGA video mode 13h (320x200, 256 colors)
+     7                                    ; Switch to VGA video mode 13h (320x200 pixels, 256 colors)
      8 00000000 B81300                    mov ax, 0013h
      9 00000003 CD10                      int 10h
     10                                  
-    11                                    ; Load the VGA video memory segment
-    12 00000005 B800A0                    mov ax, 0A000h   ; Segment address of the VGA framebuffer
-    13 00000008 8EC0                      mov es, ax       ; ES now points to video memory
-    14                                  
-    15                                    ; Clear the direction flag so string instructions move forward
-    16 0000000A FC                        cld
+    11                                    ; Initialize the x87 floating-point unit
+    12 00000005 9BDBE3                    finit
+    13                                  
+    14                                    ; Load the VGA video memory segment
+    15 00000008 B800A0                    mov ax, 0A000h   ; Segment address of the VGA framebuffer
+    16 0000000B 8EC0                      mov es, ax       ; ES now points to video memory
     17                                  
-    18                                    ; Clear DI so writing starts at the beginning of video memory
-    19 0000000B 31FF                      xor di, di
+    18                                    ; Clear the direction flag so string instructions increment addresses
+    19 0000000D FC                        cld
     20                                  
-    21                                    ; Outer loop: iterate over rows (Y direction)
-    22 0000000D C706[0200]C800            mov word [y],200
-    23                                  y_loop:
-    24                                    ; Inner loop: iterate over columns (X direction)
-    25 00000013 C706[0000]4001            mov word [x],320
-    26                                  x_loop:
-    27                                  
-    28                                    ; Compute the pixel color as x + y
-    29                                    ; Since we count downwards, the top-left pixel starts at
-    30                                    ; coordinates (320,200) and the bottom-right ends at (1,1)
-    31 00000019 A1[0000]                  mov ax,[x]
-    32 0000001C 0306[0200]                add ax,[y]
+    21                                    ; Clear DI so writing starts at the beginning of video memory
+    22 0000000E 31FF                      xor di, di
+    23                                  
+    24                                    ; Outer loop: iterate over rows (Y direction)
+    25 00000010 C706[0200]C800            mov word [y],200
+    26                                  y_loop:
+    27                                    ; Inner loop: iterate over columns (X direction)
+    28 00000016 C706[0000]4001            mov word [x],320
+    29                                  x_loop:
+    30                                  
+    31                                    ; The Mandelbrot set repeatedly applies the equation Z = Z*Z + C
+    32                                    ; Z is a complex number, and C is the initial starting point
     33                                  
-    34                                    ; STOSB is a string instruction with implicit operands:
-    35                                    ; - Writes AL (the low byte of AX) to memory at ES:DI
-    36                                    ; - Advances DI by one byte because DF is cleared
-    37 00000020 AA                        stosb
-    38                                  
-    39                                    ; Decrement X until the entire row has been written
-    40 00000021 FF0E[0000]                dec word [x]
-    41                                    ; Jump back if the result is not zero
-    42 00000025 75F2                      jnz x_loop
-    43                                  
-    44                                    ; Decrement Y until all rows have been written
-    45 00000027 FF0E[0200]                dec word [y]
-    46                                    ; Jump back if the result is not zero
-    47 0000002B 75E6                      jnz y_loop
+    34                                    ; Compute the initial complex coordinate (C) from x and y
+    35                                  
+    36                                    ; Start with the Y coordinate
+    37 0000001C DF06[0200]                fild word  [y]
+    38                                    ; Center the Y coordinate around zero
+    39 00000020 D826[B500]                fsub dword [half_h]
+    40                                    ; Apply zoom factor
+    41 00000024 D80E[AD00]                fmul dword [zoom]
+    42                                    ; Offset to the chosen Mandelbrot center (Y)
+    43 00000028 D806[A900]                fadd dword [center_y]
+    44                                    ; Store the result in c_y
+    45 0000002C D916[0800]                fst  dword [c_y]
+    46                                  
+    47                                    ; ST(0) now contains the initial Y value
     48                                  
-    49                                    ; Wait for a key press (this call blocks until a key is available)
-    50 0000002D B400                      mov ah, 00h
-    51                                    ; Invoke the BIOS Keyboard Services to read a key
-    52 0000002F CD16                      int 16h
-    53                                  
-    54                                    ; Restore standard text mode (80x25)
-    55 00000031 B80300                    mov ax, 0003h
-    56                                    ; Invoke the BIOS Video Services to switch back to text mode
-    57 00000034 CD10                      int 10h
-    58                                  
-    59                                    ; Return control to DOS
-    60 00000036 C3                        ret
-    61                                  
-    62                                  ; DATA section
-    63                                  
-    64 00000037 0000C03F                center_x  dd  1.5
-    65 0000003B 00000000                center_y  dd  0.0
-    66 0000003F CDCCCC3D                zoom      dd  0.1
-    67                                  ; BSS section - variables are uninitialized at program start
-    68                                  ; and may contain arbitrary values
-    69                                  section .bss
-    70 00000000 ????                    x resb 2
-    71 00000002 ????                    y resb 2
+    49                                    ; Now compute the X coordinate
+    50 00000030 DF06[0000]                fild word  [x]
+    51                                    ; Center the X coordinate around zero
+    52 00000034 D826[B100]                fsub dword [half_w]
+    53                                    ; Apply zoom factor
+    54 00000038 D80E[AD00]                fmul dword [zoom]
+    55                                    ; Offset to the chosen Mandelbrot center (X)
+    56 0000003C D806[A500]                fadd dword [center_x]
+    57                                    ; Store the result in c_x
+    58 00000040 D916[0400]                fst  dword [c_x]
+    59                                  
+    60                                    ; ST(0) now contains the initial X value
+    61                                    ; Since the FPU is stack-based, the Y value is now in ST(1)
+    62                                  
+    63                                    ; Current FPU stack layout:
+    64                                    ; ST(0) = x
+    65                                    ; ST(1) = y
+    66                                  
+    67                                    ; Number of iterations before giving up
+    68 00000044 B96400                    mov cx, 100
+    69                                  mandel_loop:
+    70                                    ; Duplicate Y into ST(0), pushing existing values down
+    71 00000047 D9C1                      fld st1
+    72                                    ; Multiply with X to compute x*y
+    73                                    ; Because of the duplicate, X is now in ST(1)
+    74 00000049 D8C9                      fmul st1
+    75                                  
+    76                                    ; Duplicate Y again into ST(0)
+    77 0000004B D9C2                      fld st2
+    78                                    ; Multiply with Y to compute y*y
+    79 0000004D D8CB                      fmul st3
+    80                                  
+    81                                    ; Load X into ST(0)
+    82 0000004F D9C2                      fld st2
+    83                                    ; Multiply with X to compute x*x
+    84 00000051 D8CB                      fmul st3
+    85                                  
+    86                                    ; Stack now contains:
+    87                                    ; ST(0) - x*x
+    88                                    ; ST(1) - y*y
+    89                                    ; ST(2) - x*y
+    90                                    ; ST(3) - x
+    91                                    ; ST(4) - y
+    92                                  
+    93                                    ; Check if the magnitude of Z is greater than 2 using Pythagoras
+    94                                    ; sqrt(x*x + y*y) < 2 ?
+    95                                    ; To avoid a square root, compare against 4 instead
+    96                                    ; x*x + y*y < 4 (since 2*2 = 4)
+    97                                    ; Load x*x
+    98 00000053 D9C0                      fld st0
+    99                                    ; Add y*y
+   100 00000055 D8C2                      fadd st2
+   101                                  
+   102                                    ; Have we escaped?
+   103 00000057 D906[A100]                fld dword [_4]
+   104 0000005B DED9                      fcompp
+   105 0000005D 9BDFE0                    fstsw ax
+   106 00000060 9E                        sahf
+   107 00000061 7236                      jb mandel_early_exit
+   108                                  
+   109                                    ; Not escaped, continue iterating
+   110                                    ; Complex multiplication: Z*Z
+   111                                    ; If Z = (x, y), then:
+   112                                    ; Z*Z = (x*x - y*y, 2*x*y)
+   113                                    ; Then add C
+   114                                  
+   115                                    ; Compute x*x - y*y
+   116                                    ; Load x*x
+   117 00000063 D9C0                      fld st0
+   118                                    ; Subtract y*y
+   119 00000065 D8E2                      fsub st2
+   120                                    ; Add C.x
+   121 00000067 D806[0400]                fadd dword [c_x]
+   122                                    ; Replace X on the stack with the new value
+   123 0000006B DDDC                      fstp st4
+   124                                  
+   125                                    ; We no longer need x*x and y*y
+   126                                    ; Pop x*x
+   127 0000006D DDD8                      fstp st0
+   128                                    ; Pop y*y
+   129 0000006F DDD8                      fstp st0
+   130                                    ; Compute 2*x*y by doubling x*y
+   131 00000071 D8C0                      fadd st0
+   132                                    ; Add C.y
+   133 00000073 D806[0800]                fadd dword [c_y]
+   134                                    ; Replace Y on the stack with the new value
+   135 00000077 DDDA                      fstp st2
+   136                                  
+   137                                    ; Decrement iteration counter
+   138 00000079 49                        dec cx
+   139 0000007A 75CB                      jnz mandel_loop
+   140                                  mandel_exit:
+   141                                    ; To avoid FPU stack overflow, remove X and Y
+   142                                    ; This restores the stack to its original state
+   143                                    ; Pop Y
+   144 0000007C DDD8                      fstp st0
+   145                                    ; Pop X
+   146 0000007E DDD8                      fstp st0
+   147                                  
+   148                                    ; Use the remaining iteration count as a color value
+   149                                    ; This produces a simple but visible Mandelbrot image
+   150 00000080 89C8                      mov ax,cx
+   151 00000082 AA                        stosb
+   152                                  
+   153                                    ; Decrement X until the entire row is drawn
+   154 00000083 FF0E[0000]                dec word [x]
+   155                                    ; Loop while X is not zero
+   156 00000087 7593                      jnz x_loop
+   157                                  
+   158                                    ; Decrement Y until all rows are drawn
+   159 00000089 FF0E[0200]                dec word [y]
+   160                                    ; Loop while Y is not zero
+   161 0000008D 7587                      jnz y_loop
+   162                                  
+   163                                    ; Wait for a key press (blocks until a key is pressed)
+   164 0000008F B400                      mov ah, 00h
+   165 00000091 CD16                      int 16h
+   166                                  
+   167                                    ; Restore standard text mode (80x25)
+   168 00000093 B80300                    mov ax, 0003h
+   169 00000096 CD10                      int 10h
+   170                                  
+   171                                    ; Return control to DOS
+   172 00000098 C3                        ret
+   173                                  mandel_early_exit:
+   174                                    ; On early exit, clean up the FPU stack
+   175                                    ; Remove x*x, y*y, and x*y
+   176                                    ; Pop x*x
+   177 00000099 DDD8                      fstp st0
+   178                                    ; Pop y*y
+   179 0000009B DDD8                      fstp st0
+   180                                    ; Pop x*y
+   181 0000009D DDD8                      fstp st0
+   182 0000009F EBDB                      jmp mandel_exit
+   183                                  
+   184                                  ; DATA section
+   185                                  
+   186                                  ; Constant used for comparison with 4.0
+   187 000000A1 00008040                _4        dd  4.0
+   188                                  ; Mandelbrot center coordinates
+   189 000000A5 000000BF                center_x  dd  -0.5
+   190 000000A9 00000000                center_y  dd  0.0
+   191                                  ; Zoom factor
+   192 000000AD 0AD7233C                zoom      dd  0.01
+   193                                  
+   194                                  ; Half of the screen resolution
+   195 000000B1 00002043                half_w    dd  160.0
+   196 000000B5 0000C842                half_h    dd  100.0
+   197                                  
+   198                                  ; BSS section - variables are uninitialized at program start
+   199                                  ; and may contain arbitrary values
+   200                                  section .bss
+   201 00000000 ????                    x   resb 2
+   202 00000002 ????                    y   resb 2
+   203 00000004 ????????                c_x resb 4
+   204 00000008 ????????                c_y resb 4
