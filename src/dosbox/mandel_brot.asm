@@ -48,11 +48,10 @@ x_loop:
   ; To simplify FPU code, you can store intermediate results in memory,
   ; but this increases both code size and execution time.
 
-  ; Especially the floating point store operation have two modes.
-  ; Popping mode (fstp) or non-popping mode (fst).
-  ; fstp stores and then pop the value of the stack
-  ; fst stores the value while leaving the value on the stack
-  ; fstp st0 means popping the top element without storing it
+  ; FPU store operations have two modes:
+  ; - fst: store value and leave it on the stack
+  ; - fstp: store value and pop it off the stack
+  ; Special case: "fstp st0" pops the top element without storing anywhere
 
   ; Convert pixel coordinates (x, y) to the complex number C
 
@@ -125,8 +124,8 @@ mandel_loop:
   ; ST(4) = y
 
   ; Check if Z has escaped (magnitude > 2)
-  ; Normally: sqrt(x*x + y*y) < 2
-  ; To avoid the square root, we compare x*x + y*y < 4 instead
+  ; Normally: sqrt(x*x + y*y) > 2
+  ; To avoid the square root, we compare x*x + y*y > 4 instead
   ; Duplicate x*x
   fld st0
   ; Add y*y to get the magnitude squared
