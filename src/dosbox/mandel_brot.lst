@@ -11,194 +11,244 @@
     11                                    ; Initialize the x87 floating-point unit
     12 00000005 9BDBE3                    finit
     13                                  
-    14                                    ; Load the VGA video memory segment
-    15 00000008 B800A0                    mov ax, 0A000h   ; Segment address of the VGA framebuffer
+    14                                    ; Set up ES to point to VGA video memory
+    15 00000008 B800A0                    mov ax, 0A000h   ; VGA framebuffer starts at segment 0xA000
     16 0000000B 8EC0                      mov es, ax       ; ES now points to video memory
     17                                  
     18                                    ; Clear the direction flag so string instructions increment addresses
     19 0000000D FC                        cld
     20                                  
-    21                                    ; Clear DI so writing starts at the beginning of video memory
+    21                                    ; Start writing at the beginning of video memory
     22 0000000E 31FF                      xor di, di
     23                                  
-    24                                    ; Outer loop: iterate over rows (Y direction)
-    25 00000010 C706[0200]C800            mov word [y],200
-    26                                  y_loop:
-    27                                    ; Inner loop: iterate over columns (X direction)
-    28 00000016 C706[0000]4001            mov word [x],320
-    29                                  x_loop:
-    30                                  
-    31                                    ; The Mandelbrot set repeatedly applies the equation Z = Z*Z + C
-    32                                    ; Z is a complex number, and C is the initial starting point
-    33                                  
-    34                                    ; Compute the initial complex coordinate (C) from x and y
-    35                                  
-    36                                    ; Start with the Y coordinate
-    37 0000001C DF06[0200]                fild word  [y]
-    38                                    ; Center the Y coordinate around zero
-    39 00000020 D826[B500]                fsub dword [half_h]
-    40                                    ; Apply zoom factor
-    41 00000024 D80E[AD00]                fmul dword [zoom]
-    42                                    ; Offset to the chosen Mandelbrot center (Y)
-    43 00000028 D806[A900]                fadd dword [center_y]
-    44                                    ; Store the result in c_y
-    45 0000002C D916[0800]                fst  dword [c_y]
-    46                                  
-    47                                    ; ST(0) now contains the initial Y value
-    48                                  
-    49                                    ; Now compute the X coordinate
-    50 00000030 DF06[0000]                fild word  [x]
-    51                                    ; Center the X coordinate around zero
-    52 00000034 D826[B100]                fsub dword [half_w]
-    53                                    ; Apply zoom factor
-    54 00000038 D80E[AD00]                fmul dword [zoom]
-    55                                    ; Offset to the chosen Mandelbrot center (X)
-    56 0000003C D806[A500]                fadd dword [center_x]
-    57                                    ; Store the result in c_x
-    58 00000040 D916[0400]                fst  dword [c_x]
-    59                                  
-    60                                    ; ST(0) now contains the initial X value
-    61                                    ; Since the FPU is stack-based, the Y value is now in ST(1)
-    62                                  
-    63                                    ; Current FPU stack layout:
-    64                                    ; ST(0) = x
-    65                                    ; ST(1) = y
-    66                                  
-    67                                    ; Number of iterations before giving up
-    68 00000044 B96400                    mov cx, 100
-    69                                  mandel_loop:
-    70                                    ; Duplicate Y into ST(0), pushing existing values down
-    71 00000047 D9C1                      fld st1
-    72                                    ; Multiply with X to compute x*y
-    73                                    ; Because of the duplicate, X is now in ST(1)
-    74 00000049 D8C9                      fmul st1
-    75                                  
-    76                                    ; Duplicate Y again into ST(0)
-    77 0000004B D9C2                      fld st2
-    78                                    ; Multiply with Y to compute y*y
-    79 0000004D D8CB                      fmul st3
-    80                                  
-    81                                    ; Load X into ST(0)
-    82 0000004F D9C2                      fld st2
-    83                                    ; Multiply with X to compute x*x
-    84 00000051 D8CB                      fmul st3
-    85                                  
-    86                                    ; Stack now contains:
-    87                                    ; ST(0) - x*x
-    88                                    ; ST(1) - y*y
-    89                                    ; ST(2) - x*y
-    90                                    ; ST(3) - x
-    91                                    ; ST(4) - y
-    92                                  
-    93                                    ; Check if the magnitude of Z is greater than 2 using Pythagoras
-    94                                    ; sqrt(x*x + y*y) < 2 ?
-    95                                    ; To avoid a square root, compare against 4 instead
-    96                                    ; x*x + y*y < 4 (since 2*2 = 4)
-    97                                    ; Load x*x
-    98 00000053 D9C0                      fld st0
-    99                                    ; Add y*y
-   100 00000055 D8C2                      fadd st2
-   101                                  
-   102                                    ; Have we escaped?
-   103 00000057 D906[A100]                fld dword [_4]
-   104 0000005B DED9                      fcompp
-   105 0000005D 9BDFE0                    fstsw ax
-   106 00000060 9E                        sahf
-   107 00000061 7236                      jb mandel_early_exit
-   108                                  
-   109                                    ; Not escaped, continue iterating
-   110                                    ; Complex multiplication: Z*Z
-   111                                    ; If Z = (x, y), then:
-   112                                    ; Z*Z = (x*x - y*y, 2*x*y)
-   113                                    ; Then add C
-   114                                  
-   115                                    ; Compute x*x - y*y
-   116                                    ; Load x*x
-   117 00000063 D9C0                      fld st0
-   118                                    ; Subtract y*y
-   119 00000065 D8E2                      fsub st2
-   120                                    ; Add C.x
-   121 00000067 D806[0400]                fadd dword [c_x]
-   122                                    ; Replace X on the stack with the new value
-   123 0000006B DDDC                      fstp st4
-   124                                  
-   125                                    ; We no longer need x*x and y*y
-   126                                    ; Pop x*x
-   127 0000006D DDD8                      fstp st0
-   128                                    ; Pop y*y
-   129 0000006F DDD8                      fstp st0
-   130                                    ; Compute 2*x*y by doubling x*y
-   131 00000071 D8C0                      fadd st0
-   132                                    ; Add C.y
-   133 00000073 D806[0800]                fadd dword [c_y]
-   134                                    ; Replace Y on the stack with the new value
-   135 00000077 DDDA                      fstp st2
-   136                                  
-   137                                    ; Decrement iteration counter
-   138 00000079 49                        dec cx
-   139 0000007A 75CB                      jnz mandel_loop
-   140                                  mandel_exit:
-   141                                    ; To avoid FPU stack overflow, remove X and Y
-   142                                    ; This restores the stack to its original state
-   143                                    ; Pop Y
-   144 0000007C DDD8                      fstp st0
-   145                                    ; Pop X
-   146 0000007E DDD8                      fstp st0
-   147                                  
-   148                                    ; Use the remaining iteration count as a color value
-   149                                    ; This produces a simple but visible Mandelbrot image
-   150 00000080 89C8                      mov ax,cx
-   151 00000082 AA                        stosb
-   152                                  
-   153                                    ; Decrement X until the entire row is drawn
-   154 00000083 FF0E[0000]                dec word [x]
-   155                                    ; Loop while X is not zero
-   156 00000087 7593                      jnz x_loop
-   157                                  
-   158                                    ; Decrement Y until all rows are drawn
-   159 00000089 FF0E[0200]                dec word [y]
-   160                                    ; Loop while Y is not zero
-   161 0000008D 7587                      jnz y_loop
-   162                                  
-   163                                    ; Wait for a key press (blocks until a key is pressed)
-   164 0000008F B400                      mov ah, 00h
-   165 00000091 CD16                      int 16h
-   166                                  
-   167                                    ; Restore standard text mode (80x25)
-   168 00000093 B80300                    mov ax, 0003h
-   169 00000096 CD10                      int 10h
+    24                                    ; Algorithm overview:
+    25                                    ; for each pixel (x,y):
+    26                                    ;   C = convert pixel to complex coordinate
+    27                                    ;   Z = C
+    28                                    ;   for iteration = 0 to MAX_ITERATIONS:
+    29                                    ;     Z = Z*Z + C
+    30                                    ;     if |Z| > 2: break
+    31                                    ;   color = iteration count
+    32                                  
+    33                                    ; Outer loop: iterate over rows (Y direction)
+    34 00000010 C706[0200]C800            mov word [y],200
+    35                                  y_loop:
+    36                                    ; Inner loop: iterate over columns (X direction)
+    37 00000016 C706[0000]4001            mov word [x],320
+    38                                  x_loop:
+    39                                  
+    40                                    ; The Mandelbrot set uses the iterative formula: Z = Z*Z + C
+    41                                    ; where both Z and C are complex numbers, and C is the pixel coordinate
+    42                                  
+    43                                    ; We use the FPU (Floating Point Unit) for these calculations.
+    44                                    ; Unlike CPU registers (AX, BX, CX), the FPU is stack-based with 8 slots
+    45                                    ; named ST(0), ST(1), etc. Most FPU instructions operate on ST(0), the top
+    46                                    ; of the stack. When you push a new value, everything shifts down one slot,
+    47                                    ; which can be tricky to track.
+    48                                    ; To simplify FPU code, you can store intermediate results in memory,
+    49                                    ; but this increases both code size and execution time.
+    50                                  
+    51                                    ; FPU store operations have two modes:
+    52                                    ; - fst: store value and leave it on the stack
+    53                                    ; - fstp: store value and pop it off the stack
+    54                                    ; Special case: "fstp st0" pops the top element without storing anywhere
+    55                                  
+    56                                    ; Convert pixel coordinates (x, y) to the complex number C
+    57                                  
+    58                                    ; Start with the Y coordinate
+    59 0000001C DF06[0200]                fild word  [y]
+    60                                    ; Center Y around zero (subtract half the screen height)
+    61 00000020 D826[B400]                fsub dword [half_h]
+    62                                    ; Scale by zoom factor
+    63 00000024 D80E[AC00]                fmul dword [zoom]
+    64                                    ; Offset to center the view on the desired region
+    65 00000028 D806[A800]                fadd dword [center_y]
+    66                                    ; Store the imaginary component of C
+    67 0000002C D916[0800]                fst  dword [c_y]
+    68                                  
+    69                                    ; ST(0) now contains the imaginary part of C
+    70                                  
+    71                                    ; Now compute the X coordinate
+    72 00000030 DF06[0000]                fild word  [x]
+    73                                    ; Center X around zero (subtract half the screen width)
+    74 00000034 D826[B000]                fsub dword [half_w]
+    75                                    ; Scale by zoom factor
+    76 00000038 D80E[AC00]                fmul dword [zoom]
+    77                                    ; Offset to center the view on the desired region
+    78 0000003C D806[A400]                fadd dword [center_x]
+    79                                    ; Store the real component of C
+    80 00000040 D916[0400]                fst  dword [c_x]
+    81                                  
+    82                                    ; ST(0) now contains the real part of C
+    83                                    ; The imaginary part is now in ST(1) due to the stack structure
+    84                                  
+    85                                    ; Current FPU stack layout:
+    86                                    ; ST(0) = x (real part)
+    87                                    ; ST(1) = y (imaginary part)
+    88                                  
+    89                                    ; Maximum iterations before considering a point "in the set"
+    90 00000044 B96400                    mov cx, 100
+    91                                  mandel_loop:
+    92                                    ; Duplicate y into ST(0), pushing existing values down the stack
+    93 00000047 D9C1                      fld st1
+    94                                    ; Multiply by x to compute x*y
+    95                                    ; (x is now in ST(1) due to the duplicate)
+    96 00000049 D8C9                      fmul st1
+    97                                  
+    98                                    ; Stack now contains:
+    99                                    ; ST(0) = x*y
+   100                                    ; ST(1) = x
+   101                                    ; ST(2) = y
+   102                                  
+   103                                    ; Duplicate y again into ST(0)
+   104 0000004B D9C2                      fld st2
+   105                                    ; Square y to compute y*y
+   106 0000004D D8CB                      fmul st3
+   107                                  
+   108                                    ; Stack now contains:
+   109                                    ; ST(0) = y*y
+   110                                    ; ST(1) = x*y
+   111                                    ; ST(2) = x
+   112                                    ; ST(3) = y
+   113                                  
+   114                                    ; Load x into ST(0)
+   115 0000004F D9C2                      fld st2
+   116                                    ; Square x to compute x*x
+   117 00000051 D8CB                      fmul st3
+   118                                  
+   119                                    ; Stack now contains:
+   120                                    ; ST(0) = x*x
+   121                                    ; ST(1) = y*y
+   122                                    ; ST(2) = x*y
+   123                                    ; ST(3) = x
+   124                                    ; ST(4) = y
+   125                                  
+   126                                    ; Check if Z has escaped (magnitude > 2)
+   127                                    ; Normally: sqrt(x*x + y*y) > 2
+   128                                    ; To avoid the square root, we compare x*x + y*y > 4 instead
+   129                                    ; Duplicate x*x
+   130 00000053 D9C0                      fld st0
+   131                                    ; Add y*y to get the magnitude squared
+   132 00000055 D8C2                      fadd st2
+   133                                  
+   134                                    ; Check if we've escaped (magnitude squared >= 4)
+   135                                    ; Push 4.0 onto the FPU stack
+   136 00000057 D906[A000]                fld dword [_4]
+   137                                    ; Compare ST(0) with ST(1), then pop both values
+   138                                    ; This compares 4.0 with (x*x + y*y)
+   139 0000005B DED9                      fcompp
+   140                                    ; Copy FPU status flags to AX register
+   141                                    ; (The FPU has its own flags separate from the CPU flags)
+   142 0000005D 9BDFE0                    fstsw ax
+   143                                    ; Copy AH into the CPU's flag register
+   144                                    ; This makes the FPU comparison result available to CPU jump instructions
+   145 00000060 9E                        sahf
+   146                                    ; Jump if below: if (x*x + y*y) < 4.0, the point has escaped
+   147 00000061 7235                      jb mandel_early_exit
+   148                                  
+   149                                    ; Point hasn't escaped yet, continue iterating
+   150                                    ; Apply the Mandelbrot formula: Z = Z*Z + C
+   151                                    ; For complex numbers, if Z = (x, y):
+   152                                    ; Z*Z = (x*x - y*y, 2*x*y)
+   153                                    ; Then we add C
+   154                                  
+   155                                    ; Compute the new real part: x*x - y*y + C.x
+   156                                    ; Load x*x
+   157 00000063 D9C0                      fld st0
+   158                                    ; Subtract y*y
+   159 00000065 D8E2                      fsub st2
+   160                                    ; Add the real component of C
+   161 00000067 D806[0400]                fadd dword [c_x]
+   162                                    ; Store as the new x value
+   163 0000006B DDDC                      fstp st4
+   164                                  
+   165                                    ; Clean up values we no longer need
+   166                                    ; Pop x*x
+   167 0000006D DDD8                      fstp st0
+   168                                    ; Pop y*y
+   169 0000006F DDD8                      fstp st0
    170                                  
-   171                                    ; Return control to DOS
-   172 00000098 C3                        ret
-   173                                  mandel_early_exit:
-   174                                    ; On early exit, clean up the FPU stack
-   175                                    ; Remove x*x, y*y, and x*y
-   176                                    ; Pop x*x
-   177 00000099 DDD8                      fstp st0
-   178                                    ; Pop y*y
-   179 0000009B DDD8                      fstp st0
-   180                                    ; Pop x*y
-   181 0000009D DDD8                      fstp st0
-   182 0000009F EBDB                      jmp mandel_exit
+   171                                    ; Stack now contains:
+   172                                    ; ST(0) = x*y
+   173                                    ; ST(1) = x
+   174                                    ; ST(2) = y
+   175                                  
+   176                                    ; Compute the new imaginary part: 2*x*y + C.y
+   177                                    ; Double x*y
+   178 00000071 D8C0                      fadd st0
+   179                                    ; Add the imaginary component of C
+   180 00000073 D806[0800]                fadd dword [c_y]
+   181                                    ; Store as the new y value
+   182 00000077 DDDA                      fstp st2
    183                                  
-   184                                  ; DATA section
-   185                                  
-   186                                  ; Constant used for comparison with 4.0
-   187 000000A1 00008040                _4        dd  4.0
-   188                                  ; Mandelbrot center coordinates
-   189 000000A5 000000BF                center_x  dd  -0.5
-   190 000000A9 00000000                center_y  dd  0.0
-   191                                  ; Zoom factor
-   192 000000AD 0AD7233C                zoom      dd  0.01
-   193                                  
-   194                                  ; Half of the screen resolution
-   195 000000B1 00002043                half_w    dd  160.0
-   196 000000B5 0000C842                half_h    dd  100.0
+   184                                    ; Stack now contains:
+   185                                    ; ST(0) = x
+   186                                    ; ST(1) = y
+   187                                  
+   188                                    ; Decrement iteration counter (cx) and continue if not done
+   189 00000079 E2CC                      loop mandel_loop
+   190                                  mandel_exit:
+   191                                    ; Clean up the FPU stack to prevent overflow
+   192                                    ; We need to restore the stack to its original state
+   193                                    ; Pop y
+   194 0000007B DDD8                      fstp st0
+   195                                    ; Pop x
+   196 0000007D DDD8                      fstp st0
    197                                  
-   198                                  ; BSS section - variables are uninitialized at program start
-   199                                  ; and may contain arbitrary values
-   200                                  section .bss
-   201 00000000 ????                    x   resb 2
-   202 00000002 ????                    y   resb 2
-   203 00000004 ????????                c_x resb 4
-   204 00000008 ????????                c_y resb 4
+   198                                    ; Use the iteration count as the color (higher count = darker)
+   199                                    ; This creates the characteristic Mandelbrot coloring
+   200 0000007F 89C8                      mov ax,cx
+   201 00000081 AA                        stosb
+   202                                  
+   203                                    ; Move to the next pixel in the current row
+   204 00000082 FF0E[0000]                dec word [x]
+   205                                    ; Continue until the entire row is complete
+   206 00000086 7594                      jnz x_loop
+   207                                  
+   208                                    ; Move to the next row
+   209 00000088 FF0E[0200]                dec word [y]
+   210                                    ; Continue until all rows are complete
+   211 0000008C 7588                      jnz y_loop
+   212                                  
+   213                                    ; Wait for a keypress before exiting
+   214 0000008E B400                      mov ah, 00h
+   215 00000090 CD16                      int 16h
+   216                                  
+   217                                    ; Return to text mode (80x25 characters)
+   218 00000092 B80300                    mov ax, 0003h
+   219 00000095 CD10                      int 10h
+   220                                  
+   221                                    ; Exit program and return to DOS
+   222 00000097 C3                        ret
+   223                                  mandel_early_exit:
+   224                                    ; Point escaped early - clean up the FPU stack before continuing
+   225                                    ; Remove intermediate values we calculated
+   226                                    ; Pop x*x
+   227 00000098 DDD8                      fstp st0
+   228                                    ; Pop y*y
+   229 0000009A DDD8                      fstp st0
+   230                                    ; Pop x*y
+   231 0000009C DDD8                      fstp st0
+   232 0000009E EBDB                      jmp mandel_exit
+   233                                  
+   234                                  ; DATA section
+   235                                  
+   236                                  ; Constant value 4.0 for escape radius comparison
+   237 000000A0 00008040                _4        dd  4.0
+   238                                  ; Center point of the Mandelbrot view
+   239 000000A4 000000BF                center_x  dd  -0.5
+   240 000000A8 00000000                center_y  dd  0.0
+   241                                  ; Zoom level (smaller = more zoomed in)
+   242 000000AC 0AD7233C                zoom      dd  0.01
+   243                                  
+   244                                  ; Half of the screen dimensions (for centering calculations)
+   245 000000B0 00002043                half_w    dd  160.0
+   246 000000B4 0000C842                half_h    dd  100.0
+   247                                  
+   248                                  ; BSS section - uninitialized variables
+   249                                  ; These will contain arbitrary values at program start
+   250                                  section .bss
+   251 00000000 ????                    x   resb 2
+   252 00000002 ????                    y   resb 2
+   253 00000004 ????????                c_x resb 4
+   254 00000008 ????????                c_y resb 4

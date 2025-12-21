@@ -185,9 +185,8 @@ mandel_loop:
   ; ST(0) = x
   ; ST(1) = y
 
-  ; Decrement iteration counter and continue if not done
-  dec cx
-  jnz mandel_loop
+  ; Decrement iteration counter (cx) and continue if not done
+  loop mandel_loop
 mandel_exit:
   ; Clean up the FPU stack to prevent overflow
   ; We need to restore the stack to its original state
